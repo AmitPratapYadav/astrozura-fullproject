@@ -110,7 +110,7 @@ export default function Matching() {
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
-      {error && <div className="fixed top-5 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-600 px-6 py-3 text-sm font-medium text-white shadow-lg">{error}</div>}
+      {error && <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-xl bg-red-600 px-6 py-3 text-sm font-medium text-white shadow-lg">{error}</div>}
       <Navbar />
 
       <section className="relative bg-[#1E3557] text-white overflow-hidden py-24 md:py-32">

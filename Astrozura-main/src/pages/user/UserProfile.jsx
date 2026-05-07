@@ -150,7 +150,7 @@ export default function UserProfile() {
     <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
       {message && (
         <div
-          className={`fixed top-5 left-1/2 z-50 -translate-x-1/2 rounded-xl px-6 py-3 text-sm font-medium text-white shadow-lg ${
+                  className={`fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-xl px-6 py-3 text-sm font-medium text-white shadow-lg ${
             messageType === "error" ? "bg-red-600" : "bg-[#1E3557]"
           }`}
         >

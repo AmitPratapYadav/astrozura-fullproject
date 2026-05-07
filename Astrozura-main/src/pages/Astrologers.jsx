@@ -26,6 +26,7 @@ const [search, setSearch] = useState("");
 const [showMsg, setShowMsg] = useState("");
 const [activePage, setActivePage] = useState(1);
 const [searching, setSearching] = useState(false);
+const pageSize = 6;
 
 const handleClick = (message) => {
   setShowMsg("");
@@ -66,8 +67,37 @@ useEffect(() => {
   return () => window.clearTimeout(timeoutId);
 }, [search]);
 
+useEffect(() => {
+  setActivePage(1);
+}, [search]);
+
 const featuredExpert = astrologersList.find(a => a.astrologer_detail?.is_featured) || astrologersList[0];
 const featuredDetails = featuredExpert?.astrologer_detail || {};
+const totalPages = Math.max(1, Math.ceil(astrologersList.length / pageSize));
+const currentPage = Math.min(activePage, totalPages);
+const paginatedAstrologers = astrologersList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+const formatRatingLabel = (details) => {
+  const ratingValue = details?.rating !== null && details?.rating !== undefined && details?.rating !== ""
+    ? Number(details.rating)
+    : null;
+  const totalReviews = Number(details?.total_reviews || 0);
+
+  if (!ratingValue || totalReviews === 0) {
+    return "Not Rated Yet";
+  }
+
+  return `${ratingValue.toFixed(1)} (${totalReviews} review${totalReviews === 1 ? "" : "s"})`;
+};
+
+const hasRealRating = (details) => {
+  const ratingValue = details?.rating !== null && details?.rating !== undefined && details?.rating !== ""
+    ? Number(details.rating)
+    : null;
+  const totalReviews = Number(details?.total_reviews || 0);
+
+  return Boolean(ratingValue) && totalReviews > 0;
+};
 
 const getImageUrl = (path) => {
   if (!path) return avatar;
@@ -88,7 +118,7 @@ return (
 
     {/* Notification Toast */}
     {showMsg && (
-      <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#1E3557] text-white px-6 py-3 rounded-xl shadow-lg z-50 text-sm font-medium">
+        <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">
         {showMsg}
       </div>
     )}
@@ -181,8 +211,17 @@ return (
               <div>
                 <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Rating</p>
                 <p className="font-bold text-[#1E3557] text-base md:text-lg flex items-center gap-1.5">
-                  {featuredDetails.rating || "5.0"} <FaStar className="text-[#D4A73C] text-sm" />
+                  {hasRealRating(featuredDetails) ? (
+                    <>
+                      {Number(featuredDetails.rating).toFixed(1)} <FaStar className="text-[#D4A73C] text-sm" />
+                    </>
+                  ) : (
+                    <span className="text-sm text-gray-500">Not Rated Yet</span>
+                  )}
                 </p>
+                {Number(featuredDetails.total_reviews || 0) > 0 && (
+                  <p className="mt-1 text-xs text-gray-400">{featuredDetails.total_reviews} reviews</p>
+                )}
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Sessions</p>
@@ -217,7 +256,7 @@ return (
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {astrologersList.map((astro) => {
+          {paginatedAstrologers.map((astro) => {
             const details = astro.astrologer_detail || {};
 
             return (
@@ -234,11 +273,19 @@ return (
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1 bg-[#1E3557] px-2.5 py-1.5 rounded-lg flex-shrink-0">
-                    <FaStar className="text-[#D4A73C] text-xs" />
-                    <span className="text-white text-xs font-bold">{details.rating || "5.0"}</span>
+                  <div className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold flex-shrink-0 ${hasRealRating(details) ? "bg-[#1E3557] text-white" : "bg-gray-100 text-gray-500"}`}>
+                    {hasRealRating(details) ? (
+                      <span className="flex items-center gap-1">
+                        <FaStar className="text-[#D4A73C] text-xs" />
+                        {Number(details.rating).toFixed(1)}
+                      </span>
+                    ) : (
+                      "Not Rated Yet"
+                    )}
                   </div>
                 </div>
+
+                <p className="mb-4 text-xs text-gray-400">{formatRatingLabel(details)}</p>
 
                 <div className="grid grid-cols-2 gap-3 mt-auto">
                   <div className="bg-[#f8f9fa] p-3 rounded-xl text-center border border-gray-100">
@@ -279,23 +326,50 @@ return (
       )}
 
       {/* PAGINATION */}
-      <div className="flex justify-center mt-12 gap-2 flex-wrap">
-        <button className="px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition">Prev</button>
-        {[1, 2, 3, 4, 5, 6].map(num => (
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-12 gap-2 flex-wrap">
           <button
-            key={num}
-            onClick={() => setActivePage(num)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
-              activePage === num
-                ? "bg-[#1E3557] text-white shadow-md"
-                : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => setActivePage((page) => Math.max(1, page - 1))}
+            className={`px-4 py-2 border rounded-xl text-sm transition ${
+              currentPage === 1
+                ? "border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50"
+                : "border-gray-200 hover:bg-gray-50 text-gray-700"
             }`}
           >
-            {num}
+            Prev
           </button>
-        ))}
-        <button className="px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition">Next</button>
-      </div>
+
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map((num) => (
+            <button
+              key={num}
+              type="button"
+              onClick={() => setActivePage(num)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+                currentPage === num
+                  ? "bg-[#1E3557] text-white shadow-md"
+                  : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {num}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            disabled={currentPage === totalPages}
+            onClick={() => setActivePage((page) => Math.min(totalPages, page + 1))}
+            className={`px-4 py-2 border rounded-xl text-sm transition ${
+              currentPage === totalPages
+                ? "border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50"
+                : "border-gray-200 hover:bg-gray-50 text-gray-700"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
 
     </section>
 

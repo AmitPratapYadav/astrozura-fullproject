@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FcGoogle } from "react-icons/fc";
 import vedic from "../assets/vedic-astrology.png";
+import { buildGoogleAuthUrl } from "../utils/googleAuth";
 
 const STARS = Array.from({ length: 60 }, (_, i) => ({
   id: i,
@@ -71,7 +72,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google?frontend=main`;
+    window.location.href = buildGoogleAuthUrl("main");
   };
 
   return (

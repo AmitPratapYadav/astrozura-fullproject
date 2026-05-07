@@ -16,7 +16,7 @@ import {
   TbZodiacTaurus,
   TbZodiacVirgo,
 } from "react-icons/tb";
-import { getDailyHoroscope, getWeeklyHoroscope, getMonthlyHoroscope } from "../api/prokeralaApi";
+import { getDailyHoroscope, getMonthlyHoroscope } from "../api/prokeralaApi";
 
 const zodiac = [
   { sign: "aries", id: "Aries", range: "March 21 - April 19", luckyColor: "Gold", luckyNumber: "08", icon: <TbZodiacAries size={28} strokeWidth={1.5} className="text-current" /> },
@@ -86,9 +86,7 @@ export default function Premium() {
         setHoroscopeError("");
         
         let response;
-        if (activePeriod === "weekly") {
-          response = await getWeeklyHoroscope(activeSign);
-        } else if (activePeriod === "monthly") {
+        if (activePeriod === "monthly") {
           response = await getMonthlyHoroscope(activeSign);
         } else {
           response = await getDailyHoroscope(activeSign, "today");
@@ -129,7 +127,7 @@ export default function Premium() {
   return (
     <section className="bg-[#FAF7F2] pt-4 pb-16 px-4 md:px-10">
       {message && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#c7926a] text-white px-5 py-2 rounded-md shadow text-xs z-50">
+      <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-md bg-[#c7926a] px-5 py-2 text-xs text-white shadow">
           {message}
         </div>
       )}
@@ -202,13 +200,6 @@ export default function Premium() {
               className={`transition-colors ${activePeriod === "daily" ? "text-[#D4A73C] underline underline-offset-8" : "text-gray-400 hover:text-[#2B2B2B]"}`}
             >
               Daily
-            </button>
-            <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-            <button
-              onClick={() => setActivePeriod("weekly")}
-              className={`transition-colors ${activePeriod === "weekly" ? "text-[#D4A73C] underline underline-offset-8" : "text-gray-400 hover:text-[#2B2B2B]"}`}
-            >
-              Weekly
             </button>
             <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
             <button

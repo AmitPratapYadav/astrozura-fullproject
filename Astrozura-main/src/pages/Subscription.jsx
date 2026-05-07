@@ -91,7 +91,7 @@ export default function CosmicSection() {
 
       {/* Toast */}
       {msg.text && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-full shadow-xl text-white font-medium text-center animate-bounce
+      <div className={`fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-full px-6 py-3 text-center font-medium text-white shadow-xl animate-bounce
           ${msg.isError ? "bg-red-500" : "bg-[#c79926]"}`}>
           {msg.text}
         </div>

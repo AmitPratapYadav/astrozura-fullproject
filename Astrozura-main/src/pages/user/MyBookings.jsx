@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { FaStar } from "react-icons/fa";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
-import { getMyBookings, getMyRitualBookings } from "../../api/bookingApi";
+import { getMyBookings, getMyRitualBookings, submitBookingReview } from "../../api/bookingApi";
 
 const formatSchedule = (value) =>
   value
@@ -40,6 +41,8 @@ export default function MyBookings() {
   const [ritualBookings, setRitualBookings] = useState({ upcoming: [], history: [] });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(location.state?.message || "");
+  const [reviewForms, setReviewForms] = useState({});
+  const [submittingReviewFor, setSubmittingReviewFor] = useState(null);
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -76,6 +79,74 @@ export default function MyBookings() {
     location.pathname === path
       ? "bg-gradient-to-r from-[#1E3557] to-[#2c4b7c] text-white shadow-md border-l-4 border-[#D4A73C]"
       : "bg-transparent text-gray-600 hover:bg-gray-50 hover:text-[#1E3557] border-l-4 border-transparent";
+
+  const updateReviewForm = (bookingId, patch) => {
+    setReviewForms((current) => ({
+      ...current,
+      [bookingId]: {
+        rating: current[bookingId]?.rating || 0,
+        review: current[bookingId]?.review || "",
+        open: true,
+        ...current[bookingId],
+        ...patch,
+      },
+    }));
+  };
+
+  const saveReview = async (bookingId) => {
+    const form = reviewForms[bookingId];
+
+    if (!form?.rating) {
+      setMessage("Please select a rating before submitting.");
+      return;
+    }
+
+    try {
+      setSubmittingReviewFor(bookingId);
+      const response = await submitBookingReview(bookingId, {
+        rating: form.rating,
+        review: form.review,
+      });
+
+      if (response?.success) {
+        setBookings((current) => ({
+          ...current,
+          history: current.history.map((booking) =>
+            booking.id === bookingId
+              ? {
+                  ...booking,
+                  review: response.review,
+                  astrologer: booking.astrologer
+                    ? {
+                        ...booking.astrologer,
+                        astrologer_detail: booking.astrologer.astrologer_detail
+                          ? {
+                              ...booking.astrologer.astrologer_detail,
+                              rating: response.summary?.rating ?? booking.astrologer.astrologer_detail.rating,
+                              total_reviews: response.summary?.total_reviews ?? booking.astrologer.astrologer_detail.total_reviews,
+                            }
+                          : booking.astrologer.astrologer_detail,
+                      }
+                    : booking.astrologer,
+                }
+              : booking
+          ),
+        }));
+        setReviewForms((current) => ({
+          ...current,
+          [bookingId]: {
+            ...(current[bookingId] || {}),
+            open: false,
+          },
+        }));
+        setMessage("Rating submitted successfully.");
+      }
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Failed to submit rating.");
+    } finally {
+      setSubmittingReviewFor(null);
+    }
+  };
 
   const renderBookingCard = (booking) => (
     <div key={booking.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -127,6 +198,109 @@ export default function MyBookings() {
           >
             {booking.consultation_type === "call" ? "Open Consultation Room" : "Open Chat Session"}
           </Link>
+        </div>
+      )}
+      {booking.status === "completed" && (
+        <div className="mt-5 rounded-2xl border border-[#F1E1B8] bg-[#FFF9EC] p-4">
+          {booking.review ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#D4A73C]">Your Rating</p>
+                  <div className="mt-2 flex items-center gap-1">
+                    {Array.from({ length: 5 }, (_, index) => (
+                      <FaStar
+                        key={`${booking.id}-saved-${index}`}
+                        className={index < booking.review.rating ? "text-[#D4A73C]" : "text-gray-300"}
+                      />
+                    ))}
+                    <span className="ml-2 text-sm font-semibold text-[#1E3557]">{booking.review.rating}/5</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateReviewForm(booking.id, {
+                      open: true,
+                      rating: booking.review.rating,
+                      review: booking.review.review || "",
+                    })
+                  }
+                  className="rounded-xl border border-[#D4A73C]/30 bg-white px-4 py-2 text-xs font-semibold text-[#1E3557] transition hover:bg-[#FFF4DC]"
+                >
+                  Edit Rating
+                </button>
+              </div>
+              {booking.review.review && (
+                <p className="mt-3 text-sm leading-6 text-gray-600">{booking.review.review}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-[#1E3557]">Rate {booking.astrologer_name}</p>
+                  <p className="mt-1 text-xs text-gray-500">Share your chat or call experience after a completed session.</p>
+                </div>
+                {!reviewForms[booking.id]?.open && (
+                  <button
+                    type="button"
+                    onClick={() => updateReviewForm(booking.id, { open: true })}
+                    className="rounded-xl bg-[#1E3557] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#162744]"
+                  >
+                    Rate Astrologer
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {reviewForms[booking.id]?.open && (
+            <div className="mt-4 border-t border-[#F1E1B8] pt-4">
+              <div className="flex items-center gap-2">
+                {Array.from({ length: 5 }, (_, index) => {
+                  const starValue = index + 1;
+                  const isActive = starValue <= (reviewForms[booking.id]?.rating || 0);
+                  return (
+                    <button
+                      key={`${booking.id}-star-${starValue}`}
+                      type="button"
+                      onClick={() => updateReviewForm(booking.id, { rating: starValue })}
+                      className="transition hover:scale-110"
+                    >
+                      <FaStar className={`text-lg ${isActive ? "text-[#D4A73C]" : "text-gray-300"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              <textarea
+                value={reviewForms[booking.id]?.review || ""}
+                onChange={(event) => updateReviewForm(booking.id, { review: event.target.value })}
+                rows={4}
+                placeholder="Write a short review about the astrologer, response quality, clarity, and overall experience."
+                className="mt-4 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-[#D4A73C] focus:ring-2 focus:ring-[#D4A73C]/20"
+              />
+
+              <div className="mt-4 flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => updateReviewForm(booking.id, { open: false })}
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={submittingReviewFor === booking.id}
+                  onClick={() => saveReview(booking.id)}
+                  className="rounded-xl bg-[#D4A73C] px-4 py-2 text-xs font-semibold text-[#1E3557] transition hover:bg-[#c49530] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submittingReviewFor === booking.id ? "Submitting..." : booking.review ? "Update Rating" : "Submit Rating"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -203,7 +377,7 @@ export default function MyBookings() {
   return (
     <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
       <Navbar />
-      {message && <div className="fixed top-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">{message}</div>}
+      {message && <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">{message}</div>}
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-8">
         <aside className="w-full lg:w-[280px] flex-shrink-0">

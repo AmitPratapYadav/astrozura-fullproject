@@ -25,6 +25,8 @@ class AstrologerDetail extends Model
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'rating' => 'decimal:1',
+        'total_reviews' => 'integer',
     ];
 
     public function user()

@@ -59,6 +59,44 @@ export default function MainSections() {
     return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
   };
 
+  const formatRatingText = (details) => {
+    const ratingValue =
+      details?.rating !== null && details?.rating !== undefined && details?.rating !== ""
+        ? Number(details.rating)
+        : null;
+    const totalReviews = Number(details?.total_reviews || 0);
+
+    if (!ratingValue || totalReviews === 0) {
+      return "Not Rated Yet";
+    }
+
+    return `${ratingValue.toFixed(1)} (${totalReviews} review${totalReviews === 1 ? "" : "s"})`;
+  };
+
+  const hasRealRating = (details) => {
+    const ratingValue =
+      details?.rating !== null && details?.rating !== undefined && details?.rating !== ""
+        ? Number(details.rating)
+        : null;
+    const totalReviews = Number(details?.total_reviews || 0);
+
+    return Boolean(ratingValue) && totalReviews > 0;
+  };
+
+  const formatRatingBadge = (details) => {
+    const ratingValue =
+      details?.rating !== null && details?.rating !== undefined && details?.rating !== ""
+        ? Number(details.rating)
+        : null;
+    const totalReviews = Number(details?.total_reviews || 0);
+
+    if (!ratingValue || totalReviews === 0) {
+      return "Not Rated Yet";
+    }
+
+    return `★ ${ratingValue.toFixed(1)}`;
+  };
+
   const featuredDetails = featured?.astrologer_detail || {};
   const featuredHighlights = useMemo(() => {
     const merged = [
@@ -72,7 +110,7 @@ export default function MainSections() {
   return (
     <section className="bg-gradient-to-b from-[#FAF7F2] via-[#F8F5EF] to-[#F8F5EF] px-4 py-14 md:px-10 sm:py-20">
       {msg && (
-        <div className="fixed left-1/2 top-5 z-50 -translate-x-1/2 rounded-md bg-[#d8b14a] px-5 py-2 text-xs text-white shadow">
+      <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-md bg-[#d8b14a] px-5 py-2 text-xs text-white shadow">
           {msg}
         </div>
       )}
@@ -111,7 +149,8 @@ export default function MainSections() {
               <span className="text-[#D4A73C] drop-shadow-sm">{t("main.founder_title_end")}</span>
             </h2>
 
-            <p className="mb-6 text-lg font-bold text-[#b8860b]">{featured?.name || "Featured Astrologer"}</p>
+            <p className="mb-3 text-lg font-bold text-[#b8860b]">{featured?.name || "Featured Astrologer"}</p>
+            <p className="mb-6 text-sm font-semibold text-gray-500">{formatRatingText(featuredDetails)}</p>
 
             <div className="relative">
               <div className="absolute bottom-0 left-0 top-0 w-1 rounded-full bg-[#D4A73C]" />
@@ -127,7 +166,7 @@ export default function MainSections() {
               ).map((label, index) => (
                 <div key={`${label}-${index}`} className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EEE7D6] bg-[#FAF7F2] text-sm shadow-sm">
-                    {["✦", "☉", "✧", "☽"][index % 4]}
+                    {["*", "O", "+", "~"][index % 4]}
                   </div>
                   <span className="text-xs font-bold text-[#1E3557] opacity-80">{label}</span>
                 </div>
@@ -149,7 +188,7 @@ export default function MainSections() {
                 className="flex items-center gap-3 rounded-2xl bg-[#1E3557] px-10 py-4 text-sm font-black text-white shadow-2xl shadow-[#1E3557]/20 transition-all hover:-translate-y-1 hover:bg-[#162a45] active:scale-95"
               >
                 Book a Consultation
-                <span className="text-xs opacity-50">→</span>
+                <span className="text-xs opacity-50">-&gt;</span>
               </button>
             </div>
           </div>
@@ -208,9 +247,12 @@ export default function MainSections() {
                         <p className="text-[11px] text-[#9A9A9A]">
                           {details.experience_years || 0} {t("main.years_exp")}
                         </p>
+                        <p className="mt-1 text-[11px] text-[#9A9A9A]">{formatRatingText(details)}</p>
                       </div>
 
-                      <span className="ml-auto flex-shrink-0 text-xs font-medium text-[#D4A73C]">★ {details.rating || "5.0"}</span>
+                      <span className={`ml-auto flex-shrink-0 text-xs font-medium ${hasRealRating(details) ? "text-[#D4A73C]" : "text-gray-400"}`}>
+                        {formatRatingBadge(details)}
+                      </span>
                     </div>
 
                     <div className="mt-5 flex justify-between text-[10px] text-[#9A9A9A]">

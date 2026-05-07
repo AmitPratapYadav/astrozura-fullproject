@@ -458,7 +458,7 @@ export default function AstrologerDashboard() {
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
-      {banner && <div className="fixed top-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">{banner}</div>}
+      {banner && <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">{banner}</div>}
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-8">
         <aside className="w-full lg:w-[280px] flex-shrink-0">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">

@@ -179,13 +179,17 @@ export default function Rituals() {
                 <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {rituals.map((ritual, index) => (
                     <div key={ritual.id} className="rounded-3xl border border-[#efe4d2] bg-white shadow-sm overflow-hidden">
-                      <img src={getImageUrl(ritual.image, ritualFallbacks[index % ritualFallbacks.length])} alt={ritual.name} className="h-44 w-full object-cover" />
+                      <Link to={`/rituals/${ritual.slug}`} className="block">
+                        <img src={getImageUrl(ritual.image, ritualFallbacks[index % ritualFallbacks.length])} alt={ritual.name} className="h-44 w-full object-cover transition duration-300 hover:scale-[1.02]" />
+                      </Link>
                       <div className="p-5">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A73C]">{ritual.category}</p>
                           {ritual.is_popular && <span className="rounded-full bg-[#fff3da] px-2.5 py-1 text-[10px] font-bold uppercase text-[#c38a11]">Popular</span>}
                         </div>
-                        <h2 className="mt-3 text-2xl font-bold leading-tight text-[#1E3557]">{ritual.name}</h2>
+                        <Link to={`/rituals/${ritual.slug}`} className="mt-3 block text-2xl font-bold leading-tight text-[#1E3557] transition hover:text-[#D4A73C]">
+                          {ritual.name}
+                        </Link>
                         <p className="mt-3 text-sm leading-6 text-gray-500">{ritual.short_description}</p>
                         <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
                           <span>{ritual.duration_label}</span>

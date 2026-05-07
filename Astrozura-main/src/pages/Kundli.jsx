@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaMoon, FaStar, FaSun } from "react-icons/fa";
@@ -69,8 +70,27 @@ const formatDateTime = (value, language = "en") => {
   }
 };
 
+const getRelevantSadesatiTransits = (transits) => {
+  if (!Array.isArray(transits)) return [];
+
+  const sorted = [...transits]
+    .filter((item) => item?.start)
+    .sort((left, right) => new Date(left.start).getTime() - new Date(right.start).getTime());
+
+  const now = Date.now();
+  const firstUpcomingIndex = sorted.findIndex((item) => new Date(item.start).getTime() >= now);
+
+  if (firstUpcomingIndex === -1) {
+    return sorted.slice(-8);
+  }
+
+  const startIndex = Math.max(0, firstUpcomingIndex - 2);
+  return sorted.slice(startIndex, startIndex + 8);
+};
+
 export default function Kundli() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [details, setDetails] = useState(initialDetails);
   const [showMsg, setShowMsg] = useState("");
   const [locationResults, setLocationResults] = useState([]);
@@ -89,6 +109,7 @@ export default function Kundli() {
   const [activePredictionType, setActivePredictionType] = useState("career");
 
   const isPaid = user?.subscription_status === "active" || user?.plan_name?.toLowerCase().includes("premium");
+  const requestedPremiumTab = searchParams.get("premiumTab");
 
   useEffect(() => {
     if (!user) return;
@@ -103,6 +124,16 @@ export default function Kundli() {
       gender: user.gender || prev.gender,
     }));
   }, [user]);
+
+  useEffect(() => {
+    const allowedPremiumTabs = new Set(["charts", "predictions", "numerology", "sadesati", "lalkitab"]);
+    if (!requestedPremiumTab || !allowedPremiumTabs.has(requestedPremiumTab)) {
+      return;
+    }
+
+    setActiveTab("premium");
+    setPremiumTab(requestedPremiumTab);
+  }, [requestedPremiumTab]);
 
   const showToast = (text) => {
     setShowMsg(text);
@@ -236,6 +267,7 @@ export default function Kundli() {
   const activeLanguage = apiMeta?.language || details.language;
   const yogas = Array.isArray(kundliData?.yoga_details) ? kundliData.yoga_details : [];
   const activeYogas = yogas.flatMap((group) => (group.yoga_list || []).filter((item) => item.has_yoga).map((item) => ({ ...item, group: group.name })));
+  const visibleSadesatiTransits = getRelevantSadesatiTransits(premiumData.sadesati?.transits || []);
   const profileItems = [
     ["Nakshatra", birth?.nakshatra?.name], ["Pada", birth?.nakshatra?.pada], ["Nakshatra Lord", birth?.nakshatra?.lord?.name],
     ["Moon Sign", birth?.chandra_rasi?.name], ["Sun Sign", birth?.soorya_rasi?.name], ["Zodiac", birth?.zodiac?.name],
@@ -244,7 +276,7 @@ export default function Kundli() {
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
-      {showMsg && <div className="fixed top-5 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">{showMsg}</div>}
+      {showMsg && <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">{showMsg}</div>}
       <Navbar />
       <section className="relative bg-[#1E3557] text-white overflow-hidden py-24 md:py-32">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#D4A73C 1px, transparent 1px)", backgroundSize: "30px 30px" }}></div>
@@ -271,7 +303,7 @@ export default function Kundli() {
               {KUNDLI_LANGUAGE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
             <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-              Kundli translations depend on the modules returned by Prokerala for the selected locale.
+              Kundli translations depend on the modules returned by Astrology API for the selected locale.
             </div>
             <div className="relative md:col-span-2">
               <input required type="text" value={details.place} onChange={handleLocationChange} placeholder="Birth Place (select from dropdown)" className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl pr-10" />
@@ -481,9 +513,10 @@ export default function Kundli() {
                                   </div>
                                   {premiumData.sadesati.transits && (
                                     <div className="space-y-3">
-                                      <p className="font-bold text-[#1E3557]">Sadesati Phases/Transits</p>
-                                      <div className="grid gap-3">
-                                        {premiumData.sadesati.transits.map((t, i) => (
+                                      <p className="font-bold text-[#1E3557]">Relevant Sadesati Phase Changes</p>
+                                      <p className="text-sm text-gray-500">Showing the most relevant recent and upcoming phase changes instead of the full lifetime transit log.</p>
+                                      <div className="grid gap-3 max-h-[32rem] overflow-y-auto pr-1">
+                                        {visibleSadesatiTransits.map((t, i) => (
                                           <div key={i} className="p-4 rounded-xl border border-gray-100 flex justify-between items-center text-sm">
                                             <span className="font-bold text-[#1E3557]">{t.phase || t.name}</span>
                                             <span className="text-gray-500">{formatDateTime(t.start, activeLanguage)} to {formatDateTime(t.end, activeLanguage)}</span>
@@ -508,6 +541,39 @@ export default function Kundli() {
                                       <p className="text-gray-600 text-sm leading-relaxed">{r}</p>
                                     </div>
                                   )) : <p className="text-gray-400">No Lal Kitab remedies available.</p>}
+
+                                  {Array.isArray(premiumData.lalkitab.planets) && premiumData.lalkitab.planets.length > 0 && (
+                                    <div className="rounded-2xl border border-gray-100 bg-[#f8f9fa] p-5">
+                                      <h5 className="text-lg font-bold text-[#1E3557]">Planet Positions</h5>
+                                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                        {premiumData.lalkitab.planets.map((planet) => (
+                                          <div key={planet.planet} className="rounded-xl border border-gray-100 bg-white p-4">
+                                            <p className="font-bold text-[#1E3557]">{planet.planet}</p>
+                                            <p className="mt-2 text-sm text-gray-600">Rashi: {planet.rashi || "-"}</p>
+                                            <p className="mt-1 text-sm text-gray-600">Nature: {planet.nature || "-"}</p>
+                                            <p className="mt-1 text-sm text-gray-600">Position: {planet.position || "-"}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {Array.isArray(premiumData.lalkitab.houses) && premiumData.lalkitab.houses.length > 0 && (
+                                    <div className="rounded-2xl border border-gray-100 bg-[#f8f9fa] p-5">
+                                      <h5 className="text-lg font-bold text-[#1E3557]">House Summary</h5>
+                                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                        {premiumData.lalkitab.houses.map((house) => (
+                                          <div key={house.khana_number} className="rounded-xl border border-gray-100 bg-white p-4">
+                                            <p className="font-bold text-[#1E3557]">House {house.khana_number}</p>
+                                            <p className="mt-2 text-sm text-gray-600">Maalik: {house.maalik || "-"}</p>
+                                            <p className="mt-1 text-sm text-gray-600">Pakka Ghar: {house.pakka_ghar || "-"}</p>
+                                            <p className="mt-1 text-sm text-gray-600">Kismat: {house.kismat || "-"}</p>
+                                            <p className="mt-1 text-sm text-gray-600">Soya: {house.soya ? "Yes" : "No"}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               ) : <p className="text-gray-400">No Lal Kitab data available.</p>}
                             </div>

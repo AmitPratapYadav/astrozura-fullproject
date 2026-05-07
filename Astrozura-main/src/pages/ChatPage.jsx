@@ -214,7 +214,7 @@ export default function ChatPage() {
   const [callMuted, setCallMuted] = useState(false);
   const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
 
-  const scrollAnchorRef = useRef(null);
+  const messageViewportRef = useRef(null);
   const zimRef = useRef(null);
   const zimContextKeyRef = useRef("");
   const zegoEngineRef = useRef(null);
@@ -228,6 +228,8 @@ export default function ChatPage() {
   const chatSyncTimerRef = useRef(null);
   const fileInputRef = useRef(null);
   const callAutoJoinKeyRef = useRef("");
+  const shouldStickToBottomRef = useRef(true);
+  const previousMessageCountRef = useRef(0);
 
   const isAstrologerViewer =
     user?.id && booking ? Number(user.id) === Number(booking.astrologer_id) : user?.role === "astrologer";
@@ -239,7 +241,7 @@ export default function ChatPage() {
     booking?.astrologer?.astrologer_detail || booking?.astrologer?.astrologerDetail || null;
   const callEnabled = booking?.consultation_type === "call";
   const viewerZegoId = session?.viewer?.zego_user_id || "";
-  const chatServiceEnabled = !callEnabled && Boolean(session?.zego?.chat);
+  const chatServiceEnabled = Boolean(session?.zego?.chat);
   const canOpenChat = Boolean(session?.can_join && chatServiceEnabled);
   const isClosed = CLOSED_STATUSES.has(booking?.status) || session?.state === "closed";
   const canJoinCall = Boolean(callEnabled && session?.can_join && session?.zego?.call);
@@ -295,7 +297,20 @@ export default function ChatPage() {
   }, [callEnabled, chatReady, scheduledEndLabel, scheduledStartLabel, session?.test_mode]);
 
   useEffect(() => {
-    scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const viewport = messageViewportRef.current;
+
+    if (!viewport) {
+      previousMessageCountRef.current = messages.length;
+      return;
+    }
+
+    const wasEmpty = previousMessageCountRef.current === 0;
+
+    if (shouldStickToBottomRef.current || wasEmpty) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+
+    previousMessageCountRef.current = messages.length;
   }, [messages]);
 
   useEffect(() => {
@@ -329,6 +344,15 @@ export default function ChatPage() {
     messageKeysRef.current = new Set();
     setMessages([]);
     mergeMessages(nextMessages, true);
+  };
+
+  const handleMessageViewportScroll = () => {
+    const viewport = messageViewportRef.current;
+
+    if (!viewport) return;
+
+    const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    shouldStickToBottomRef.current = distanceFromBottom < 80;
   };
 
   const destroyChatConnection = async (roomId = "") => {
@@ -686,7 +710,7 @@ export default function ChatPage() {
       setBooking(response.booking);
       setSession(response.session);
 
-      if (response.booking?.consultation_type !== "call" && response.session?.can_join && response.session?.zego?.chat) {
+      if (response.session?.can_join && response.session?.zego?.chat) {
         try {
           await ensureChatConnection(response.booking, response.session);
         } catch (error) {
@@ -1024,7 +1048,7 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-[#f3f5fb] font-sans">
       {banner && (
-        <div className="fixed left-1/2 top-5 z-50 -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">
+              <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">
           {banner}
         </div>
       )}
@@ -1108,8 +1132,8 @@ export default function ChatPage() {
             <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#D4A73C]"></div>
           </div>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <section className="flex min-h-[70vh] flex-col rounded-3xl border border-gray-200 bg-white shadow-sm">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+            <section className="flex min-h-[70vh] flex-col rounded-3xl border border-gray-200 bg-white shadow-sm xl:h-[calc(100vh-12.5rem)] xl:min-h-0 xl:max-h-[820px]">
               <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F6E8BF] text-[#1E3557]">
@@ -1133,7 +1157,11 @@ export default function ChatPage() {
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-5 py-5">
+              <div
+                ref={messageViewportRef}
+                onScroll={handleMessageViewportScroll}
+                className="flex-1 overflow-y-auto px-5 py-5"
+              >
                 {!session?.can_join ? (
                   <div className="flex h-full min-h-[320px] items-center justify-center">
                     <div className="max-w-md text-center">
@@ -1209,7 +1237,6 @@ export default function ChatPage() {
                         </div>
                       </div>
                     ))}
-                    <div ref={scrollAnchorRef} />
                   </div>
                 ) : (
                   <div className="flex h-full min-h-[320px] items-center justify-center">

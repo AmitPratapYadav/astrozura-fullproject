@@ -34,3 +34,8 @@ export const markBookingCompleted = async (bookingId) => {
   const response = await api.post(`/astrologer/bookings/${bookingId}/complete`);
   return response.data;
 };
+
+export const submitBookingReview = async (bookingId, payload) => {
+  const response = await api.post(`/bookings/${bookingId}/review`, payload);
+  return response.data;
+};

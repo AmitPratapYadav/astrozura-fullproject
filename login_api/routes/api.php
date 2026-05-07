@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\RitualController;
 use App\Http\Controllers\Api\RitualBookingController;
 use App\Http\Controllers\Api\BookingSessionController;
 use App\Http\Controllers\Api\MediaController;
+use App\Http\Controllers\Api\AstrologerReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Booking Routes (auth required)
     Route::get('/my-bookings', [BookingController::class, 'myBookings']);
     Route::get('/my-subscriptions', [SubscriptionController::class, 'mySubscriptions']);
+    Route::post('/bookings/{booking}/review', [AstrologerReviewController::class, 'store']);
 });
 
 Route::get('/bookings/availability', [BookingController::class, 'getAvailability']);
@@ -124,7 +126,7 @@ Route::delete('/admin/rituals/{id}', [RitualController::class, 'destroy']);
 Route::get('/admin/ritual-bookings', [RitualBookingController::class, 'index']);
 Route::post('/admin/ritual-bookings/{ritualBooking}/status', [RitualBookingController::class, 'updateStatus']);
 
-// Prokerala API Proxy Endpoints
+// Astrology API Proxy Endpoints
 Route::get('/astrology/horoscope/daily', [AstrologyController::class, 'getDailyHoroscope']);
 Route::get('/prokerala/horoscope/{sign}', [AstrologyController::class, 'getDailyHoroscope']);
 Route::get('/prokerala/horoscope-weekly/{sign}', [AstrologyController::class, 'getWeeklyHoroscope']);
@@ -135,7 +137,7 @@ Route::post('/prokerala/matching', [AstrologyController::class, 'matchMaking']);
 Route::post('/prokerala/panchang', [AstrologyController::class, 'getPanchang']);
 Route::get('/prokerala/location/search', [AstrologyController::class, 'searchLocation']);
 
-// Premium Prokerala Endpoints
+// Extended Astrology API Endpoints
 Route::post('/prokerala/divisional-charts', [AstrologyController::class, 'getDivisionalCharts']);
 Route::post('/prokerala/predictions', [AstrologyController::class, 'getPredictions']);
 Route::post('/prokerala/vedic-calculators/{calculator}', [AstrologyController::class, 'getVedicCalculator']);
@@ -143,37 +145,3 @@ Route::post('/prokerala/matching-calculators/{calculator}', [AstrologyController
 Route::post('/prokerala/numerology', [AstrologyController::class, 'getNumerology']);
 Route::post('/prokerala/sadesati', [AstrologyController::class, 'getSadesati']);
 Route::post('/prokerala/lal-kitab', [AstrologyController::class, 'getLalKitab']);
-
-Route::get('/test-endpoints', function() {
-    $token = \Illuminate\Support\Facades\Cache::remember('prokerala_access_token_test', 3500, function () {
-        $response = \Illuminate\Support\Facades\Http::asForm()->post('https://api.prokerala.com/token', [
-            'grant_type' => 'client_credentials',
-            'client_id' => env('PROKERALA_CLIENT_ID'),
-            'client_secret' => env('PROKERALA_CLIENT_SECRET'),
-        ]);
-        return $response->json('access_token');
-    });
-
-    $endpoints = [
-        '/v2/astrology/horoscope',
-        '/v2/astrology/horoscope/daily',
-        '/v2/astrology/daily-horoscope',
-        '/v2/astrology/prediction/daily',
-        '/v2/horoscope',
-        '/v2/astrology/prediction',
-        '/v2/astrology/prediction/daily-horoscope',
-        '/v2/astrology/zodiac-horoscope/daily'
-    ];
-    $results = [];
-    foreach($endpoints as $ep) {
-        $res = \Illuminate\Support\Facades\Http::withToken($token)->get("https://api.prokerala.com" . $ep, [
-            'sign' => 'aries',
-            'datetime' => now()->format('Y-m-d\TH:i:sP')
-        ]);
-        $results[$ep] = [
-            'status' => $res->status(),
-            'body' => $res->json()
-        ];
-    }
-    return $results;
-});

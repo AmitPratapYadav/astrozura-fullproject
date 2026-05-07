@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import InlineInfoPopover from "../components/InlineInfoPopover";
 import { getVedicCalculator, searchLocation } from "../api/prokeralaApi";
 import {
   AYANAMSA_OPTIONS,
@@ -34,6 +35,36 @@ const renderPrimitive = (value) => {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value === null || value === undefined || value === "") return "-";
   return String(value);
+};
+
+const formatIsoTime = (value) => {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const stamp = Date.parse(value);
+  return Number.isNaN(stamp) ? Number.POSITIVE_INFINITY : stamp;
+};
+
+const getRelevantSadesatiTransits = (transits) => {
+  if (!Array.isArray(transits)) return [];
+
+  const unique = [];
+  const seen = new Set();
+  for (const item of transits) {
+    const key = `${item?.phase || item?.name || "phase"}|${item?.start || ""}|${item?.end || ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(item);
+  }
+
+  const sorted = [...unique].sort((left, right) => formatIsoTime(left?.start) - formatIsoTime(right?.start));
+  const now = Date.now();
+  const pivotIndex = sorted.findIndex((item) => formatIsoTime(item?.start) >= now);
+
+  if (pivotIndex === -1) {
+    return sorted.slice(-8);
+  }
+
+  const start = Math.max(0, pivotIndex - 2);
+  return sorted.slice(start, start + 8);
 };
 
 function ResultTree({ value, label }) {
@@ -215,10 +246,20 @@ export default function VedicCalculators() {
     return typeof raw === "string" && raw.trim().startsWith("<svg") ? raw : null;
   }, [result]);
 
+  const displayResult = useMemo(() => {
+    if (!result?.data || tool.key !== "sade-sati") return result?.data;
+    const relevantTransits = getRelevantSadesatiTransits(result.data.transits);
+    return {
+      ...result.data,
+      transits: relevantTransits,
+      hidden_transit_count: Math.max((result.data.transits?.length || 0) - relevantTransits.length, 0),
+    };
+  }, [result, tool.key]);
+
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-[#1E3557]">
       {toast && (
-        <div className="fixed left-1/2 top-5 z-50 -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">
+        <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">
           {toast}
         </div>
       )}
@@ -240,7 +281,7 @@ export default function VedicCalculators() {
         <div className="grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
           <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-bold">Calculator Inputs</h2>
-            <p className="mt-2 text-sm text-slate-500">This tool uses the exact parameter contract from the Prokerala calculator mapping.</p>
+            <p className="mt-2 text-sm text-slate-500">This tool uses the exact parameter contract from the active Astrology API calculator mapping.</p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               {tool.requiresDate && (
@@ -297,7 +338,13 @@ export default function VedicCalculators() {
               )}
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-600">Ayanamsa</label>
+                <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-600">
+                  <span>Ayanamsa</span>
+                  <InlineInfoPopover
+                    title="Which Ayanamsa should I use?"
+                    content="Use Lahiri unless an astrologer specifically asks for Raman or Krishnamurti. Ayanamsa is the sidereal reference system used for chart calculations."
+                  />
+                </label>
                 <select
                   name="ayanamsa"
                   value={form.ayanamsa}
@@ -420,7 +467,7 @@ export default function VedicCalculators() {
               <div className="rounded-3xl border border-slate-100 bg-white p-10 shadow-sm">
                 <h2 className="text-2xl font-bold">Ready to Calculate</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-                  Use this page to run live Prokerala-backed Vedic calculators with the inputs required by the selected tool.
+                  Use this page to run live Astrology API-backed Vedic calculators with the inputs required by the selected tool.
                 </p>
               </div>
             ) : (
@@ -463,9 +510,15 @@ export default function VedicCalculators() {
                     </div>
                   )}
 
+                  {tool.key === "sade-sati" && displayResult?.hidden_transit_count > 0 && (
+                    <div className="mt-5 rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-sm text-slate-600">
+                      Showing the most relevant recent and upcoming Sade Sati phase changes. {displayResult.hidden_transit_count} older transit entries were hidden to keep the report readable.
+                    </div>
+                  )}
+
                   {!svgMarkup && !tool.hasCompanionChart && (
-                    <div className="mt-6">
-                      <ResultTree value={result.data} />
+                    <div className="mt-6 max-h-[72vh] overflow-y-auto pr-1">
+                      <ResultTree value={displayResult} />
                     </div>
                   )}
                 </div>

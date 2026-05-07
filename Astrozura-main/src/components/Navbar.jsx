@@ -23,14 +23,57 @@ export default function Navbar() {
 
   const navItems = useMemo(
     () => [
-      { type: "link", label: "Pooja Anusthan", to: "/rituals" },
-      { type: "link", label: "Astro Zura Panchang", to: "/panchang" },
-      { type: "dropdown", label: "Horoscope", key: "horoscope", items: groupedServices.horoscope },
-      { type: "dropdown", label: "Reports", key: "reports", items: groupedServices.reports },
-      { type: "dropdown", label: "Calculators", key: "calculators", items: groupedServices.calculators },
-      { type: "link", label: "Our Astrologers", to: "/astrologers" },
+      { type: "link", label: t("navMenu.poojaAnusthan"), to: "/rituals" },
+      { type: "link", label: t("navMenu.astroZuraPanchang"), to: "/panchang" },
+      {
+        type: "dropdown",
+        label: t("navMenu.horoscope"),
+        key: "horoscope",
+        items: [
+          { label: t("navMenu.horoscopeItems.today"), to: "/rashifal?period=today" },
+          { label: t("navMenu.horoscopeItems.tomorrow"), to: "/rashifal?period=tomorrow" },
+          { label: t("navMenu.horoscopeItems.yesterday"), to: "/rashifal?period=yesterday" },
+        ],
+      },
+      {
+        type: "dropdown",
+        label: t("navMenu.reports"),
+        key: "reports",
+        items: [
+          { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
+          { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
+          { label: t("navMenu.reportItems.nakshatraPorutham"), to: "/matching-calculators?tool=nakshatra-porutham" },
+          { label: t("navMenu.reportItems.thirumanaPorutham"), to: "/matching-calculators?tool=thirumana-porutham" },
+          { label: t("navMenu.reportItems.porutham"), to: "/matching-calculators?tool=porutham" },
+          { label: t("navMenu.reportItems.papasamyam"), to: "/matching-calculators?tool=papasamyam-check" },
+          { label: t("navMenu.reportItems.detailedKundali"), to: "/services/detailed-kundali" },
+        ],
+      },
+      {
+        type: "dropdown",
+        label: t("navMenu.calculators"),
+        key: "calculators",
+        items: [
+          ...groupedServices.calculators.map((item) => {
+            if (item.to === "/numerology") {
+              return { ...item, label: t("navMenu.calculatorItems.numerology") };
+            }
+
+            if (item.to === "/services/tarot-reading") {
+              return { ...item, label: t("navMenu.calculatorItems.tarotReading") };
+            }
+
+            if (item.to === "/services/palm-reading") {
+              return { ...item, label: t("navMenu.calculatorItems.palmReading") };
+            }
+
+            return item;
+          }),
+        ],
+      },
+      { type: "link", label: t("nav.astrologers"), to: "/astrologers" },
     ],
-    []
+    [t]
   );
 
   useEffect(() => {
@@ -63,18 +106,18 @@ export default function Navbar() {
   };
 
   const desktopNavClass = ({ isActive }) =>
-    `rounded-xl px-2.5 py-2 transition ${
+    `whitespace-nowrap rounded-xl px-2 py-2 transition ${
       isActive ? "bg-[#D4A73C] text-white" : "text-gray-700 hover:bg-[#FFF1CF]"
     }`;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-100/70 bg-white/90 px-4 py-1.5 shadow-[0_4px_30px_rgba(0,0,0,0.03)] backdrop-blur-lg md:px-8">
-      <div className="flex items-center justify-between">
-        <Link to="/" className="flex items-center transition hover:opacity-90">
-          <img src={vedic} alt="Astro Zura" className="h-10 object-contain sm:h-11 md:h-12 lg:h-14" />
+      <div className="flex items-center justify-between gap-3">
+        <Link to="/" className="flex shrink-0 items-center transition hover:opacity-90">
+          <img src={vedic} alt="Astro Zura" className="h-9 object-contain sm:h-10 md:h-11 lg:h-12" />
         </Link>
 
-        <ul className="hidden items-center gap-1.5 text-sm font-medium md:flex lg:gap-2" ref={navDropdownRef}>
+        <ul className="hidden min-w-0 flex-1 items-center justify-center gap-1 text-[13px] font-medium md:flex lg:gap-1.5 xl:text-sm" ref={navDropdownRef}>
           {navItems.map((item) => (
             <li key={item.label} className="relative">
               {item.type === "link" ? (
@@ -86,7 +129,7 @@ export default function Navbar() {
                   <button
                     type="button"
                     onClick={() => setNavDropdownOpen((current) => (current === item.key ? "" : item.key))}
-                    className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 transition ${
+                    className={`flex items-center gap-1 whitespace-nowrap rounded-xl px-2 py-2 transition ${
                       navDropdownOpen === item.key ? "bg-[#FFF1CF] text-[#1E3557]" : "text-gray-700 hover:bg-[#FFF1CF]"
                     }`}
                   >
@@ -117,25 +160,25 @@ export default function Navbar() {
             <NavLink
               to="/subscription"
               className={({ isActive }) =>
-                `rounded-xl px-3 py-2 font-semibold transition ${
+                `whitespace-nowrap rounded-xl px-2.5 py-2 font-semibold transition ${
                   isActive ? "bg-[#D4A73C] text-white" : "bg-[#F6E6BB] text-[#1E3557] hover:bg-[#EFD694]"
                 }`
               }
             >
-              Premium Plans
+              {t("navMenu.premiumPlans")}
             </NavLink>
           </li>
         </ul>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 lg:gap-2">
           <div className="relative" ref={langRef}>
             <button
               type="button"
               onClick={() => setLangDropdownOpen((current) => !current)}
-              className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-bold uppercase text-gray-600 transition hover:bg-gray-100"
+              className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-bold uppercase text-gray-600 transition hover:bg-gray-100"
             >
               <span className="text-[11px] leading-none">🌐</span>
-              {currentLang === "hi" ? "Hindi" : "EN"}
+              {currentLang === "hi" ? "HI" : "EN"}
             </button>
 
             {langDropdownOpen && (
@@ -163,11 +206,11 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setUserDropdownOpen((current) => !current)}
-                className="flex items-center gap-1.5 transition hover:opacity-80"
+                className="flex items-center gap-1 transition hover:opacity-80"
               >
-                <div className="mr-0.5 hidden text-right xl:block">
-                  <p className="text-sm font-semibold leading-none text-[#184070]">Hi! {user.name}</p>
-                  <p className="mt-0.5 text-[11px] text-gray-500">Free Member</p>
+                <div className="mr-0.5 hidden max-w-[150px] text-right 2xl:block">
+                  <p className="truncate text-sm font-semibold leading-none text-[#184070]">{t("navMenu.userGreeting")} {user.name}</p>
+                  <p className="mt-0.5 text-[11px] text-gray-500">{t("navMenu.memberTier")}</p>
                 </div>
                 <div className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-gray-200 text-sm font-bold text-gray-700 shadow-sm">
                   {avatarLetter}
@@ -190,7 +233,7 @@ export default function Navbar() {
                     </div>
                     <div className="overflow-hidden">
                       <p className="truncate text-sm font-semibold leading-tight text-gray-800">{user.name}</p>
-                      <p className="text-xs text-gray-400">Free Member</p>
+                      <p className="text-xs text-gray-400">{t("navMenu.memberTier")}</p>
                     </div>
                   </div>
 
@@ -258,11 +301,11 @@ export default function Navbar() {
         <div className="absolute left-0 right-0 top-full mt-0.5 border-t border-gray-100/50 bg-white/95 p-6 shadow-2xl backdrop-blur-md md:hidden">
           <ul className="flex flex-col gap-4 text-gray-700">
             {[
-              { path: "/", name: "Home" },
-              { path: "/rituals", name: "Pooja Anusthan" },
-              { path: "/panchang", name: "Astro Zura Panchang" },
-              { path: "/astrologers", name: "Our Astrologers" },
-              { path: "/subscription", name: "Premium Plans" },
+              { path: "/", name: t("nav.home") },
+              { path: "/rituals", name: t("navMenu.poojaAnusthan") },
+              { path: "/panchang", name: t("navMenu.astroZuraPanchang") },
+              { path: "/astrologers", name: t("nav.astrologers") },
+              { path: "/subscription", name: t("navMenu.premiumPlans") },
             ].map((item) => (
               <li key={item.path}>
                 <NavLink
@@ -280,9 +323,46 @@ export default function Navbar() {
             ))}
 
             {[
-              { title: "Horoscope", items: groupedServices.horoscope },
-              { title: "Reports", items: groupedServices.reports },
-              { title: "Calculators", items: groupedServices.calculators },
+              {
+                title: t("navMenu.horoscope"),
+                items: [
+                  { label: t("navMenu.horoscopeItems.today"), to: "/rashifal?period=today" },
+                  { label: t("navMenu.horoscopeItems.tomorrow"), to: "/rashifal?period=tomorrow" },
+                  { label: t("navMenu.horoscopeItems.yesterday"), to: "/rashifal?period=yesterday" },
+                ],
+              },
+              {
+                title: t("navMenu.reports"),
+                items: [
+                  { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
+                  { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
+                  { label: t("navMenu.reportItems.nakshatraPorutham"), to: "/matching-calculators?tool=nakshatra-porutham" },
+                  { label: t("navMenu.reportItems.thirumanaPorutham"), to: "/matching-calculators?tool=thirumana-porutham" },
+                  { label: t("navMenu.reportItems.porutham"), to: "/matching-calculators?tool=porutham" },
+                  { label: t("navMenu.reportItems.papasamyam"), to: "/matching-calculators?tool=papasamyam-check" },
+                  { label: t("navMenu.reportItems.detailedKundali"), to: "/services/detailed-kundali" },
+                ],
+              },
+              {
+                title: t("navMenu.calculators"),
+                items: [
+                  ...groupedServices.calculators.map((item) => {
+                    if (item.to === "/numerology") {
+                      return { ...item, label: t("navMenu.calculatorItems.numerology") };
+                    }
+
+                    if (item.to === "/services/tarot-reading") {
+                      return { ...item, label: t("navMenu.calculatorItems.tarotReading") };
+                    }
+
+                    if (item.to === "/services/palm-reading") {
+                      return { ...item, label: t("navMenu.calculatorItems.palmReading") };
+                    }
+
+                    return item;
+                  }),
+                ],
+              },
             ].map((group) => (
               <li key={group.title} className="rounded-2xl border border-gray-100 bg-[#FBF7F0] p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D4A73C]">{group.title}</p>
@@ -309,7 +389,7 @@ export default function Navbar() {
                   </div>
                   <div>
                     <p className="text-sm font-bold leading-none text-gray-900">{user.name}</p>
-                    <p className="mt-1 text-[11px] text-gray-400">Free Member</p>
+                    <p className="mt-1 text-[11px] text-gray-400">{t("navMenu.memberTier")}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">

@@ -188,7 +188,7 @@ export default function ConsultationPage() {
   return (
     <>
       <Navbar />
-      {toast && <div className={`fixed top-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg ${toast.type === "error" ? "bg-red-500" : "bg-[#1E3557]"}`}>{toast.message}</div>}
+      {toast && <div className={`fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg ${toast.type === "error" ? "bg-red-500" : "bg-[#1E3557]"}`}>{toast.message}</div>}
       <div className="min-h-screen bg-[#FFFBF3] px-4 py-8 md:px-10">
         <div className="mx-auto max-w-[1100px]">
           <h1 className="text-3xl font-bold text-[#1E3557]">Book Your Consultation</h1>

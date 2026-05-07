@@ -30,3 +30,8 @@ Thumbs.db
 
 # Vendor stays EXCLUDED from ignore (enabled for push)
 # !**/vendor/
+
+# Deployment archives
+login_api.zip
+deploy/*.zip
+deploy/*.tgz

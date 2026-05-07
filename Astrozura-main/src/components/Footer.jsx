@@ -42,7 +42,7 @@ export default function Footer() {
   return (
     <footer className="mt-2 bg-[#1E3557] text-white">
       {msg && (
-        <div className="fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-lg bg-[#D4A73C] px-6 py-3 text-sm shadow">
+      <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-lg bg-[#D4A73C] px-6 py-3 text-sm shadow">
           {msg}
         </div>
       )}

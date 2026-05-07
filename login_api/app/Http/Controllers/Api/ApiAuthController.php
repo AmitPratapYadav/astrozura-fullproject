@@ -20,17 +20,23 @@ class ApiAuthController extends Controller
     public function redirectToGoogle(Request $request)
     {
         $frontend = $request->query('frontend', 'main');
+        $frontendUrl = $this->sanitizeFrontendUrl($request->query('frontend_url'));
+        $state = $this->encodeOAuthState([
+            'frontend' => $frontend,
+            'frontend_url' => $frontendUrl,
+        ]);
 
         return Socialite::driver('google')
             ->stateless()
-            ->with(['state' => $frontend])
+            ->with(['state' => $state])
             ->redirect();
     }
 
     public function handleGoogleCallback(Request $request)
     {
-        $frontend = $request->query('state', 'main');
-        $frontendUrl = $this->resolveFrontendUrl($frontend);
+        $state = $this->decodeOAuthState((string) $request->query('state', ''));
+        $frontend = $state['frontend'] ?? 'main';
+        $frontendUrl = $state['frontend_url'] ?? $this->resolveFrontendUrl($frontend);
 
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
@@ -520,7 +526,12 @@ class ApiAuthController extends Controller
 
     public function getAstrologerProfile($id)
     {
-        $astrologer = User::with('astrologerDetail')
+        $astrologer = User::with([
+                'astrologerDetail',
+                'receivedReviews' => function ($query) {
+                    $query->latest()->with('user:id,name,profile_image');
+                },
+            ])
             ->where('role', 'astrologer')
             ->where('id', $id)
             ->first();
@@ -724,5 +735,70 @@ class ApiAuthController extends Controller
             'ecomm' => env('FRONTEND_ECOMM_URL', 'http://127.0.0.1:5174'),
             default => env('FRONTEND_MAIN_URL', 'http://127.0.0.1:5173'),
         };
+    }
+
+    private function sanitizeFrontendUrl(?string $frontendUrl): ?string
+    {
+        if (!$frontendUrl) {
+            return null;
+        }
+
+        $normalizedUrl = rtrim($frontendUrl, '/');
+
+        return $this->isAllowedFrontendUrl($normalizedUrl) ? $normalizedUrl : null;
+    }
+
+    private function isAllowedFrontendUrl(string $frontendUrl): bool
+    {
+        return in_array($frontendUrl, $this->allowedFrontendUrls(), true);
+    }
+
+    private function allowedFrontendUrls(): array
+    {
+        $configuredUrls = array_map(
+            static fn (string $url) => rtrim(trim($url), '/'),
+            array_filter(explode(',', (string) env('FRONTEND_ALLOWED_URLS', '')))
+        );
+
+        return array_values(array_unique(array_filter([
+            env('FRONTEND_MAIN_URL'),
+            env('FRONTEND_ECOMM_URL'),
+            'http://127.0.0.1:5173',
+            'http://localhost:5173',
+            'http://127.0.0.1:5174',
+            'http://localhost:5174',
+            'https://astrozura.cloud',
+            'https://shop.astrozura.cloud',
+            ...$configuredUrls,
+        ])));
+    }
+
+    private function encodeOAuthState(array $state): string
+    {
+        return rtrim(strtr(base64_encode(json_encode($state, JSON_UNESCAPED_SLASHES)), '+/', '-_'), '=');
+    }
+
+    private function decodeOAuthState(string $state): array
+    {
+        if ($state === '') {
+            return [];
+        }
+
+        $decoded = base64_decode(strtr($state, '-_', '+/'), true);
+        if ($decoded === false) {
+            return [];
+        }
+
+        $payload = json_decode($decoded, true);
+
+        if (!is_array($payload)) {
+            return [];
+        }
+
+        if (isset($payload['frontend_url'])) {
+            $payload['frontend_url'] = $this->sanitizeFrontendUrl($payload['frontend_url']);
+        }
+
+        return $payload;
     }
 }

@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { FcGoogle } from "react-icons/fc";
 import { CheckCircle2 } from "lucide-react";
 import vedic from "../assets/vedic-astrology.png";
+import { buildGoogleAuthUrl } from "../utils/googleAuth";
 
 const STARS = Array.from({ length: 60 }, (_, i) => ({
   id: i,
@@ -42,7 +43,7 @@ export default function Register() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = import.meta.env.VITE_API_BASE_URL + "/auth/google";
+    window.location.href = buildGoogleAuthUrl("main");
   };
 
   const features = [

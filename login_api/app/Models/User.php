@@ -80,4 +80,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Booking::class, 'astrologer_id');
     }
+
+    public function givenReviews()
+    {
+        return $this->hasMany(AstrologerReview::class, 'user_id');
+    }
+
+    public function receivedReviews()
+    {
+        return $this->hasMany(AstrologerReview::class, 'astrologer_id');
+    }
 }

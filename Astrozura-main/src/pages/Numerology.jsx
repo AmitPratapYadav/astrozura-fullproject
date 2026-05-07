@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import InlineInfoPopover from "../components/InlineInfoPopover";
 import { getNumerologyReport } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 
@@ -304,7 +305,7 @@ export default function Numerology() {
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-[#1E3557]">
       {toast && (
-        <div className="fixed left-1/2 top-5 z-50 -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">
+        <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">
           {toast}
         </div>
       )}
@@ -320,7 +321,7 @@ export default function Numerology() {
             </span>
             <h1 className="mt-6 text-4xl font-black md:text-5xl">Decode Your Number Pattern</h1>
             <p className="mt-5 text-sm leading-7 text-slate-200 md:text-base">
-              Explore Pythagorean and Chaldean numerology with calculator-specific inputs. This module now uses the real Prokerala calculator routes instead of the old placeholder numerology wrapper.
+              Explore Pythagorean and Chaldean numerology with calculator-specific inputs. This module now uses the live Astrology API numerology route instead of the old placeholder wrapper.
             </p>
           </div>
         </div>
@@ -351,7 +352,13 @@ export default function Numerology() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-600">Calculator</label>
+                <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-600">
+                  <span>Calculator</span>
+                  <InlineInfoPopover
+                    title="How to choose a numerology report"
+                    content="Pick the number or report you want to calculate. Birth-date reports use your date of birth, while name-based reports use your full name. If you are unsure, start with Life Path Number or Maturity Number."
+                  />
+                </label>
                 <select
                   name="calculator"
                   value={form.calculator}
@@ -457,7 +464,7 @@ export default function Numerology() {
               <div className="rounded-3xl border border-slate-100 bg-white p-10 shadow-sm">
                 <h2 className="text-2xl font-bold">Ready to Calculate</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-                  Choose your numerology system, pick a calculator, and submit the exact inputs it needs. The result panel will show the primary insight first, then the complete structured response from Prokerala.
+                  Choose your numerology system, pick a calculator, and submit the exact inputs it needs. The result panel will show the primary insight first, then the complete structured response from Astrology API.
                 </p>
               </div>
             ) : (
@@ -523,7 +530,7 @@ export default function Numerology() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm max-h-[72vh] overflow-y-auto">
                   <h3 className="text-xl font-bold">Detailed Result</h3>
                   <div className="mt-6">
                     <ResultTree value={result.data} />

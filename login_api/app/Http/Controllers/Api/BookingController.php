@@ -139,7 +139,7 @@ class BookingController extends Controller
         $timezone = 'Asia/Kolkata';
         $now = Carbon::now($timezone);
 
-        $bookings = Booking::with(['astrologer.astrologerDetail'])
+        $bookings = Booking::with(['astrologer.astrologerDetail', 'review'])
             ->where('user_id', $request->user()->id)
             ->orderByDesc('scheduled_at')
             ->get();

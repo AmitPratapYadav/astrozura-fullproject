@@ -65,6 +65,11 @@ class Booking extends Model
         return $this->belongsTo(User::class, 'astrologer_id');
     }
 
+    public function review()
+    {
+        return $this->hasOne(AstrologerReview::class);
+    }
+
     public function setScheduledAtAttribute($value): void
     {
         $this->attributes['scheduled_at'] = $this->normalizeDateTimeForStorage($value);
