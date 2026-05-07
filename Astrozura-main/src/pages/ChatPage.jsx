@@ -45,18 +45,18 @@ const resolveImageUrl = (path) => {
 const formatDateTime = (value) =>
   value
     ? new Date(value).toLocaleString("en-IN", {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: "Asia/Kolkata",
-      })
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Asia/Kolkata",
+    })
     : "-";
 
 const formatTime = (value) =>
   value
     ? new Date(value).toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "-";
 
 const formatCountdown = (seconds) => {
@@ -361,29 +361,29 @@ export default function ChatPage() {
     if (zim) {
       try {
         zim.off("roomMessageReceived");
-      } catch {}
+      } catch { }
 
       try {
         zim.off("connectionStateChanged");
-      } catch {}
+      } catch { }
 
       try {
         zim.off("tokenWillExpire");
-      } catch {}
+      } catch { }
 
       try {
         if (roomId) {
           await zim.leaveRoom(roomId);
         }
-      } catch {}
+      } catch { }
 
       try {
         zim.logout();
-      } catch {}
+      } catch { }
 
       try {
         zim.destroy();
-      } catch {}
+      } catch { }
     }
 
     zimRef.current = null;
@@ -408,31 +408,31 @@ export default function ChatPage() {
     if (engine && publishedStreamIdRef.current) {
       try {
         engine.stopPublishingStream(publishedStreamIdRef.current);
-      } catch {}
+      } catch { }
     }
 
     if (engine) {
       activeRemoteStreamsRef.current.forEach((streamId) => {
         try {
           engine.stopPlayingStream(streamId);
-        } catch {}
+        } catch { }
       });
 
       try {
         if (roomId) {
           engine.logoutRoom(roomId);
         }
-      } catch {}
+      } catch { }
 
       try {
         engine.destroyEngine();
-      } catch {}
+      } catch { }
     }
 
     if (localStreamRef.current) {
       try {
         localStreamRef.current.getTracks().forEach((track) => track.stop());
-      } catch {}
+      } catch { }
     }
 
     stopAllRemoteAudio();
@@ -560,7 +560,7 @@ export default function ChatPage() {
   const stopRemoteStream = (engine, streamId) => {
     try {
       engine.stopPlayingStream(streamId);
-    } catch {}
+    } catch { }
 
     const audioEl = remoteAudioMapRef.current.get(streamId);
     if (audioEl) {
@@ -1207,11 +1207,10 @@ export default function ChatPage() {
                         className={`flex ${message.isSelf ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                            message.isSelf
+                          className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm shadow-sm ${message.isSelf
                               ? "bg-[#1E3557] text-white"
                               : "border border-gray-100 bg-[#F8F9FC] text-[#1E3557]"
-                          }`}
+                            }`}
                         >
                           {message.kind === "image" && message.mediaUrl ? (
                             <a href={message.mediaUrl} target="_blank" rel="noreferrer" className="block">
@@ -1228,9 +1227,8 @@ export default function ChatPage() {
                             <p className="leading-6">{message.text}</p>
                           )}
                           <p
-                            className={`mt-2 text-[11px] ${
-                              message.isSelf ? "text-white/70" : "text-gray-400"
-                            }`}
+                            className={`mt-2 text-[11px] ${message.isSelf ? "text-white/70" : "text-gray-400"
+                              }`}
                           >
                             {formatTime(message.timestamp)}
                           </p>
@@ -1311,8 +1309,8 @@ export default function ChatPage() {
                     <img
                       src={resolveImageUrl(
                         counterpart?.astrologer_detail?.profile_image ||
-                          counterpart?.astrologerDetail?.profile_image ||
-                          astrologerDetail?.profile_image
+                        counterpart?.astrologerDetail?.profile_image ||
+                        astrologerDetail?.profile_image
                       )}
                       alt={counterpart?.name || "Profile"}
                       className="h-16 w-16 rounded-2xl object-cover"

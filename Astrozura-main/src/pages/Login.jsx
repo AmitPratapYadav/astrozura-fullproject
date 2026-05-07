@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FcGoogle } from "react-icons/fc";
 import vedic from "../assets/vedic-astrology.png";
@@ -25,11 +25,14 @@ export default function Login() {
 
   const { sendOtp, loginWithOtp, loginWithPassword, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const otpInputRef = useRef(null);
 
+  const from = location.state?.from?.pathname || "/";
+
   useEffect(() => {
-    if (user) navigate("/");
-  }, [user, navigate]);
+    if (user) navigate(from, { replace: true });
+  }, [user, navigate, from]);
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -55,7 +58,7 @@ export default function Login() {
     setLoading(true); setError("");
     try {
       const response = await loginWithOtp(identifier, otp);
-      if (response) navigate(response.is_new_user ? "/user-profile" : "/");
+      if (response) navigate(response.is_new_user ? "/user-profile" : from, { replace: true });
     } catch (err) { setError(err.message || "Invalid or expired OTP."); }
     finally { setLoading(false); }
   };
@@ -66,7 +69,7 @@ export default function Login() {
     setLoading(true); setError("");
     try {
       const response = await loginWithPassword({ email: identifier, password });
-      if (response) navigate(response.is_new_user ? "/user-profile" : "/");
+      if (response) navigate(response.is_new_user ? "/user-profile" : from, { replace: true });
     } catch (err) { setError(err.message || "Invalid email or password."); }
     finally { setLoading(false); }
   };

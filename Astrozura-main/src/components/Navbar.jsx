@@ -119,11 +119,24 @@ export default function Navbar() {
 
         <ul className="hidden min-w-0 flex-1 items-center justify-center gap-1 text-[13px] font-medium md:flex lg:gap-1.5 xl:text-sm" ref={navDropdownRef}>
           {navItems.map((item) => (
-            <li key={item.label} className="relative">
+            <li key={item.label} className="relative flex-shrink-0">
               {item.type === "link" ? (
-                <NavLink to={item.to} className={desktopNavClass}>
+                <NavLink to={item.to} className={({ isActive }) =>
+                  `rounded-xl px-1 py-1.5 transition md:px-1.5 lg:px-2 lg:py-2 ${
+                    isActive ? "bg-[#D4A73C] text-white" : "text-gray-700 hover:bg-[#FFF1CF]"
+                  }`
+                }>
                   {item.label}
                 </NavLink>
+              ) : item.type === "external" ? (
+                <a
+                  href={item.to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl px-1 py-1.5 transition text-gray-700 hover:bg-[#FFF1CF] md:px-1.5 lg:px-2 lg:py-2"
+                >
+                  {item.label}
+                </a>
               ) : (
                 <>
                   <button
@@ -133,12 +146,12 @@ export default function Navbar() {
                       navDropdownOpen === item.key ? "bg-[#FFF1CF] text-[#1E3557]" : "text-gray-700 hover:bg-[#FFF1CF]"
                     }`}
                   >
-                    <span>{item.label}</span>
-                    <span className={`text-[10px] transition ${navDropdownOpen === item.key ? "rotate-180" : ""}`}>▼</span>
+                    <span className="whitespace-nowrap">{item.label}</span>
+                    <span className={`text-[8px] transition lg:text-[10px] ${navDropdownOpen === item.key ? "rotate-180" : ""}`}>▼</span>
                   </button>
 
                   {navDropdownOpen === item.key && (
-                    <div className="absolute left-0 top-full mt-3 max-h-[70vh] min-w-[250px] overflow-y-auto rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl">
+                    <div className="absolute left-0 top-full mt-3 max-h-[70vh] min-w-[220px] overflow-y-auto rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl">
                       {item.items.map((subItem) => (
                         <Link
                           key={subItem.label}
@@ -156,7 +169,7 @@ export default function Navbar() {
             </li>
           ))}
 
-          <li>
+          <li className="flex-shrink-0">
             <NavLink
               to="/subscription"
               className={({ isActive }) =>
@@ -308,17 +321,29 @@ export default function Navbar() {
               { path: "/subscription", name: t("navMenu.premiumPlans") },
             ].map((item) => (
               <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `block rounded-xl px-4 py-3 font-medium transition-all ${
-                      isActive ? "bg-[#D4A73C] text-white shadow-md" : "text-[#1E3557] hover:bg-[#FFF6E5]"
-                    }`
-                  }
-                >
-                  {item.name}
-                </NavLink>
+                {item.isExternal ? (
+                  <a
+                    href={item.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMenuOpen(false)}
+                    className="block rounded-xl px-4 py-3 font-medium text-[#1E3557] transition-all hover:bg-[#FFF6E5]"
+                  >
+                    {item.name}
+                  </a>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    onClick={() => setMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `block rounded-xl px-4 py-3 font-medium transition-all ${
+                        isActive ? "bg-[#D4A73C] text-white shadow-md" : "text-[#1E3557] hover:bg-[#FFF6E5]"
+                      }`
+                    }
+                  >
+                    {item.name}
+                  </NavLink>
+                )}
               </li>
             ))}
 

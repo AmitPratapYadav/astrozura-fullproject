@@ -18,7 +18,9 @@ export default function OAuthCallback() {
           if (isNew) {
             navigate("/user-profile", { replace: true });
           } else {
-            navigate("/", { replace: true });
+            const redirectTo = localStorage.getItem("redirect_after_login") || "/";
+            localStorage.removeItem("redirect_after_login");
+            navigate(redirectTo, { replace: true });
           }
         } else {
           navigate("/login?error=auth_failed");

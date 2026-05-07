@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInite6c72cd12bae6efd22276e467c2b772b
+class ComposerStaticInitfca7d7934072b52db278bde2e37fd912
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -733,6 +733,8 @@ class ComposerStaticInite6c72cd12bae6efd22276e467c2b772b
         'App\\Http\\Controllers\\Api\\BookingController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/BookingController.php',
         'App\\Http\\Controllers\\Api\\BookingSessionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/BookingSessionController.php',
         'App\\Http\\Controllers\\Api\\EcommController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/EcommController.php',
+        'App\\Http\\Controllers\\Api\\MediaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/MediaController.php',
+        'App\\Http\\Controllers\\Api\\RitualBookingController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/RitualBookingController.php',
         'App\\Http\\Controllers\\Api\\RitualController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/RitualController.php',
         'App\\Http\\Controllers\\Api\\SubscriptionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/SubscriptionController.php',
         'App\\Http\\Controllers\\Api\\UserDashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/UserDashboardController.php',
@@ -744,6 +746,7 @@ class ComposerStaticInite6c72cd12bae6efd22276e467c2b772b
         'App\\Models\\Order' => __DIR__ . '/../..' . '/app/Models/Order.php',
         'App\\Models\\OrderItem' => __DIR__ . '/../..' . '/app/Models/OrderItem.php',
         'App\\Models\\Product' => __DIR__ . '/../..' . '/app/Models/Product.php',
+        'App\\Models\\RitualBooking' => __DIR__ . '/../..' . '/app/Models/RitualBooking.php',
         'App\\Models\\RitualService' => __DIR__ . '/../..' . '/app/Models/RitualService.php',
         'App\\Models\\SubscriptionPlan' => __DIR__ . '/../..' . '/app/Models/SubscriptionPlan.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
@@ -5040,9 +5043,7 @@ class ComposerStaticInite6c72cd12bae6efd22276e467c2b772b
         'League\\Config\\ReadOnlyConfiguration' => __DIR__ . '/..' . '/league/config/src/ReadOnlyConfiguration.php',
         'League\\Config\\SchemaBuilderInterface' => __DIR__ . '/..' . '/league/config/src/SchemaBuilderInterface.php',
         'League\\Flysystem\\AwsS3V3\\AwsS3V3Adapter' => __DIR__ . '/..' . '/league/flysystem-aws-s3-v3/AwsS3V3Adapter.php',
-        'League\\Flysystem\\AwsS3V3\\AwsS3V3AdapterTest' => __DIR__ . '/..' . '/league/flysystem-aws-s3-v3/AwsS3V3AdapterTest.php',
         'League\\Flysystem\\AwsS3V3\\PortableVisibilityConverter' => __DIR__ . '/..' . '/league/flysystem-aws-s3-v3/PortableVisibilityConverter.php',
-        'League\\Flysystem\\AwsS3V3\\S3ClientStub' => __DIR__ . '/..' . '/league/flysystem-aws-s3-v3/S3ClientStub.php',
         'League\\Flysystem\\AwsS3V3\\VisibilityConverter' => __DIR__ . '/..' . '/league/flysystem-aws-s3-v3/VisibilityConverter.php',
         'League\\Flysystem\\CalculateChecksumFromStream' => __DIR__ . '/..' . '/league/flysystem/src/CalculateChecksumFromStream.php',
         'League\\Flysystem\\ChecksumAlgoIsNotSupported' => __DIR__ . '/..' . '/league/flysystem/src/ChecksumAlgoIsNotSupported.php',
@@ -9047,9 +9048,9 @@ class ComposerStaticInite6c72cd12bae6efd22276e467c2b772b
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInite6c72cd12bae6efd22276e467c2b772b::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInite6c72cd12bae6efd22276e467c2b772b::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInite6c72cd12bae6efd22276e467c2b772b::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitfca7d7934072b52db278bde2e37fd912::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitfca7d7934072b52db278bde2e37fd912::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitfca7d7934072b52db278bde2e37fd912::$classMap;
 
         }, null, ClassLoader::class);
     }
