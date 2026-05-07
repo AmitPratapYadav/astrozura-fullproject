@@ -29,6 +29,7 @@ export default function Navbar() {
       { type: "dropdown", label: "Reports", key: "reports", items: groupedServices.reports },
       { type: "dropdown", label: "Calculators", key: "calculators", items: groupedServices.calculators },
       { type: "link", label: "Our Astrologers", to: "/astrologers" },
+      { type: "external", label: "Astrozura Store", to: "https://shop.astrozura.cloud/" },
     ],
     []
   );
@@ -68,34 +69,47 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-100/70 bg-white/90 px-4 py-1.5 shadow-[0_4px_30px_rgba(0,0,0,0.03)] backdrop-blur-lg md:px-8">
-      <div className="flex items-center justify-between">
-        <Link to="/" className="flex items-center transition hover:opacity-90">
-          <img src={vedic} alt="Astro Zura" className="h-10 object-contain sm:h-11 md:h-12 lg:h-14" />
+    <nav className="sticky top-0 z-50 border-b border-gray-100/70 bg-white/90 px-2 py-1.5 shadow-[0_4px_30px_rgba(0,0,0,0.03)] backdrop-blur-lg md:px-3 lg:px-6 xl:px-8">
+      <div className="flex flex-nowrap items-center justify-between">
+        <Link to="/" className="flex flex-shrink-0 items-center transition hover:opacity-90">
+          <img src={vedic} alt="Astro Zura" className="h-8 object-contain sm:h-9 md:h-10 lg:h-11 xl:h-12" />
         </Link>
 
-        <ul className="hidden items-center gap-1.5 text-sm font-medium md:flex lg:gap-2" ref={navDropdownRef}>
+        <ul className="hidden flex-nowrap items-center gap-0 text-[10px] font-medium md:flex lg:gap-0.5 lg:text-[12px] xl:gap-1.5 xl:text-sm" ref={navDropdownRef}>
           {navItems.map((item) => (
-            <li key={item.label} className="relative">
+            <li key={item.label} className="relative flex-shrink-0">
               {item.type === "link" ? (
-                <NavLink to={item.to} className={desktopNavClass}>
+                <NavLink to={item.to} className={({ isActive }) =>
+                  `rounded-xl px-1 py-1.5 transition md:px-1.5 lg:px-2 lg:py-2 ${
+                    isActive ? "bg-[#D4A73C] text-white" : "text-gray-700 hover:bg-[#FFF1CF]"
+                  }`
+                }>
                   {item.label}
                 </NavLink>
+              ) : item.type === "external" ? (
+                <a
+                  href={item.to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl px-1 py-1.5 transition text-gray-700 hover:bg-[#FFF1CF] md:px-1.5 lg:px-2 lg:py-2"
+                >
+                  {item.label}
+                </a>
               ) : (
                 <>
                   <button
                     type="button"
                     onClick={() => setNavDropdownOpen((current) => (current === item.key ? "" : item.key))}
-                    className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 transition ${
+                    className={`flex items-center gap-0.5 rounded-xl px-1 py-1.5 transition md:px-1.5 lg:gap-1 lg:px-2 lg:py-2 ${
                       navDropdownOpen === item.key ? "bg-[#FFF1CF] text-[#1E3557]" : "text-gray-700 hover:bg-[#FFF1CF]"
                     }`}
                   >
-                    <span>{item.label}</span>
-                    <span className={`text-[10px] transition ${navDropdownOpen === item.key ? "rotate-180" : ""}`}>▼</span>
+                    <span className="whitespace-nowrap">{item.label}</span>
+                    <span className={`text-[8px] transition lg:text-[10px] ${navDropdownOpen === item.key ? "rotate-180" : ""}`}>▼</span>
                   </button>
 
                   {navDropdownOpen === item.key && (
-                    <div className="absolute left-0 top-full mt-3 max-h-[70vh] min-w-[250px] overflow-y-auto rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl">
+                    <div className="absolute left-0 top-full mt-3 max-h-[70vh] min-w-[220px] overflow-y-auto rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl">
                       {item.items.map((subItem) => (
                         <Link
                           key={subItem.label}
@@ -113,11 +127,11 @@ export default function Navbar() {
             </li>
           ))}
 
-          <li>
+          <li className="flex-shrink-0">
             <NavLink
               to="/subscription"
               className={({ isActive }) =>
-                `rounded-xl px-3 py-2 font-semibold transition ${
+                `whitespace-nowrap rounded-xl px-1.5 py-1.5 font-semibold transition lg:px-2.5 lg:py-2 ${
                   isActive ? "bg-[#D4A73C] text-white" : "bg-[#F6E6BB] text-[#1E3557] hover:bg-[#EFD694]"
                 }`
               }
@@ -127,14 +141,14 @@ export default function Navbar() {
           </li>
         </ul>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-0.5 md:gap-1.5">
           <div className="relative" ref={langRef}>
             <button
               type="button"
               onClick={() => setLangDropdownOpen((current) => !current)}
-              className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-bold uppercase text-gray-600 transition hover:bg-gray-100"
+              className="flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-50 px-1 py-1 text-[8px] font-bold uppercase text-gray-600 transition hover:bg-gray-100 lg:gap-1 lg:px-2 lg:text-[10px]"
             >
-              <span className="text-[11px] leading-none">🌐</span>
+              <span className="text-[9px] leading-none lg:text-[11px]">🌐</span>
               {currentLang === "hi" ? "Hindi" : "EN"}
             </button>
 
@@ -262,20 +276,33 @@ export default function Navbar() {
               { path: "/rituals", name: "Pooja Anusthan" },
               { path: "/panchang", name: "Astro Zura Panchang" },
               { path: "/astrologers", name: "Our Astrologers" },
+              { path: "https://shop.astrozura.cloud/", name: "Astrozura Store", isExternal: true },
               { path: "/subscription", name: "Premium Plans" },
             ].map((item) => (
               <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `block rounded-xl px-4 py-3 font-medium transition-all ${
-                      isActive ? "bg-[#D4A73C] text-white shadow-md" : "text-[#1E3557] hover:bg-[#FFF6E5]"
-                    }`
-                  }
-                >
-                  {item.name}
-                </NavLink>
+                {item.isExternal ? (
+                  <a
+                    href={item.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMenuOpen(false)}
+                    className="block rounded-xl px-4 py-3 font-medium text-[#1E3557] transition-all hover:bg-[#FFF6E5]"
+                  >
+                    {item.name}
+                  </a>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    onClick={() => setMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `block rounded-xl px-4 py-3 font-medium transition-all ${
+                        isActive ? "bg-[#D4A73C] text-white shadow-md" : "text-[#1E3557] hover:bg-[#FFF6E5]"
+                      }`
+                    }
+                  >
+                    {item.name}
+                  </NavLink>
+                )}
               </li>
             ))}
 

@@ -30,3 +30,6 @@ Thumbs.db
 
 # Vendor stays EXCLUDED from ignore (enabled for push)
 # !**/vendor/
+
+# Ignore large zip file
+login_api.zip

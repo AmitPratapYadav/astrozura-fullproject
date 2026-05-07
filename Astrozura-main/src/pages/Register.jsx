@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FcGoogle } from "react-icons/fc";
 import { CheckCircle2 } from "lucide-react";
@@ -20,6 +20,9 @@ export default function Register() {
 
   const { registerWithPassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || "/";
 
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -33,7 +36,7 @@ export default function Register() {
     setError("");
     try {
       const response = await registerWithPassword(formData);
-      if (response) navigate("/user-profile");
+      if (response) navigate(from === "/" ? "/user-profile" : from, { replace: true });
     } catch (err) {
       setError(err.message || "Failed to register. Try again.");
     } finally {
@@ -42,6 +45,7 @@ export default function Register() {
   };
 
   const handleGoogleLogin = () => {
+    localStorage.setItem("redirect_after_login", from);
     window.location.href = import.meta.env.VITE_API_BASE_URL + "/auth/google";
   };
 
