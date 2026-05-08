@@ -14,8 +14,11 @@ use App\Http\Controllers\Api\AdminSubscriptionController;
 use App\Http\Controllers\Api\RitualController;
 use App\Http\Controllers\Api\RitualBookingController;
 use App\Http\Controllers\Api\BookingSessionController;
+use App\Http\Controllers\Api\BookingMessageController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\AstrologerReviewController;
+use App\Http\Controllers\Api\LiveSessionController;
+use App\Http\Controllers\Api\PushNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,7 +54,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bookings/{booking}/session/start', [BookingSessionController::class, 'start']);
     Route::post('/bookings/{booking}/session/end', [BookingSessionController::class, 'end']);
     Route::post('/bookings/{booking}/session/ping', [BookingSessionController::class, 'ping']);
+    Route::get('/bookings/{booking}/messages', [BookingMessageController::class, 'index']);
+    Route::post('/bookings/{booking}/messages', [BookingMessageController::class, 'store']);
     Route::post('/media/chat-image', [MediaController::class, 'uploadChatImage']);
+    Route::get('/live-sessions/current/viewer', [LiveSessionController::class, 'viewer']);
+    Route::post('/live-sessions/start', [LiveSessionController::class, 'start']);
+    Route::post('/live-sessions/{liveSession}/stop', [LiveSessionController::class, 'stop']);
+    Route::post('/live-sessions/{liveSession}/comments', [LiveSessionController::class, 'commentStore']);
 
     // User Dashboard Routes
     Route::get('/dashboard/profile', [UserDashboardController::class, 'getProfile']);
@@ -68,6 +77,11 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/bookings/availability', [BookingController::class, 'getAvailability']);
+Route::get('/live-sessions/current', [LiveSessionController::class, 'current']);
+Route::get('/live-sessions/{liveSession}/comments', [LiveSessionController::class, 'comments']);
+Route::get('/notifications/live/status', [PushNotificationController::class, 'status']);
+Route::post('/notifications/live/subscribe', [PushNotificationController::class, 'subscribe']);
+Route::post('/notifications/live/unsubscribe', [PushNotificationController::class, 'unsubscribe']);
 
 // Subscription Plans - Public
 Route::get('/subscriptions/plans', [SubscriptionController::class, 'getPlans']);

@@ -25,6 +25,7 @@ import AboutUs from "./pages/AboutUs";
 import ContactSupport from "./pages/ContactSupport";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+import LiveSessions from "./pages/LiveSessions";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import OAuthCallback from "./pages/OAuthCallback";
@@ -34,15 +35,17 @@ import UserDashboard from "./pages/user/UserDashboard";
 import UserProfile from "./pages/user/UserProfile";
 import MyBookings from "./pages/user/MyBookings";
 import { AuthProvider } from "./context/AuthContext";
+import { PushNotificationsProvider } from "./context/PushNotificationsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
+      <PushNotificationsProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -74,6 +77,7 @@ function App() {
           <Route path="/contact-support" element={<ContactSupport />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-and-conditions" element={<TermsConditions />} />
+          <Route path="/live" element={<LiveSessions />} />
 
           {/* Astrologer Routes */}
           <Route path="/astrologer/login" element={<AstrologerLogin />} />
@@ -126,8 +130,9 @@ function App() {
               <ChatPage />
             </ProtectedRoute>
           } />
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </PushNotificationsProvider>
     </AuthProvider>
   );
 }

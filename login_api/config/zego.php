@@ -25,4 +25,11 @@ return [
         'server_url' => env('ZEGO_CALL_SERVER_URL'),
         'secondary_server_url' => env('ZEGO_CALL_SECONDARY_SERVER_URL'),
     ],
+    'live' => [
+        'app_id' => (int) env('ZEGO_LIVE_APP_ID', 0),
+        'app_sign' => env('ZEGO_LIVE_APP_SIGN'),
+        'server_secret' => env('ZEGO_LIVE_SERVER_SECRET'),
+        'server_url' => env('ZEGO_LIVE_SERVER_URL'),
+        'secondary_server_url' => env('ZEGO_LIVE_SECONDARY_SERVER_URL'),
+    ],
 ];

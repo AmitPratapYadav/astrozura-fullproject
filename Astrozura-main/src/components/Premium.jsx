@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Star, Sparkles, HeartHandshake, TrendingUp } from "lucide-react";
+import { Calculator, ChevronLeft, ChevronRight, HeartHandshake, ScrollText, Sparkles, Star, TrendingUp } from "lucide-react";
 import {
   TbZodiacAquarius,
   TbZodiacAries,
@@ -17,6 +17,7 @@ import {
   TbZodiacVirgo,
 } from "react-icons/tb";
 import { getDailyHoroscope, getMonthlyHoroscope } from "../api/prokeralaApi";
+import { serviceCatalog } from "../data/serviceCatalog";
 
 const zodiac = [
   { sign: "aries", id: "Aries", range: "March 21 - April 19", luckyColor: "Gold", luckyNumber: "08", icon: <TbZodiacAries size={28} strokeWidth={1.5} className="text-current" /> },
@@ -36,6 +37,7 @@ const zodiac = [
 export default function Premium() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const sliderRef = useRef(null);
   const [message, setMessage] = useState("");
   const [activeSign, setActiveSign] = useState("aries");
   const [activePeriod, setActivePeriod] = useState("daily");
@@ -43,32 +45,37 @@ export default function Premium() {
   const [loadingHoroscope, setLoadingHoroscope] = useState(false);
   const [horoscopeError, setHoroscopeError] = useState("");
 
-  const services = [
-    {
-      title: t("premium.services.vedic_astrology") || "Vedic Astrology",
-      icon: <Star size={24} strokeWidth={1.5} className="text-white" />,
-      price: "Rs 29.99",
-      to: "/astrologers",
-    },
-    {
-      title: t("premium.services.muhurat") || "Muhurat",
-      icon: <Sparkles size={24} strokeWidth={1.5} className="text-white" />,
-      price: "Rs 19.99",
-      to: "/panchang",
-    },
-    {
-      title: t("premium.services.lal_kitab") || "Lal Kitab",
-      icon: <HeartHandshake size={24} strokeWidth={1.5} className="text-white" />,
-      price: "Rs 34.99",
-      to: "/services/lal-kitab-report",
-    },
-    {
-      title: t("premium.services.palmistry") || "Palmistry",
-      icon: <TrendingUp size={24} strokeWidth={1.5} className="text-white" />,
-      price: "Rs 24.99",
-      to: "/services/palm-reading",
-    },
-  ];
+  const premiumServices = useMemo(() => {
+    const eligibleCategories = new Set(["Reports", "Calculators", "Marriage Matching"]);
+    const iconMap = {
+      Reports: <ScrollText size={22} strokeWidth={1.7} className="text-white" />,
+      Calculators: <Calculator size={22} strokeWidth={1.7} className="text-white" />,
+      "Marriage Matching": <HeartHandshake size={22} strokeWidth={1.7} className="text-white" />,
+    };
+    const priceMap = {
+      "Marriage Matching": "Rs 29.99",
+      Reports: "Rs 34.99",
+      Calculators: "Rs 24.99",
+    };
+
+    return serviceCatalog
+      .filter((item) => eligibleCategories.has(item.category))
+      .map((item) => ({
+        title: item.title,
+        summary: item.summary,
+        to: item.ctaTo,
+        price: priceMap[item.category] || "Rs 24.99",
+        icon: iconMap[item.category] || <Star size={22} strokeWidth={1.7} className="text-white" />,
+        badge: item.category,
+      }));
+  }, []);
+
+  const scrollServices = (direction) => {
+    sliderRef.current?.scrollBy({
+      left: direction * 340,
+      behavior: "smooth",
+    });
+  };
 
   useEffect(() => {
     if (!message) {
@@ -136,41 +143,64 @@ export default function Premium() {
         <div className="flex justify-between items-center mb-10 flex-wrap gap-3">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-[#1A1A1A]">
-              {t("premium.title")}
+              Premium Services
             </h2>
             <p className="text-gray-400 text-xs mt-1">
-              {t("premium.subtitle")}
+              Explore paid-ready reports and calculators from Astro Zura's core service stack.
             </p>
           </div>
 
-          <button
-            onClick={() => navigate("/services")}
-            className="text-[#c7926a] text-xs font-medium hover:underline"
-          >
-            {t("premium.view_all")}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => scrollServices(-1)}
+              className="hidden h-10 w-10 items-center justify-center rounded-full border border-[#E5D8C3] bg-white text-[#1E3557] shadow-sm transition hover:border-[#D4A73C] hover:text-[#D4A73C] md:inline-flex"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollServices(1)}
+              className="hidden h-10 w-10 items-center justify-center rounded-full border border-[#E5D8C3] bg-white text-[#1E3557] shadow-sm transition hover:border-[#D4A73C] hover:text-[#D4A73C] md:inline-flex"
+            >
+              <ChevronRight size={18} />
+            </button>
+            <button
+              onClick={() => navigate("/services")}
+              className="text-[#c7926a] text-xs font-medium hover:underline"
+            >
+              {t("premium.view_all")}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {services.map((item) => (
+        <div
+          ref={sliderRef}
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {premiumServices.map((item) => (
             <div
               key={item.title}
-              className="bg-[#FFF8ED] rounded-2xl p-6 border border-[#F3E7D3] hover:shadow-lg transition text-center flex flex-col items-center"
+              className="min-w-[280px] max-w-[320px] snap-start rounded-2xl border border-[#F3E7D3] bg-[#FFF8ED] p-6 text-center shadow-sm transition hover:shadow-lg sm:min-w-[320px]"
             >
-              <div className="w-[52px] h-[52px] bg-[#1E3557] flex items-center justify-center rounded-xl mb-5 shadow-md">
+              <div className="mb-3 inline-flex rounded-full bg-[#F3E7D3] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B88332]">
+                {item.badge}
+              </div>
+
+              <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#1E3557] shadow-md">
                 {item.icon}
               </div>
 
-              <h3 className="text-sm font-bold text-[#1E3557]">
+              <h3 className="text-lg font-bold text-[#1E3557]">
                 {item.title}
               </h3>
 
-              <p className="text-[11px] text-gray-400 mt-1 mb-5">
-                {t("premium.service_desc")}
+              <p className="mt-2 min-h-[54px] text-[12px] leading-5 text-gray-500">
+                {item.summary}
               </p>
 
-              <div className="flex items-center justify-between w-full mt-auto">
-                <p className="text-[#1E3557] font-bold text-sm">
+              <div className="mt-6 flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-[#1E3557]">
                   {item.price}
                 </p>
 
@@ -179,7 +209,7 @@ export default function Premium() {
                     notify(`${item.title} selected`);
                     navigate(item.to);
                   }}
-                  className="text-[11px] border border-[#1E3557] text-[#1E3557] px-3 py-1 rounded-full hover:bg-[#1E3557] hover:text-white transition font-medium"
+                  className="rounded-full border border-[#1E3557] px-4 py-1.5 text-[11px] font-medium text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white"
                 >
                   {t("premium.book_now")}
                 </button>

@@ -90,4 +90,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(AstrologerReview::class, 'astrologer_id');
     }
+
+    public function pushSubscriptions()
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
 }

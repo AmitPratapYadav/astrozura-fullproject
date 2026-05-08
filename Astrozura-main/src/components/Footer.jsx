@@ -10,6 +10,7 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
   const { user } = useAuth();
+  const currentYear = new Date().getFullYear();
   
   const servicesLinks = [
     { label: "View All Services", to: "/services" },
@@ -120,7 +121,7 @@ export default function Footer() {
 
       <div className="border-t border-[#2C4870] py-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between px-6 text-sm text-gray-300 md:flex-row">
-          <p>{t("footer.rights")}</p>
+          <p>(c) {currentYear} AstroZura Inc. All cosmic rights reserved.</p>
 
           <div className="mt-3 flex items-center gap-6 md:mt-0">
             {!user && (

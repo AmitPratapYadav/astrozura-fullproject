@@ -70,6 +70,11 @@ class Booking extends Model
         return $this->hasOne(AstrologerReview::class);
     }
 
+    public function messages()
+    {
+        return $this->hasMany(BookingMessage::class);
+    }
+
     public function setScheduledAtAttribute($value): void
     {
         $this->attributes['scheduled_at'] = $this->normalizeDateTimeForStorage($value);

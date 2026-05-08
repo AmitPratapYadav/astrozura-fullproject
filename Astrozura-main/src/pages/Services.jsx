@@ -28,7 +28,7 @@ const sections = [
     ],
   },
   {
-    title: "Premium Consultations",
+    title: "Premium Services",
     items: groupedServices.premium.map((item, index) => ({
       title: item.label,
       summary: "Dedicated service entry point with guided action and linked working flow.",
@@ -67,7 +67,7 @@ export default function Services() {
           </h1>
           <p className="mt-6 max-w-2xl text-sm leading-7 text-slate-200 md:text-base">
             Every major Astro Zura service now has a dedicated entry point. Use this hub to browse rituals,
-            matchmaking, horoscope flows, premium consultations, and specialist calculators.
+            matchmaking, horoscope flows, premium services, and specialist calculators.
           </p>
         </div>
       </section>

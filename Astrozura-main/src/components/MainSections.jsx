@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import astro1 from "../assets/astro1.png";
 import astro2 from "../assets/astro2.png";
 import astro3 from "../assets/astro3.png";
+import { usePushNotifications } from "../context/PushNotificationsContext";
 
 export default function MainSections() {
   const { t } = useTranslation();
@@ -14,6 +15,15 @@ export default function MainSections() {
   const [astrologers, setAstrologers] = useState([]);
   const [featured, setFeatured] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [liveSession, setLiveSession] = useState(null);
+  const {
+    isSupported: pushSupported,
+    isSubscribed: pushSubscribed,
+    isLoading: pushLoading,
+    permission: pushPermission,
+    subscribeToLiveNotifications,
+    unsubscribeFromLiveNotifications,
+  } = usePushNotifications();
 
   useEffect(() => {
     const fetchAstrologers = async () => {
@@ -45,9 +55,39 @@ export default function MainSections() {
     void fetchAstrologers();
   }, []);
 
+  useEffect(() => {
+    const fetchLiveSession = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+        const response = await fetch(`${apiUrl}/live-sessions/current`);
+        const data = await response.json();
+        if (data?.success) {
+          setLiveSession(data.session || null);
+        }
+      } catch (error) {
+        console.error("Failed to load current live session", error);
+      }
+    };
+
+    void fetchLiveSession();
+  }, []);
+
   const notify = (text) => {
     setMsg(text);
     window.setTimeout(() => setMsg(""), 2000);
+  };
+
+  const handleLiveNotificationToggle = async () => {
+    try {
+      const result = pushSubscribed
+        ? await unsubscribeFromLiveNotifications()
+        : await subscribeToLiveNotifications();
+
+      notify(result.message);
+    } catch (error) {
+      console.error("Failed to update live notification subscription", error);
+      notify(error?.message || "Live notification subscription could not be updated.");
+    }
   };
 
   const getImageUrl = (path, fallback) => {
@@ -194,6 +234,80 @@ export default function MainSections() {
           </div>
         </div>
 
+        <div className="overflow-hidden rounded-[2rem] border border-[#EEE7D6] bg-white shadow-sm">
+          <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="bg-gradient-to-br from-[#162744] via-[#1E3557] to-[#223C63] p-8 text-white md:p-10">
+              <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
+                <span className={`h-2 w-2 rounded-full ${liveSession ? "animate-pulse bg-red-400" : "bg-[#D4A73C]"}`} />
+                {liveSession ? "Astro Zura Live" : "Live Sessions"}
+              </p>
+              <h2 className="mt-5 text-3xl font-black md:text-4xl">
+                {liveSession ? liveSession.title : "No astrologer is live right now"}
+              </h2>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200">
+                {liveSession
+                  ? liveSession.description
+                  : "Join live spiritual guidance sessions with featured astrologers. When no one is live, you can subscribe for notifications and return as soon as the next session starts."}
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
+                <span className="rounded-2xl bg-white/10 px-4 py-2 text-slate-100">
+                  {liveSession ? `Hosted by ${liveSession.astrologer?.name || "Featured Astrologer"}` : "Featured astrologers only"}
+                </span>
+                <span className="rounded-2xl bg-white/10 px-4 py-2 text-slate-100">
+                  {liveSession ? "Live comments enabled" : "Push alerts coming next"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-center gap-4 p-8 md:p-10">
+              <div className="rounded-3xl border border-[#EEE7D6] bg-[#FBF7F0] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A73C]">
+                  {liveSession ? "Streaming Status" : "Stay Updated"}
+                </p>
+                <p className="mt-3 text-2xl font-black text-[#1E3557]">
+                  {liveSession ? "A featured astrologer is live now" : "Get notified when the next session starts"}
+                </p>
+                <p className="mt-3 text-sm leading-7 text-gray-600">
+                  {liveSession
+                    ? "Open the live room to watch, comment, and interact in real time."
+                    : "We will connect this block to Firebase web push notifications so visitors can subscribe and receive live-start alerts directly in the browser."}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => navigate("/live")}
+                  className="inline-flex items-center justify-center rounded-2xl bg-[#1E3557] px-8 py-4 text-sm font-black text-white shadow-xl shadow-[#1E3557]/20 transition hover:-translate-y-1 hover:bg-[#162a45]"
+                >
+                  {liveSession ? "Join Live Session" : "Open Live Page"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleLiveNotificationToggle()}
+                  disabled={!pushSupported || pushLoading}
+                  className="inline-flex items-center justify-center rounded-2xl border border-[#D4A73C]/30 px-8 py-4 text-sm font-bold text-[#D4A73C] transition hover:bg-[#FFF7E5] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {!pushSupported
+                    ? "Notifications Unsupported"
+                    : pushLoading
+                      ? "Please Wait..."
+                      : pushSubscribed
+                        ? "Disable Alerts"
+                        : "Notify Me"}
+                </button>
+              </div>
+              {pushSupported && !liveSession && (
+                <p className="text-xs leading-6 text-gray-500">
+                  {pushPermission === "denied"
+                    ? "Browser notifications are blocked. Enable them in browser settings to receive live alerts."
+                    : "This browser can subscribe to live-start alerts and open the live room directly from the notification."}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#D4A73C]" />
@@ -235,7 +349,7 @@ export default function MainSections() {
                       <div className="min-w-0 flex-1">
                         <h3 className="flex items-center gap-2 truncate text-sm font-medium text-[#2B2B2B]">
                           {astro.name}
-                          {index === 0 && (
+                          {liveSession?.astrologer?.id === astro.id && (
                             <span className="animate-pulse rounded-sm bg-red-500 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-white">
                               Live
                             </span>

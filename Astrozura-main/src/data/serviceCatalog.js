@@ -58,7 +58,7 @@ const staticServices = [
   },
   {
     slug: "premium-consultations",
-    title: "Premium Consultations",
+    title: "Premium Services",
     category: "Services",
     summary: "One place to explore all premium spiritual consultations, reports, and ritual assistance.",
     description:

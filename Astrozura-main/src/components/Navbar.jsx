@@ -184,6 +184,13 @@ export default function Navbar() {
         </ul>
 
         <div className="flex shrink-0 items-center gap-1.5 lg:gap-2">
+          <Link
+            to="/live"
+            className="hidden items-center rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-red-600 transition hover:bg-red-100 md:inline-flex"
+          >
+            Live
+          </Link>
+
           <div className="relative" ref={langRef}>
             <button
               type="button"
@@ -317,6 +324,7 @@ export default function Navbar() {
               { path: "/", name: t("nav.home") },
               { path: "/rituals", name: t("navMenu.poojaAnusthan") },
               { path: "/panchang", name: t("navMenu.astroZuraPanchang") },
+              { path: "/live", name: "Live" },
               { path: "/astrologers", name: t("nav.astrologers") },
               { path: "/subscription", name: t("navMenu.premiumPlans") },
             ].map((item) => (

@@ -210,6 +210,7 @@ class BookingSessionController extends Controller
             'can_end' => $canEnd,
             'remaining_seconds' => $remainingSeconds,
             'needs_low_time_warning' => $needsLowTimeWarning,
+            'server_now' => $now->toIso8601String(),
             'scheduled_at' => $scheduledAt?->toIso8601String(),
             'scheduled_end_at' => $endsAt?->toIso8601String(),
             'join_window' => [

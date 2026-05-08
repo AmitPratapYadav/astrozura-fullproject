@@ -49,24 +49,25 @@ function ProfileManagementForm({ user }) {
   const { setUser } = useAuth();
   const nameParts = getNameParts(user?.name);
   const backendBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api").replace(/\/index\.php\/api$|\/api$/, "");
+  const astrologerDetail = user?.astrologer_detail || user?.astrologerDetail || {};
 
   const [formData, setFormData] = useState({
     firstName: nameParts.firstName,
     lastName: nameParts.lastName,
     email: user?.email || "",
     password: "",
-    experience_years: user?.astrologer_detail?.experience_years || "",
-    languages: user?.astrologer_detail?.languages || "",
-    specialities: user?.astrologer_detail?.specialities || "",
-    chat_price: user?.astrologer_detail?.chat_price || "",
-    call_price: user?.astrologer_detail?.call_price || "",
-    about_bio: user?.astrologer_detail?.about_bio || "",
+    experience_years: astrologerDetail?.experience_years || "",
+    languages: astrologerDetail?.languages || "",
+    specialities: astrologerDetail?.specialities || "",
+    chat_price: astrologerDetail?.chat_price || "",
+    call_price: astrologerDetail?.call_price || "",
+    about_bio: astrologerDetail?.about_bio || "",
     profile_image: null,
-    is_featured: Boolean(user?.astrologer_detail?.is_featured),
+    is_featured: Boolean(astrologerDetail?.is_featured),
   });
   const [profilePreview, setProfilePreview] = useState(
-    user?.astrologer_detail?.profile_image
-      ? resolveImageUrl(backendBaseUrl, user.astrologer_detail.profile_image)
+    astrologerDetail?.profile_image
+      ? resolveImageUrl(backendBaseUrl, astrologerDetail.profile_image)
       : ""
   );
   const [loading, setLoading] = useState(false);
@@ -136,8 +137,9 @@ function ProfileManagementForm({ user }) {
           profile_image: null,
         }));
 
-        if (data.user?.astrologer_detail?.profile_image) {
-          setProfilePreview(resolveImageUrl(backendBaseUrl, data.user.astrologer_detail.profile_image));
+        const updatedDetail = data.user?.astrologer_detail || data.user?.astrologerDetail;
+        if (updatedDetail?.profile_image) {
+          setProfilePreview(resolveImageUrl(backendBaseUrl, updatedDetail.profile_image));
         }
 
         setMessage({ type: "success", text: "Profile updated successfully." });
@@ -266,6 +268,8 @@ function ProfileManagementForm({ user }) {
 
 export default function AstrologerDashboard() {
   const { user, logout } = useAuth();
+  const astrologerDetail = user?.astrologer_detail || user?.astrologerDetail || {};
+  const canHostLive = Boolean(user?.role === "astrologer" && astrologerDetail?.is_featured);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [bookingData, setBookingData] = useState({
     upcoming: [],
@@ -488,6 +492,14 @@ export default function AstrologerDashboard() {
               <button onClick={() => setActiveTab("profile")} className={getTabClass("profile")}>
                 Manage Profile
               </button>
+              {canHostLive && (
+                <Link
+                  to="/live"
+                  className="rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#1E3557] transition hover:bg-[#1E3557]/5 hover:text-[#D4A73C]"
+                >
+                  Live Studio
+                </Link>
+              )}
             </nav>
 
             <div className="p-4 border-t border-gray-100 bg-gray-50/50">
@@ -509,6 +521,19 @@ export default function AstrologerDashboard() {
                   <p className="text-[#D4A73C] font-medium text-sm tracking-wider uppercase mb-1">Overview</p>
                   <h1 className="text-3xl font-bold text-[#1E3557]">Dashboard</h1>
                 </div>
+                {canHostLive && (
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="rounded-full bg-[#F6E8BF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#8B6A16]">
+                      Featured Astrologer
+                    </span>
+                    <Link
+                      to="/live"
+                      className="rounded-xl bg-[#1E3557] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#162744]"
+                    >
+                      Go Live Studio
+                    </Link>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

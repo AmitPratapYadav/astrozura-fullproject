@@ -60,9 +60,15 @@ const formatTime = (value) =>
     : "-";
 
 const formatCountdown = (seconds) => {
-  const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
-  const mins = Math.floor(safeSeconds / 60);
+  const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+  const hours = Math.floor(safeSeconds / 3600);
+  const mins = Math.floor((safeSeconds % 3600) / 60);
   const secs = safeSeconds % 60;
+
+  if (hours > 0) {
+    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 };
 
@@ -182,8 +188,25 @@ const mapChatMessage = (message, selfUserId) => {
     text: payload.text,
     kind: payload.kind,
     mediaUrl: payload.mediaUrl,
+    clientUuid: "",
     timestamp: message?.timestamp || Date.now(),
     isSelf: message?.senderUserID === selfUserId,
+  };
+};
+
+const mapStoredMessage = (message, selfUserId) => {
+  const kind = message?.message_type === "image" ? "image" : "text";
+  const mediaUrl = kind === "image" ? resolveImageUrl(message?.media_url || "") : "";
+
+  return {
+    id: message?.zego_message_id || message?.client_uuid || `db-${message?.id}`,
+    senderUserId: message?.sender_user_id || "",
+    text: kind === "image" ? "Image attachment" : message?.text || "",
+    kind,
+    mediaUrl,
+    clientUuid: message?.client_uuid || "",
+    timestamp: message?.timestamp || Date.now(),
+    isSelf: String(message?.sender_user_id || "") === selfUserId,
   };
 };
 
@@ -197,6 +220,7 @@ export default function ChatPage() {
   const [booking, setBooking] = useState(null);
   const [session, setSession] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [pendingMessages, setPendingMessages] = useState([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -213,6 +237,8 @@ export default function ChatPage() {
   const [callStatus, setCallStatus] = useState("Audio call is not connected.");
   const [callMuted, setCallMuted] = useState(false);
   const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
+  const [clockNowMs, setClockNowMs] = useState(() => Date.now());
+  const [serverClockOffsetMs, setServerClockOffsetMs] = useState(0);
 
   const messageViewportRef = useRef(null);
   const zimRef = useRef(null);
@@ -228,6 +254,7 @@ export default function ChatPage() {
   const chatSyncTimerRef = useRef(null);
   const fileInputRef = useRef(null);
   const callAutoJoinKeyRef = useRef("");
+  const sessionAutoStartKeyRef = useRef("");
   const shouldStickToBottomRef = useRef(true);
   const previousMessageCountRef = useRef(0);
 
@@ -240,15 +267,39 @@ export default function ChatPage() {
   const astrologerDetail =
     booking?.astrologer?.astrologer_detail || booking?.astrologer?.astrologerDetail || null;
   const callEnabled = booking?.consultation_type === "call";
+  const currentUserId = user?.id ? String(user.id) : "";
   const viewerZegoId = session?.viewer?.zego_user_id || "";
   const chatServiceEnabled = Boolean(session?.zego?.chat);
   const canOpenChat = Boolean(session?.can_join && chatServiceEnabled);
   const isClosed = CLOSED_STATUSES.has(booking?.status) || session?.state === "closed";
   const canJoinCall = Boolean(callEnabled && session?.can_join && session?.zego?.call);
-  const showLowTimeWarning = Boolean(session?.needs_low_time_warning && session?.remaining_seconds > 0);
+  const isCallConnected = callState === "live" || callState === "room-connected";
   const backHref = isAstrologerViewer ? "/astrologer/dashboard" : "/my-bookings";
   const scheduledStartLabel = formatDateTime(session?.scheduled_at || booking?.scheduled_at);
   const scheduledEndLabel = formatDateTime(session?.scheduled_end_at || booking?.ends_at);
+  const effectiveNowMs = clockNowMs + serverClockOffsetMs;
+  const effectiveNow = useMemo(() => new Date(effectiveNowMs), [effectiveNowMs]);
+  const displayRemainingSeconds = useMemo(() => {
+    if (!session) return 0;
+
+    if (isClosed) {
+      return 0;
+    }
+
+    const targetTime = session.is_live ? session.scheduled_end_at : session.scheduled_at;
+    if (!targetTime) {
+      return Math.max(0, Math.floor(session.remaining_seconds || 0));
+    }
+
+    const targetMs = new Date(targetTime).getTime();
+    if (!Number.isFinite(targetMs)) {
+      return Math.max(0, Math.floor(session.remaining_seconds || 0));
+    }
+
+    return Math.max(0, Math.floor((targetMs - effectiveNow.getTime()) / 1000));
+  }, [effectiveNow, isClosed, session]);
+  const sessionTimerLabel = session?.is_live ? "Remaining Time" : "Starts In";
+  const showLowTimeWarning = Boolean(session?.is_live && displayRemainingSeconds > 0 && displayRemainingSeconds <= 120);
   const sessionHeadline = useMemo(() => {
     if (isClosed) {
       return "This consultation has ended.";
@@ -295,12 +346,50 @@ export default function ChatPage() {
 
     return `Scheduled start: ${scheduledStartLabel}. Scheduled end: ${scheduledEndLabel}.${testingNote}`;
   }, [callEnabled, chatReady, scheduledEndLabel, scheduledStartLabel, session?.test_mode]);
+  const callActionLabel = useMemo(() => {
+    if (callLoading || callState === "connecting") {
+      return "Connecting...";
+    }
+
+    if (isCallConnected) {
+      return "Audio Call Connected";
+    }
+
+    if (!isAstrologerViewer && !session?.is_live) {
+      return "Waiting for Astrologer";
+    }
+
+    if (callState === "error") {
+      return "Reconnect Audio Call";
+    }
+
+    return "Join Audio Call";
+  }, [callLoading, callState, isAstrologerViewer, isCallConnected, session?.is_live]);
+
+  const visibleMessages = useMemo(() => {
+    const combined = [...messages];
+
+    pendingMessages.forEach((pendingMessage) => {
+      const exists = combined.some(
+        (message) =>
+          message.id === pendingMessage.id ||
+          (message.clientUuid && pendingMessage.clientUuid && message.clientUuid === pendingMessage.clientUuid)
+      );
+
+      if (!exists) {
+        combined.push(pendingMessage);
+      }
+    });
+
+    combined.sort((left, right) => left.timestamp - right.timestamp);
+    return combined;
+  }, [messages, pendingMessages]);
 
   useEffect(() => {
     const viewport = messageViewportRef.current;
 
     if (!viewport) {
-      previousMessageCountRef.current = messages.length;
+      previousMessageCountRef.current = visibleMessages.length;
       return;
     }
 
@@ -310,14 +399,19 @@ export default function ChatPage() {
       viewport.scrollTop = viewport.scrollHeight;
     }
 
-    previousMessageCountRef.current = messages.length;
-  }, [messages]);
+    previousMessageCountRef.current = visibleMessages.length;
+  }, [visibleMessages]);
 
   useEffect(() => {
     if (!banner) return undefined;
     const timer = window.setTimeout(() => setBanner(""), 2800);
     return () => window.clearTimeout(timer);
   }, [banner]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNowMs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const mergeMessages = (nextMessages, replace = false) => {
     setMessages((previous) => {
@@ -326,6 +420,24 @@ export default function ChatPage() {
 
       nextMessages.forEach((message) => {
         const messageKey = message.id;
+        const clientUuid = message.clientUuid || "";
+        const existingIndex = base.findIndex(
+          (item) =>
+            item.id === messageKey ||
+            (clientUuid && item.clientUuid && item.clientUuid === clientUuid)
+        );
+
+        if (existingIndex >= 0) {
+          base[existingIndex] = {
+            ...base[existingIndex],
+            ...message,
+          };
+          if (messageKey) {
+            keySet.add(messageKey);
+          }
+          return;
+        }
+
         if (!messageKey || keySet.has(messageKey)) {
           return;
         }
@@ -449,22 +561,80 @@ export default function ChatPage() {
     await destroyChatConnection(session?.rooms?.chat || "");
   };
 
-  const loadHistoryMessages = async (zimInstance, currentSession) => {
-    const history = await zimInstance.queryHistoryMessage(
-      currentSession.rooms.chat,
-      ZIMConversationType.Room,
-      {
-        count: 50,
-        reverse: false,
-        isPreferQueryFromServer: true,
-      }
+  const fetchPersistedMessages = async () => {
+    if (!bookingId) {
+      return;
+    }
+
+    const response = await api.get(`/bookings/${bookingId}/messages`);
+    const normalized = (response.data?.messages || [])
+      .map((message) => mapStoredMessage(message, currentUserId))
+      .filter((message) => message.text || message.mediaUrl);
+
+    mergeMessages(normalized);
+    setPendingMessages((previous) =>
+      previous.filter(
+        (pendingMessage) =>
+          !normalized.some(
+            (storedMessage) =>
+              (pendingMessage.clientUuid &&
+                storedMessage.clientUuid &&
+                pendingMessage.clientUuid === storedMessage.clientUuid) ||
+              pendingMessage.id === storedMessage.id
+          )
+      )
     );
+  };
 
-    const normalized = (history?.messageList || [])
-      .map((message) => mapChatMessage(message, currentSession.viewer.zego_user_id))
-      .filter((message) => message.text);
+  const persistBookingMessage = async ({
+    messageType,
+    text = "",
+    mediaUrl = "",
+    zegoMessageId = "",
+    clientUuid = "",
+  }) => {
+    if (!bookingId) {
+      return null;
+    }
 
-    resetMessages(normalized);
+    const payload = {
+      message_type: messageType,
+      client_uuid:
+        clientUuid ||
+        (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+      zego_message_id: zegoMessageId || null,
+      sent_at: new Date(effectiveNowMs).toISOString(),
+    };
+
+    if (messageType === "image") {
+      payload.media_url = mediaUrl;
+    } else {
+      payload.text = text;
+    }
+
+    const response = await api.post(`/bookings/${bookingId}/messages`, payload);
+    return response.data?.message ? mapStoredMessage(response.data.message, currentUserId) : null;
+  };
+
+  const createOptimisticMessage = ({ clientUuid, text = "", kind = "text", mediaUrl = "" }) => ({
+    id: `optimistic-${clientUuid}`,
+    senderUserId: viewerZegoId || currentUserId,
+    text: kind === "image" ? "Image attachment" : text,
+    kind,
+    mediaUrl,
+    clientUuid,
+    timestamp: Date.now(),
+    isSelf: true,
+  });
+
+  const removeOptimisticMessage = (clientUuid) => {
+    if (!clientUuid) {
+      return;
+    }
+
+    setPendingMessages((previous) => previous.filter((message) => message.clientUuid !== clientUuid));
   };
 
   const ensureChatConnection = async (currentBooking, currentSession) => {
@@ -482,7 +652,6 @@ export default function ChatPage() {
     if (zimRef.current && zimContextKeyRef.current === roomKey) {
       setChatReady(true);
       setChatStatus("Connected to live chat.");
-      await loadHistoryMessages(zimRef.current, currentSession);
       return;
     }
 
@@ -523,6 +692,9 @@ export default function ChatPage() {
         mapChatMessage(message, currentSession.viewer.zego_user_id)
       );
       mergeMessages(normalized);
+      void fetchPersistedMessages().catch((error) => {
+        console.error("Failed to refresh stored messages after room update", error);
+      });
     });
 
     await zimInstance.login(chatConfig.user_id, {
@@ -535,7 +707,6 @@ export default function ChatPage() {
       roomName: roomId,
     });
 
-    await loadHistoryMessages(zimInstance, currentSession);
     setChatReady(true);
     setChatStatus("Connected to live chat.");
   };
@@ -709,6 +880,12 @@ export default function ChatPage() {
       const response = await getBookingSession(bookingId);
       setBooking(response.booking);
       setSession(response.session);
+      if (response.session?.server_now) {
+        const serverNowMs = new Date(response.session.server_now).getTime();
+        if (Number.isFinite(serverNowMs)) {
+          setServerClockOffsetMs(serverNowMs - Date.now());
+        }
+      }
 
       if (response.session?.can_join && response.session?.zego?.chat) {
         try {
@@ -749,6 +926,20 @@ export default function ChatPage() {
   }, [bookingId]);
 
   useEffect(() => {
+    if (!bookingId) {
+      resetMessages([]);
+      setPendingMessages([]);
+      return;
+    }
+
+    resetMessages([]);
+    setPendingMessages([]);
+    void fetchPersistedMessages().catch((error) => {
+      console.error("Failed to load stored chat messages", error);
+    });
+  }, [bookingId]);
+
+  useEffect(() => {
     if (pingTimerRef.current) {
       window.clearInterval(pingTimerRef.current);
     }
@@ -775,22 +966,22 @@ export default function ChatPage() {
       window.clearInterval(chatSyncTimerRef.current);
     }
 
-    if (!session?.can_join || !chatReady || !zimRef.current || isClosed) {
+    if (!bookingId || loading) {
       return undefined;
     }
 
     chatSyncTimerRef.current = window.setInterval(() => {
-      void loadHistoryMessages(zimRef.current, session).catch((error) => {
-        console.error("Chat history sync failed", error);
+      void fetchPersistedMessages().catch((error) => {
+        console.error("Stored chat sync failed", error);
       });
-    }, 4000);
+    }, 1500);
 
     return () => {
       if (chatSyncTimerRef.current) {
         window.clearInterval(chatSyncTimerRef.current);
       }
     };
-  }, [chatReady, isClosed, session]);
+  }, [bookingId, loading]);
 
   useEffect(() => {
     return () => {
@@ -804,6 +995,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!bookingId) {
       callAutoJoinKeyRef.current = "";
+      sessionAutoStartKeyRef.current = "";
     }
   }, [bookingId]);
 
@@ -851,8 +1043,22 @@ export default function ChatPage() {
       return;
     }
 
+    const clientUuid =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     try {
       setSending(true);
+      setPendingMessages((previous) => [
+        ...previous,
+        createOptimisticMessage({
+          clientUuid,
+          text: trimmed,
+          kind: "text",
+        }),
+      ]);
+      setDraft("");
       const result = await zimRef.current.sendMessage(
         {
           type: ZIMMessageType.Text,
@@ -865,12 +1071,26 @@ export default function ChatPage() {
         }
       );
 
-      const sentMessage = mapChatMessage(result.message, viewerZegoId);
+      const zegoMessageId =
+        result?.message?.messageID || result?.message?.localMessageID || "";
+      const persistedMessage = await persistBookingMessage({
+        messageType: "text",
+        text: trimmed,
+        zegoMessageId,
+        clientUuid,
+      });
+      const sentMessage = persistedMessage || mapChatMessage(result.message, viewerZegoId);
+      if (!persistedMessage) {
+        sentMessage.clientUuid = clientUuid;
+      }
       mergeMessages([sentMessage]);
-      await loadHistoryMessages(zimRef.current, session);
-      setDraft("");
+      void fetchPersistedMessages().catch((error) => {
+        console.error("Failed to refresh stored messages after send", error);
+      });
     } catch (error) {
       console.error("Failed to send message", error);
+      removeOptimisticMessage(clientUuid);
+      setDraft(trimmed);
       setBanner("Message could not be sent.");
     } finally {
       setSending(false);
@@ -883,6 +1103,11 @@ export default function ChatPage() {
     if (!file || !chatReady || !zimRef.current || !session?.rooms?.chat) {
       return;
     }
+
+    const clientUuid =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     try {
       setUploadingImage(true);
@@ -902,6 +1127,15 @@ export default function ChatPage() {
         throw new Error("Image upload did not return a valid URL.");
       }
 
+      setPendingMessages((previous) => [
+        ...previous,
+        createOptimisticMessage({
+          clientUuid,
+          kind: "image",
+          mediaUrl: imageUrl,
+        }),
+      ]);
+
       const result = await zimRef.current.sendMessage(
         {
           type: ZIMMessageType.Text,
@@ -914,12 +1148,26 @@ export default function ChatPage() {
         }
       );
 
-      const sentMessage = mapChatMessage(result.message, viewerZegoId);
+      const zegoMessageId =
+        result?.message?.messageID || result?.message?.localMessageID || "";
+      const persistedMessage = await persistBookingMessage({
+        messageType: "image",
+        mediaUrl: imageUrl,
+        zegoMessageId,
+        clientUuid,
+      });
+      const sentMessage = persistedMessage || mapChatMessage(result.message, viewerZegoId);
+      if (!persistedMessage) {
+        sentMessage.clientUuid = clientUuid;
+      }
       mergeMessages([sentMessage]);
-      await loadHistoryMessages(zimRef.current, session);
+      void fetchPersistedMessages().catch((error) => {
+        console.error("Failed to refresh stored messages after image send", error);
+      });
       setBanner("Image sent.");
     } catch (error) {
       console.error("Failed to send chat image", error);
+      removeOptimisticMessage(clientUuid);
       setBanner(error?.response?.data?.message || error?.message || "Image could not be sent.");
     } finally {
       setUploadingImage(false);
@@ -932,6 +1180,10 @@ export default function ChatPage() {
   const handleJoinAudioCall = async () => {
     if (!canJoinCall) {
       setBanner("Audio call is not available yet.");
+      return;
+    }
+
+    if (isCallConnected || callLoading) {
       return;
     }
 
@@ -974,7 +1226,21 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    if (!callEnabled || isClosed || !canJoinCall || callLoading || zegoEngineRef.current) {
+    if (callEnabled || !isAstrologerViewer || isClosed || startingSession || session?.is_live || !session?.can_start) {
+      return;
+    }
+
+    const autoStartKey = [bookingId, session?.state || "scheduled", session?.scheduled_at || ""].join(":");
+    if (sessionAutoStartKeyRef.current === autoStartKey) {
+      return;
+    }
+
+    sessionAutoStartKeyRef.current = autoStartKey;
+    void handleStartSession();
+  }, [bookingId, callEnabled, isAstrologerViewer, isClosed, session?.can_start, session?.is_live, session?.scheduled_at, session?.state, startingSession]);
+
+  useEffect(() => {
+    if (!callEnabled || isClosed || !canJoinCall || callLoading || zegoEngineRef.current || isCallConnected) {
       return;
     }
 
@@ -1000,6 +1266,7 @@ export default function ChatPage() {
     callEnabled,
     callLoading,
     canJoinCall,
+    isCallConnected,
     isAstrologerViewer,
     isClosed,
     session?.is_live,
@@ -1082,7 +1349,7 @@ export default function ChatPage() {
             </div>
             <div className="rounded-2xl border border-gray-200 bg-[#F8F9FC] px-4 py-3 text-sm">
               <p className="text-xs uppercase tracking-wide text-gray-400">Time Remaining</p>
-              <p className="mt-1 font-semibold text-[#1E3557]">{formatCountdown(session?.remaining_seconds || 0)}</p>
+              <p className="mt-1 font-semibold text-[#1E3557]">{formatCountdown(displayRemainingSeconds)}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-[#F8F9FC] px-4 py-3 text-sm">
               <p className="text-xs uppercase tracking-wide text-gray-400">Room Refresh</p>
@@ -1199,9 +1466,9 @@ export default function ChatPage() {
                       </p>
                     </div>
                   </div>
-                ) : messages.length > 0 ? (
+                ) : visibleMessages.length > 0 ? (
                   <div className="space-y-4">
-                    {messages.map((message) => (
+                    {visibleMessages.map((message) => (
                       <div
                         key={message.id}
                         className={`flex ${message.isSelf ? "justify-end" : "justify-start"}`}
@@ -1431,10 +1698,10 @@ export default function ChatPage() {
                   <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-[#F8F9FC] px-4 py-3">
                     <div className="flex items-center gap-2 text-sm font-semibold text-[#1E3557]">
                       <FaClock className="text-[#D4A73C]" />
-                      Remaining Time
+                      {sessionTimerLabel}
                     </div>
                     <span className="text-sm font-bold text-[#1E3557]">
-                      {formatCountdown(session?.remaining_seconds || 0)}
+                      {formatCountdown(displayRemainingSeconds)}
                     </span>
                   </div>
 
@@ -1446,32 +1713,16 @@ export default function ChatPage() {
                     <span className="text-sm font-bold text-[#1E3557]">{remoteParticipantCount}</span>
                   </div>
 
-                  {isAstrologerViewer && session?.can_start && !session?.is_live && (
-                    <button
-                      type="button"
-                      onClick={() => void handleStartSession()}
-                      disabled={startingSession}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557] transition hover:bg-[#c49530] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <FaPlayCircle />
-                      {startingSession ? "Starting..." : "Start Consultation"}
-                    </button>
-                  )}
-
                   {callEnabled && (
                     <>
                       <button
                         type="button"
                         onClick={() => void handleJoinAudioCall()}
-                        disabled={!canJoinCall || callLoading || isClosed}
+                        disabled={!canJoinCall || callLoading || isClosed || isCallConnected}
                         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1E3557] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#162744] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <FaPhoneAlt />
-                        {callLoading
-                          ? "Connecting..."
-                          : callState === "live" || callState === "room-connected"
-                            ? "Reconnect Audio Call"
-                            : "Join Audio Call"}
+                        {callActionLabel}
                       </button>
 
                       <div className="grid grid-cols-2 gap-3">
