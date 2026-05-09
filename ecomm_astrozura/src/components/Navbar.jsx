@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import axios from "axios";
 import vedic from "../assets/vedic-astrology.png";
 import menuIcon from "../assets/menu-icon.png";
 import cart from "../assets/carts.png";
@@ -12,13 +13,31 @@ export default function Navbar() {
   const { cartItems } = useCart();
   const navigate = useNavigate();
 
+  const [categories, setCategories] = useState([]);
+  const [catMenuOpen, setCatMenuOpen] = useState(false);
+
   const menuItems = [
-    { path: "/", name: "Home" },
-    { path: "/category", name: "Category" },
     { path: "/allproduct", name: "Allproduct" },
-    { path: "/Contact", name: "Contact" },
-    { path: "/About", name: "About" }
+    { path: "/Contact", name: "Contact us" },
+    { path: "/About", name: "About us" }
   ];
+
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await axios.get(`${apiUrl}/ecomm/categories`);
+      if (data.status === "success") {
+        setCategories(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching categories", error);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -31,10 +50,45 @@ export default function Navbar() {
         <div className="flex justify-between items-center">
 
           {/* LOGO */}
-          <img src={vedic} alt="logo" className="h-12 md:h-16 object-contain" />
+          <NavLink to="/">
+            <img src={vedic} alt="logo" className="h-12 md:h-16 object-contain cursor-pointer" />
+          </NavLink>
 
           {/* DESKTOP MENU */}
           <ul className="hidden md:flex gap-6 text-sm items-center font-medium">
+            {/* SHOP BY CATEGORIES DROPDOWN */}
+            <li 
+              className="relative group"
+              onMouseEnter={() => setCatMenuOpen(true)}
+              onMouseLeave={() => setCatMenuOpen(false)}
+            >
+              <button className="flex items-center gap-1 px-3 py-1.5 rounded-md text-gray-700 hover:bg-[#D4A73C] transition">
+                Shop by Categories
+                <svg className={`w-4 h-4 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {catMenuOpen && (
+                <div className="absolute left-0 top-full w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <NavLink
+                        key={cat.id}
+                        to={`/allproduct?category=${cat.id}`}
+                        onClick={() => setCatMenuOpen(false)}
+                        className="block px-4 py-2.5 text-sm text-gray-600 hover:bg-[#d8b14a]/10 hover:text-[#d8b14a] transition"
+                      >
+                        {cat.name}
+                      </NavLink>
+                    ))
+                  ) : (
+                    <p className="px-4 py-2 text-xs text-gray-400">Loading categories...</p>
+                  )}
+                </div>
+              )}
+            </li>
+
             {menuItems.map((item, i) => (
               <li key={i}>
                 <NavLink
@@ -126,7 +180,9 @@ export default function Navbar() {
           <div className={`absolute right-0 top-0 h-full w-[280px] bg-white shadow-2xl transition-transform duration-300 transform ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>
             <div className="p-6 flex flex-col h-full">
               <div className="flex justify-between items-center mb-10">
-                <img src={vedic} alt="logo" className="h-10 object-contain" />
+                <NavLink to="/" onClick={() => setMenuOpen(false)}>
+                  <img src={vedic} alt="logo" className="h-10 object-contain" />
+                </NavLink>
                 <button onClick={() => setMenuOpen(false)} className="p-2 -mr-2 text-gray-400 hover:text-[#1E3557] bg-gray-50 rounded-xl transition-all active:scale-90">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -135,6 +191,34 @@ export default function Navbar() {
               </div>
 
               <ul className="flex flex-col gap-1 text-gray-700">
+                {/* MOBILE CATEGORIES ACCORDION/LIST */}
+                <li className="mb-2">
+                  <button 
+                    onClick={() => setCatMenuOpen(!catMenuOpen)}
+                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-all"
+                  >
+                    <span>Shop by Categories</span>
+                    <svg className={`w-5 h-5 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {catMenuOpen && (
+                    <div className="pl-4 mt-1 flex flex-col gap-1 animate-in slide-in-from-top-2 duration-200">
+                      {categories.map((cat) => (
+                        <NavLink
+                          key={cat.id}
+                          to={`/allproduct?category=${cat.id}`}
+                          onClick={() => { setMenuOpen(false); setCatMenuOpen(false); }}
+                          className="block px-4 py-2.5 text-sm text-gray-500 hover:text-[#d8b14a] transition"
+                        >
+                          {cat.name}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </li>
+
                 {menuItems.map((item, i) => (
                   <li key={i}>
                     <NavLink
