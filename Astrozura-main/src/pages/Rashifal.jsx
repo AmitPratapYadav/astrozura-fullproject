@@ -2,22 +2,36 @@ import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { FaBriefcase, FaHeartbeat, FaHeart, FaMagic } from "react-icons/fa";
+import { FaArrowRight, FaBriefcase, FaHeartbeat, FaHeart, FaMagic } from "react-icons/fa";
+import {
+  TbZodiacAquarius,
+  TbZodiacAries,
+  TbZodiacCancer,
+  TbZodiacCapricorn,
+  TbZodiacGemini,
+  TbZodiacLeo,
+  TbZodiacLibra,
+  TbZodiacPisces,
+  TbZodiacSagittarius,
+  TbZodiacScorpio,
+  TbZodiacTaurus,
+  TbZodiacVirgo,
+} from "react-icons/tb";
 import { getDailyHoroscope } from "../api/prokeralaApi";
 
 const zodiacs = [
-  { name: "Aries", icon: "\u2648", date: "Mar 21 - Apr 19" },
-  { name: "Taurus", icon: "\u2649", date: "Apr 20 - May 20" },
-  { name: "Gemini", icon: "\u264A", date: "May 21 - Jun 20" },
-  { name: "Cancer", icon: "\u264B", date: "Jun 21 - Jul 22" },
-  { name: "Leo", icon: "\u264C", date: "Jul 23 - Aug 22" },
-  { name: "Virgo", icon: "\u264D", date: "Aug 23 - Sep 22" },
-  { name: "Libra", icon: "\u264E", date: "Sep 23 - Oct 22" },
-  { name: "Scorpio", icon: "\u264F", date: "Oct 23 - Nov 21" },
-  { name: "Sagittarius", icon: "\u2650", date: "Nov 22 - Dec 21" },
-  { name: "Capricorn", icon: "\u2651", date: "Dec 22 - Jan 19" },
-  { name: "Aquarius", icon: "\u2652", date: "Jan 20 - Feb 18" },
-  { name: "Pisces", icon: "\u2653", date: "Feb 19 - Mar 20" },
+  { name: "Aries", Icon: TbZodiacAries, date: "Mar 21 - Apr 19", element: "Fire", ruler: "Mars", tone: "from-[#f97316] to-[#dc2626]", surface: "bg-[#fff6ed]", accent: "text-[#c2410c]" },
+  { name: "Taurus", Icon: TbZodiacTaurus, date: "Apr 20 - May 20", element: "Earth", ruler: "Venus", tone: "from-[#84cc16] to-[#15803d]", surface: "bg-[#f4fbec]", accent: "text-[#3f7a14]" },
+  { name: "Gemini", Icon: TbZodiacGemini, date: "May 21 - Jun 20", element: "Air", ruler: "Mercury", tone: "from-[#38bdf8] to-[#2563eb]", surface: "bg-[#eef8ff]", accent: "text-[#1d4ed8]" },
+  { name: "Cancer", Icon: TbZodiacCancer, date: "Jun 21 - Jul 22", element: "Water", ruler: "Moon", tone: "from-[#22d3ee] to-[#0f766e]", surface: "bg-[#eefdfb]", accent: "text-[#0f766e]" },
+  { name: "Leo", Icon: TbZodiacLeo, date: "Jul 23 - Aug 22", element: "Fire", ruler: "Sun", tone: "from-[#facc15] to-[#ea580c]", surface: "bg-[#fff9db]", accent: "text-[#b45309]" },
+  { name: "Virgo", Icon: TbZodiacVirgo, date: "Aug 23 - Sep 22", element: "Earth", ruler: "Mercury", tone: "from-[#a3a866] to-[#64748b]", surface: "bg-[#f8f7ee]", accent: "text-[#5b621f]" },
+  { name: "Libra", Icon: TbZodiacLibra, date: "Sep 23 - Oct 22", element: "Air", ruler: "Venus", tone: "from-[#f0abfc] to-[#7c3aed]", surface: "bg-[#fdf2ff]", accent: "text-[#7e22ce]" },
+  { name: "Scorpio", Icon: TbZodiacScorpio, date: "Oct 23 - Nov 21", element: "Water", ruler: "Pluto", tone: "from-[#fb7185] to-[#7f1d1d]", surface: "bg-[#fff1f2]", accent: "text-[#be123c]" },
+  { name: "Sagittarius", Icon: TbZodiacSagittarius, date: "Nov 22 - Dec 21", element: "Fire", ruler: "Jupiter", tone: "from-[#f59e0b] to-[#a855f7]", surface: "bg-[#fff7ed]", accent: "text-[#9333ea]" },
+  { name: "Capricorn", Icon: TbZodiacCapricorn, date: "Dec 22 - Jan 19", element: "Earth", ruler: "Saturn", tone: "from-[#94a3b8] to-[#334155]", surface: "bg-[#f8fafc]", accent: "text-[#334155]" },
+  { name: "Aquarius", Icon: TbZodiacAquarius, date: "Jan 20 - Feb 18", element: "Air", ruler: "Uranus", tone: "from-[#60a5fa] to-[#4338ca]", surface: "bg-[#eff6ff]", accent: "text-[#3730a3]" },
+  { name: "Pisces", Icon: TbZodiacPisces, date: "Feb 19 - Mar 20", element: "Water", ruler: "Neptune", tone: "from-[#2dd4bf] to-[#6366f1]", surface: "bg-[#f0fdfa]", accent: "text-[#0f766e]" },
 ];
 
 export default function Rashifal() {
@@ -83,17 +97,42 @@ export default function Rashifal() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 -mt-8 relative z-10 grid gap-8 flex-1 w-full">
         {!selectedSign ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {zodiacs.map((zodiac) => (
               <button
                 key={zodiac.name}
                 type="button"
                 onClick={() => handleSelect(zodiac)}
-                className="bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100 cursor-pointer hover:-translate-y-2 hover:shadow-xl hover:border-[#D4A73C]/50 transition-all group"
+                className={`group relative min-h-[230px] overflow-hidden rounded-[1.35rem] border border-white/80 ${zodiac.surface} p-5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.14)] focus:outline-none focus:ring-2 focus:ring-[#D4A73C]`}
               >
-                <div className="text-5xl mb-3 text-[#1E3557] group-hover:text-[#D4A73C] transition-colors">{zodiac.icon}</div>
-                <h3 className="font-bold text-[#1E3557]">{zodiac.name}</h3>
-                <p className="text-xs text-gray-500 mt-1">{zodiac.date}</p>
+                <div className={`absolute -right-8 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${zodiac.tone} opacity-20 transition group-hover:scale-125`} />
+                <div className="absolute inset-x-5 top-0 h-1 rounded-b-full bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+
+                <div className="relative flex items-start justify-between gap-4">
+                  <span className="rounded-full border border-white/70 bg-white/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600 shadow-sm">
+                    {zodiac.element}
+                  </span>
+                  <span className="rounded-full bg-white/65 px-3 py-1 text-xs font-semibold text-slate-500 shadow-sm">
+                    {zodiac.date}
+                  </span>
+                </div>
+
+                <div className="relative mt-7 flex items-center gap-4">
+                  <div className={`grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${zodiac.tone} text-white shadow-lg shadow-slate-900/10 ring-4 ring-white/70`}>
+                    {React.createElement(zodiac.Icon, { size: 54, strokeWidth: 1.6 })}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-2xl font-black text-[#1E3557]">{zodiac.name}</h3>
+                    <p className={`mt-1 text-sm font-semibold ${zodiac.accent}`}>{zodiac.ruler}-ruled sign</p>
+                  </div>
+                </div>
+
+                <div className="relative mt-7 flex items-center justify-between border-t border-white/70 pt-4">
+                  <p className="text-sm font-medium text-slate-600">Open {activeTab} reading</p>
+                  <span className={`grid h-9 w-9 place-items-center rounded-full bg-white ${zodiac.accent} shadow-sm transition group-hover:translate-x-1`}>
+                    <FaArrowRight size={14} />
+                  </span>
+                </div>
               </button>
             ))}
           </div>
@@ -111,7 +150,7 @@ export default function Rashifal() {
               >
                 Back
               </button>
-              <div className="text-6xl text-[#D4A73C] mb-2">{selectedSign.icon}</div>
+              {React.createElement(selectedSign.Icon, { size: 72, strokeWidth: 1.4, className: "mx-auto mb-2 text-[#D4A73C]" })}
               <h2 className="text-3xl font-bold">{selectedSign.name} Horoscope</h2>
               <p className="text-gray-400 mt-1">{selectedSign.date}</p>
             </div>

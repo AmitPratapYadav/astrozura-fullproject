@@ -48,7 +48,7 @@ function resolveImageUrl(baseUrl, path) {
 function ProfileManagementForm({ user }) {
   const { setUser } = useAuth();
   const nameParts = getNameParts(user?.name);
-  const backendBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api").replace(/\/index\.php\/api$|\/api$/, "");
+  const backendBaseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   const astrologerDetail = user?.astrologer_detail || user?.astrologerDetail || {};
 
   const [formData, setFormData] = useState({

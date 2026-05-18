@@ -35,3 +35,6 @@ Thumbs.db
 login_api.zip
 deploy/*.zip
 deploy/*.tgz
+AstrologyAPI_Endpoint_Audit_2026-05-13.xlsx
+.gitignore
+api_pdf_extract.txt

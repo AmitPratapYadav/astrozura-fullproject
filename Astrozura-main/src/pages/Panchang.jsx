@@ -3,6 +3,8 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getPanchang, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
+import { ProviderSections } from "../components/report/ReportDataRenderer";
+import { KeyValueTable, ReportPanel, ReportTable } from "../components/report/ReportTables";
 
 const formatDate = (value, options = { dateStyle: "medium" }) => {
   if (!value) return "-";
@@ -232,6 +234,34 @@ export default function Panchang() {
   ];
 
   const transitionCards = buildTransitionCards(summary, panchang);
+  const summaryRows = [
+    ["Vaara", summary?.vaara],
+    ["Sunrise", formatTime(summary?.sunrise)],
+    ["Sunset", formatTime(summary?.sunset)],
+    ["Moonrise", formatTime(summary?.moonrise)],
+    ["Moonset", formatTime(summary?.moonset)],
+    ["Current Tithi", summary?.current_tithi?.name],
+    ["Tithi Ends", formatDate(summary?.current_tithi?.end, { dateStyle: "medium", timeStyle: "short" })],
+    ["Current Nakshatra", summary?.current_nakshatra?.name],
+    ["Nakshatra Ends", formatDate(summary?.current_nakshatra?.end, { dateStyle: "medium", timeStyle: "short" })],
+    ["Current Karana", summary?.current_karana?.name],
+    ["Current Yoga", summary?.current_yoga?.name],
+  ];
+  const flowRows = panchangGroups.flatMap((group) =>
+    group.items.map((item, index) => ({
+      id: `${group.key}-${index}`,
+      type: group.title.replace(" Flow", ""),
+      name: item.name || "-",
+      extra: group.getExtra(item) || "-",
+      start: formatDate(item.start, { dateStyle: "medium", timeStyle: "short" }),
+      end: formatDate(item.end, { dateStyle: "medium", timeStyle: "short" }),
+      status: getEntryStatus(item, referenceTime),
+    }))
+  );
+  const muhurtaRows = [
+    ...auspicious.map((item) => ({ kind: "Auspicious", name: item.name, type: item.type, periods: item.period?.map((period) => `${formatTime(period.start)} to ${formatTime(period.end)}`).join(", ") })),
+    ...inauspicious.map((item) => ({ kind: "Avoid", name: item.name, type: item.type, periods: item.period?.map((period) => `${formatTime(period.start)} to ${formatTime(period.end)}`).join(", ") })),
+  ];
 
   return (
     <div className="min-h-screen bg-[#f7f8fb] font-sans text-[#1E3557]">
@@ -426,6 +456,54 @@ export default function Panchang() {
           </aside>
 
           <main className="space-y-6">
+            <ReportPanel
+              title="Daily Panchang Report"
+              subtitle={`Compact Panchang table for ${formatDate(selectedDate, { dateStyle: "long" })}`}
+            >
+              <KeyValueTable rows={summaryRows} />
+            </ReportPanel>
+
+            <ReportPanel title="Panchang Transitions">
+              <ReportTable
+                compact
+                columns={[
+                  { key: "label", label: "Transition" },
+                  { key: "current", label: "Current" },
+                  { key: "next", label: "Next" },
+                  { key: "time", label: "Changes At", render: (row) => formatDate(row.time, { dateStyle: "medium", timeStyle: "short" }) },
+                ]}
+                rows={transitionCards}
+              />
+            </ReportPanel>
+
+            <ReportPanel title="Panchang Flow Table" subtitle="Tithi, Nakshatra, Karana and Yoga in one compact table">
+              <ReportTable
+                compact
+                columns={[
+                  { key: "type", label: "Type" },
+                  { key: "name", label: "Name" },
+                  { key: "extra", label: "Extra" },
+                  { key: "start", label: "Start" },
+                  { key: "end", label: "End" },
+                  { key: "status", label: "Status" },
+                ]}
+                rows={flowRows}
+              />
+            </ReportPanel>
+
+            <ReportPanel title="Muhurat Timing Table" subtitle="Auspicious, avoid, Hora and Chaughadiya summaries">
+              <ReportTable
+                compact
+                columns={[
+                  { key: "kind", label: "Kind" },
+                  { key: "name", label: "Name" },
+                  { key: "type", label: "Type" },
+                  { key: "periods", label: "Periods" },
+                ]}
+                rows={muhurtaRows}
+              />
+            </ReportPanel>
+
             <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -632,6 +710,8 @@ export default function Panchang() {
                 </div>
               </div>
             </div>
+
+            <ProviderSections sections={data?.provider_sections || []} />
 
             <div className="rounded-3xl bg-[#1e2f59] px-6 py-10 text-center text-white shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A73C]">

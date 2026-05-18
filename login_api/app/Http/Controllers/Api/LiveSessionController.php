@@ -9,6 +9,7 @@ use App\Services\FirebaseCloudMessagingService;
 use App\Support\Zego\ZegoTokenService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class LiveSessionController extends Controller
 {
@@ -82,12 +83,14 @@ class LiveSessionController extends Controller
             'ended_at' => Carbon::now('Asia/Kolkata'),
         ]);
 
+        $sessionKey = $this->generateSessionKey();
+
         $session = LiveSession::create([
             'astrologer_id' => $user->id,
             'title' => $validated['title'] ?? ($user->name . "'s Live Guidance Session"),
             'description' => $validated['description'] ?? 'Join the live spiritual session and interact in real time.',
-            'room_id' => "astrozura-live-room-{$user->id}",
-            'stream_id' => "astrozura-live-stream-{$user->id}",
+            'room_id' => "astrozura-live-room-{$user->id}-{$sessionKey}",
+            'stream_id' => "astrozura-live-stream-{$user->id}-{$sessionKey}",
             'status' => 'live',
             'started_at' => Carbon::now('Asia/Kolkata'),
         ])->load('astrologer.astrologerDetail');
@@ -260,5 +263,10 @@ class LiveSessionController extends Controller
         if ((int) $liveSession->astrologer_id !== $userId) {
             abort(403, 'You do not own this live session.');
         }
+    }
+
+    private function generateSessionKey(): string
+    {
+        return Carbon::now('Asia/Kolkata')->format('YmdHis') . '-' . Str::lower(Str::random(6));
     }
 }

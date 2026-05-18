@@ -25,7 +25,17 @@ class AstrologyApiService
         );
     }
 
-    protected function request(string $url, array $payload, ?string $language): Response
+    public function pdfForm(string $path, array $payload = [], ?string $language = null): Response
+    {
+        return $this->request(
+            rtrim((string) config('astrologyapi.pdf_base_url'), '/') . '/' . ltrim($path, '/'),
+            $payload,
+            $language,
+            true
+        );
+    }
+
+    protected function request(string $url, array $payload, ?string $language, bool $asForm = false): Response
     {
         $userId = (string) config('astrologyapi.user_id');
         $apiKey = (string) config('astrologyapi.api_key');
@@ -40,10 +50,12 @@ class AstrologyApiService
             'Accept-Language' => $language ?: (string) config('astrologyapi.default_language', 'en'),
         ];
 
-        return Http::withBasicAuth($userId, $apiKey)
+        $request = Http::withBasicAuth($userId, $apiKey)
             ->withHeaders($headers)
-            ->timeout(30)
-            ->asJson()
-            ->post($url, $payload);
+            ->timeout(30);
+
+        $request = $asForm ? $request->asForm() : $request->asJson();
+
+        return $request->post($url, $payload);
     }
 }

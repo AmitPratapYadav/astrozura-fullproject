@@ -42,10 +42,7 @@ export default function Navbar() {
         items: [
           { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
           { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
-          { label: t("navMenu.reportItems.nakshatraPorutham"), to: "/matching-calculators?tool=nakshatra-porutham" },
-          { label: t("navMenu.reportItems.thirumanaPorutham"), to: "/matching-calculators?tool=thirumana-porutham" },
-          { label: t("navMenu.reportItems.porutham"), to: "/matching-calculators?tool=porutham" },
-          { label: t("navMenu.reportItems.papasamyam"), to: "/matching-calculators?tool=papasamyam-check" },
+          { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
           { label: t("navMenu.reportItems.detailedKundali"), to: "/services/detailed-kundali" },
         ],
       },
@@ -104,11 +101,6 @@ export default function Navbar() {
     i18n.changeLanguage(lng);
     setLangDropdownOpen(false);
   };
-
-  const desktopNavClass = ({ isActive }) =>
-    `whitespace-nowrap rounded-xl px-2 py-2 transition ${
-      isActive ? "bg-[#D4A73C] text-white" : "text-gray-700 hover:bg-[#FFF1CF]"
-    }`;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-100/70 bg-white/90 px-4 py-1.5 shadow-[0_4px_30px_rgba(0,0,0,0.03)] backdrop-blur-lg md:px-8">
@@ -369,10 +361,7 @@ export default function Navbar() {
                 items: [
                   { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
                   { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
-                  { label: t("navMenu.reportItems.nakshatraPorutham"), to: "/matching-calculators?tool=nakshatra-porutham" },
-                  { label: t("navMenu.reportItems.thirumanaPorutham"), to: "/matching-calculators?tool=thirumana-porutham" },
-                  { label: t("navMenu.reportItems.porutham"), to: "/matching-calculators?tool=porutham" },
-                  { label: t("navMenu.reportItems.papasamyam"), to: "/matching-calculators?tool=papasamyam-check" },
+                  { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
                   { label: t("navMenu.reportItems.detailedKundali"), to: "/services/detailed-kundali" },
                 ],
               },

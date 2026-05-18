@@ -3,7 +3,10 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import InlineInfoPopover from "../components/InlineInfoPopover";
+import { ProviderSections, ReportDataBlock } from "../components/report/ReportDataRenderer";
+import { KeyValueTable, ReportPanel } from "../components/report/ReportTables";
 import { getVedicCalculator, searchLocation } from "../api/prokeralaApi";
+import { useAuth } from "../context/AuthContext";
 import {
   AYANAMSA_OPTIONS,
   CHART_STYLE_OPTIONS,
@@ -24,103 +27,21 @@ const initialForm = {
   chart_style: "north-indian",
   detailed_report: false,
   planets: "",
+  mahadasha: "",
+  antardasha: "",
+  pratyantardasha: "",
+  sookshma_dasha: "",
+  dasha_cycle: "",
+  dasha_name: "",
 };
 
-const titleize = (value) =>
-  String(value || "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (match) => match.toUpperCase());
-
-const renderPrimitive = (value) => {
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (value === null || value === undefined || value === "") return "-";
-  return String(value);
+const buildKolkataDatetime = (date, time) => {
+  const [hour = "12", minute = "00", second = "00"] = String(time || "12:00").split(":");
+  return `${date}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:${second.padStart(2, "0")}+05:30`;
 };
-
-const formatIsoTime = (value) => {
-  if (!value) return Number.POSITIVE_INFINITY;
-  const stamp = Date.parse(value);
-  return Number.isNaN(stamp) ? Number.POSITIVE_INFINITY : stamp;
-};
-
-const getRelevantSadesatiTransits = (transits) => {
-  if (!Array.isArray(transits)) return [];
-
-  const unique = [];
-  const seen = new Set();
-  for (const item of transits) {
-    const key = `${item?.phase || item?.name || "phase"}|${item?.start || ""}|${item?.end || ""}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push(item);
-  }
-
-  const sorted = [...unique].sort((left, right) => formatIsoTime(left?.start) - formatIsoTime(right?.start));
-  const now = Date.now();
-  const pivotIndex = sorted.findIndex((item) => formatIsoTime(item?.start) >= now);
-
-  if (pivotIndex === -1) {
-    return sorted.slice(-8);
-  }
-
-  const start = Math.max(0, pivotIndex - 2);
-  return sorted.slice(start, start + 8);
-};
-
-function ResultTree({ value, label }) {
-  if (value === null || value === undefined) return null;
-
-  if (Array.isArray(value)) {
-    if (!value.length) return null;
-    return (
-      <div className="space-y-3">
-        {label && <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{titleize(label)}</p>}
-        {value.map((item, index) => (
-          <div key={`${label || "item"}-${index}`} className="rounded-2xl border border-slate-100 bg-white p-4">
-            <ResultTree value={item} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (typeof value === "object") {
-    const entries = Object.entries(value).filter(([, child]) => child !== null && child !== undefined && child !== "");
-    if (!entries.length) return null;
-
-    return (
-      <div className="space-y-4">
-        {label && <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{titleize(label)}</p>}
-        <div className="grid gap-4 md:grid-cols-2">
-          {entries.map(([childKey, childValue]) => {
-            const isNested = Array.isArray(childValue) || typeof childValue === "object";
-            return (
-              <div key={childKey} className="rounded-2xl border border-slate-100 bg-[#f8f9fc] p-4">
-                {isNested ? (
-                  <ResultTree value={childValue} label={childKey} />
-                ) : (
-                  <>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{titleize(childKey)}</p>
-                    <p className="mt-2 text-sm font-semibold text-[#1E3557]">{renderPrimitive(childValue)}</p>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-2xl border border-slate-100 bg-[#f8f9fc] p-4">
-      {label && <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{titleize(label)}</p>}
-      <p className="mt-2 text-sm font-semibold text-[#1E3557]">{renderPrimitive(value)}</p>
-    </div>
-  );
-}
 
 export default function VedicCalculators() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const toolKey = searchParams.get("tool") || "mangal-dosha";
   const tool = getVedicCalculatorTool(toolKey);
@@ -133,7 +54,7 @@ export default function VedicCalculators() {
   const [result, setResult] = useState(null);
 
   const suggestedTools = useMemo(
-    () => vedicCalculatorTools.filter((item) => item.key !== toolKey).slice(0, 6),
+    () => vedicCalculatorTools.filter((item) => item.key !== toolKey && !item.hideFromCalculators).slice(0, 6),
     [toolKey]
   );
 
@@ -142,6 +63,22 @@ export default function VedicCalculators() {
     setToast("");
     setSearchResults([]);
   }, [toolKey]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const latitude = user.latitude || user.lat || user.birth_latitude;
+    const longitude = user.longitude || user.lon || user.birth_longitude;
+    const coordinates = latitude && longitude ? `${latitude},${longitude}` : "";
+
+    setForm((current) => ({
+      ...current,
+      date_of_birth: current.date_of_birth || user.date_of_birth || user.dob || "",
+      time_of_birth: current.time_of_birth || user.time_of_birth || user.birth_time || "",
+      place_of_birth: current.place_of_birth || user.place_of_birth || user.birth_place || user.city || "",
+      coordinates: current.coordinates || coordinates,
+    }));
+  }, [user]);
 
   if (!tool) {
     return <Navigate to="/services" replace />;
@@ -206,7 +143,7 @@ export default function VedicCalculators() {
 
       const datetime =
         tool.requiresDate && form.date_of_birth
-          ? `${form.date_of_birth}T${form.time_of_birth || "12:00"}:00+05:30`
+          ? buildKolkataDatetime(form.date_of_birth, form.time_of_birth)
           : undefined;
 
       const payload = {
@@ -216,9 +153,15 @@ export default function VedicCalculators() {
         la: form.language,
         year: tool.requiresYear ? Number(form.year) : undefined,
         planet: tool.requiresPlanet ? Number(form.planet) : undefined,
-        chart_style: tool.requiresChartStyle || tool.hasCompanionChart ? form.chart_style : undefined,
+        chart_style: tool.requiresChartStyle || tool.hasCompanionChart || tool.key === "planet-position" ? form.chart_style : undefined,
         detailed_report: tool.supportsAdvanced ? form.detailed_report : undefined,
         planets: tool.key === "planet-position" && form.planets.trim() ? form.planets.trim() : undefined,
+        mahadasha: form.mahadasha.trim() || undefined,
+        antardasha: form.antardasha.trim() || undefined,
+        pratyantardasha: form.pratyantardasha.trim() || undefined,
+        sookshma_dasha: form.sookshma_dasha.trim() || undefined,
+        dasha_cycle: form.dasha_cycle.trim() || undefined,
+        dasha_name: form.dasha_name.trim() || undefined,
       };
 
       const response = await getVedicCalculator(tool.key, payload);
@@ -236,25 +179,8 @@ export default function VedicCalculators() {
     }
   };
 
-  const primaryResult = useMemo(() => {
-    if (tool.hasCompanionChart && result?.data?.chart_data) return result.data.chart_data;
-    return result?.data || null;
-  }, [result, tool.hasCompanionChart]);
-
-  const svgMarkup = useMemo(() => {
-    const raw = result?.data?.svg || result?.data?.chart_svg || result?.data;
-    return typeof raw === "string" && raw.trim().startsWith("<svg") ? raw : null;
-  }, [result]);
-
-  const displayResult = useMemo(() => {
-    if (!result?.data || tool.key !== "sade-sati") return result?.data;
-    const relevantTransits = getRelevantSadesatiTransits(result.data.transits);
-    return {
-      ...result.data,
-      transits: relevantTransits,
-      hidden_transit_count: Math.max((result.data.transits?.length || 0) - relevantTransits.length, 0),
-    };
-  }, [result, tool.key]);
+  const providerSections = result?.data?.provider_sections || result?.provider_sections || [];
+  const providerPayload = result?.data?.provider_payload || {};
 
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-[#1E3557]">
@@ -440,6 +366,73 @@ export default function VedicCalculators() {
                 </div>
               )}
 
+              {tool.supportsDashaParams && (
+                <div className="rounded-2xl border border-slate-200 bg-[#f8f9fc] p-4">
+                  <p className="text-sm font-bold text-slate-700">Optional Dasha Sub-period Inputs</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Leave blank to generate the core dasha report. Fill these when you want the parameterized sub-period APIs.
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    <input
+                      type="text"
+                      name="mahadasha"
+                      value={form.mahadasha}
+                      onChange={handleChange}
+                      placeholder="Mahadasha, e.g. Mars"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                    />
+                    <input
+                      type="text"
+                      name="antardasha"
+                      value={form.antardasha}
+                      onChange={handleChange}
+                      placeholder="Antardasha, e.g. Rahu"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                    />
+                    <input
+                      type="text"
+                      name="pratyantardasha"
+                      value={form.pratyantardasha}
+                      onChange={handleChange}
+                      placeholder="Pratyantardasha"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                    />
+                    <input
+                      type="text"
+                      name="sookshma_dasha"
+                      value={form.sookshma_dasha}
+                      onChange={handleChange}
+                      placeholder="Sookshma Dasha"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {tool.supportsYoginiParams && (
+                <div className="rounded-2xl border border-slate-200 bg-[#f8f9fc] p-4">
+                  <p className="text-sm font-bold text-slate-700">Optional Yogini Sub-period Inputs</p>
+                  <div className="mt-4 space-y-3">
+                    <input
+                      type="text"
+                      name="dasha_cycle"
+                      value={form.dasha_cycle}
+                      onChange={handleChange}
+                      placeholder="Dasha cycle"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                    />
+                    <input
+                      type="text"
+                      name="dasha_name"
+                      value={form.dasha_name}
+                      onChange={handleChange}
+                      placeholder="Dasha name"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                    />
+                  </div>
+                </div>
+              )}
+
               {tool.supportsAdvanced && (
                 <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-4 text-sm font-medium text-slate-700">
                   <input
@@ -491,37 +484,31 @@ export default function VedicCalculators() {
                     </div>
                   )}
 
-                  {svgMarkup && (
-                    <div className="mt-6 rounded-3xl border border-slate-100 bg-[#f8f9fc] p-4">
-                      <div dangerouslySetInnerHTML={{ __html: svgMarkup }} />
-                    </div>
-                  )}
-
-                  {tool.hasCompanionChart && result?.data?.chart_svg && (
-                    <div className="mt-6 rounded-3xl border border-slate-100 bg-[#f8f9fc] p-4">
-                      <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Chart Output</p>
-                      <div dangerouslySetInnerHTML={{ __html: result.data.chart_svg }} />
-                    </div>
-                  )}
-
-                  {tool.hasCompanionChart && primaryResult && (
-                    <div className="mt-6">
-                      <ResultTree value={primaryResult} />
-                    </div>
-                  )}
-
-                  {tool.key === "sade-sati" && displayResult?.hidden_transit_count > 0 && (
-                    <div className="mt-5 rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-sm text-slate-600">
-                      Showing the most relevant recent and upcoming Sade Sati phase changes. {displayResult.hidden_transit_count} older transit entries were hidden to keep the report readable.
-                    </div>
-                  )}
-
-                  {!svgMarkup && !tool.hasCompanionChart && (
-                    <div className="mt-6 max-h-[72vh] overflow-y-auto pr-1">
-                      <ResultTree value={displayResult} />
-                    </div>
-                  )}
+                  <div className="mt-6">
+                    <KeyValueTable
+                      rows={[
+                        ["Calculator", tool.title],
+                        ["Language", form.language],
+                        ["Birth Place", form.place_of_birth || "-"],
+                        ["Coordinates", form.coordinates || "-"],
+                      ]}
+                    />
+                  </div>
                 </div>
+
+                {providerSections.length > 0 ? (
+                  <ProviderSections sections={providerSections} />
+                ) : (
+                  <ReportPanel title="Detailed Result" subtitle="Complete response returned by the backend.">
+                    <ReportDataBlock title="Result" data={result?.data} />
+                  </ReportPanel>
+                )}
+
+                {Object.keys(providerPayload || {}).length > 0 && providerSections.length === 0 && (
+                  <ReportPanel title="Provider Payload">
+                    <ReportDataBlock title="Provider Payload" data={providerPayload} />
+                  </ReportPanel>
+                )}
 
                 {suggestedTools.length > 0 && (
                   <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">

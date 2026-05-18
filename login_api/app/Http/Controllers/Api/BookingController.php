@@ -67,6 +67,9 @@ class BookingController extends Controller
             'birth_details.date_of_birth' => 'nullable|date',
             'birth_details.time_of_birth' => 'nullable|string|max:50',
             'birth_details.place_of_birth' => 'nullable|string|max:255',
+            'birth_details.latitude' => 'nullable|numeric|between:-90,90',
+            'birth_details.longitude' => 'nullable|numeric|between:-180,180',
+            'birth_details.coordinates' => 'nullable|string|max:80',
             'birth_details.gender' => 'nullable|in:male,female,other',
         ]);
 
@@ -317,6 +320,9 @@ class BookingController extends Controller
             'date_of_birth' => $birthDetails['date_of_birth'] ?? null,
             'time_of_birth' => $birthDetails['time_of_birth'] ?? null,
             'place_of_birth' => $birthDetails['place_of_birth'] ?? null,
+            'latitude' => $birthDetails['latitude'] ?? null,
+            'longitude' => $birthDetails['longitude'] ?? null,
+            'coordinates' => $birthDetails['coordinates'] ?? null,
             'gender' => $birthDetails['gender'] ?? null,
         ], fn ($value) => $value !== null && $value !== '');
 

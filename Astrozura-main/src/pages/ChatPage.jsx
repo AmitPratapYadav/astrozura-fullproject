@@ -23,23 +23,24 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import {
   endBookingSession,
+  extendBookingSession,
   getBookingSession,
   pingBookingSession,
   startBookingSession,
 } from "../api/sessionApi";
 
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api").replace(
-  /\/index\.php\/api$|\/api$/,
-  ""
-);
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const CLOSED_STATUSES = new Set(["completed", "cancelled", "declined"]);
 const IMAGE_MESSAGE_PREFIX = "[[image]]";
 const ZEGO_STANDARD_VIDEO_CALL_SCENARIO = 4;
+const TYPING_COMMAND_EVENT = "astrozura.typing";
+const TYPING_NOTIFY_INTERVAL_MS = 1400;
+const TYPING_VISIBLE_TIMEOUT_MS = 3000;
 
 const resolveImageUrl = (path) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  return `${API_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${BACKEND_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
 const formatDateTime = (value) =>
@@ -139,32 +140,6 @@ const getBookingId = (params, location) => {
   return search.get("booking");
 };
 
-const parseMessagePayload = (message) => {
-  if (message?.type === ZIMMessageType.Text && typeof message.message === "string") {
-    const text = message.message.trim();
-
-    if (text.startsWith(IMAGE_MESSAGE_PREFIX)) {
-      return {
-        kind: "image",
-        text: "Image attachment",
-        mediaUrl: text.slice(IMAGE_MESSAGE_PREFIX.length).trim(),
-      };
-    }
-
-    return {
-      kind: "text",
-      text,
-      mediaUrl: "",
-    };
-  }
-
-  return {
-    kind: "text",
-    text: "[Unsupported message]",
-    mediaUrl: "",
-  };
-};
-
 const formatBirthDetails = (birthDetails) => {
   if (!birthDetails) return [];
 
@@ -174,24 +149,6 @@ const formatBirthDetails = (birthDetails) => {
     birthDetails.place_of_birth ? `Place: ${birthDetails.place_of_birth}` : null,
     birthDetails.gender ? `Gender: ${birthDetails.gender}` : null,
   ].filter(Boolean);
-};
-
-const mapChatMessage = (message, selfUserId) => {
-  const payload = parseMessagePayload(message);
-
-  return {
-    id:
-      message?.messageID ||
-      message?.localMessageID ||
-      `${message?.senderUserID || "unknown"}-${message?.timestamp || Date.now()}`,
-    senderUserId: message?.senderUserID || "",
-    text: payload.text,
-    kind: payload.kind,
-    mediaUrl: payload.mediaUrl,
-    clientUuid: "",
-    timestamp: message?.timestamp || Date.now(),
-    isSelf: message?.senderUserID === selfUserId,
-  };
 };
 
 const mapStoredMessage = (message, selfUserId) => {
@@ -208,6 +165,27 @@ const mapStoredMessage = (message, selfUserId) => {
     timestamp: message?.timestamp || Date.now(),
     isSelf: String(message?.sender_user_id || "") === selfUserId,
   };
+};
+
+const encodeTypingCommand = ({ bookingId, isTyping }) =>
+  new TextEncoder().encode(JSON.stringify({
+    event: TYPING_COMMAND_EVENT,
+    bookingId: String(bookingId || ""),
+    isTyping: Boolean(isTyping),
+    sentAt: Date.now(),
+  }));
+
+const decodeTypingCommand = (message) => {
+  if (message?.type !== ZIMMessageType.Command || !message?.message) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(message.message));
+    return payload?.event === TYPING_COMMAND_EVENT ? payload : null;
+  } catch {
+    return null;
+  }
 };
 
 export default function ChatPage() {
@@ -228,10 +206,12 @@ export default function ChatPage() {
   const [banner, setBanner] = useState("");
   const [chatReady, setChatReady] = useState(false);
   const [chatStatus, setChatStatus] = useState("Connecting to room...");
-  const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [messageLoadError, setMessageLoadError] = useState("");
+  const [counterpartTyping, setCounterpartTyping] = useState(false);
   const [startingSession, setStartingSession] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
+  const [extendingDuration, setExtendingDuration] = useState(null);
   const [callLoading, setCallLoading] = useState(false);
   const [callState, setCallState] = useState("idle");
   const [callStatus, setCallStatus] = useState("Audio call is not connected.");
@@ -248,7 +228,6 @@ export default function ChatPage() {
   const publishedStreamIdRef = useRef("");
   const remoteAudioMapRef = useRef(new Map());
   const activeRemoteStreamsRef = useRef(new Set());
-  const messageKeysRef = useRef(new Set());
   const pollTimerRef = useRef(null);
   const pingTimerRef = useRef(null);
   const chatSyncTimerRef = useRef(null);
@@ -257,6 +236,8 @@ export default function ChatPage() {
   const sessionAutoStartKeyRef = useRef("");
   const shouldStickToBottomRef = useRef(true);
   const previousMessageCountRef = useRef(0);
+  const typingClearTimerRef = useRef(null);
+  const lastTypingNotifyAtRef = useRef(0);
 
   const isAstrologerViewer =
     user?.id && booking ? Number(user.id) === Number(booking.astrologer_id) : user?.role === "astrologer";
@@ -270,8 +251,8 @@ export default function ChatPage() {
   const currentUserId = user?.id ? String(user.id) : "";
   const viewerZegoId = session?.viewer?.zego_user_id || "";
   const chatServiceEnabled = Boolean(session?.zego?.chat);
-  const canOpenChat = Boolean(session?.can_join && chatServiceEnabled);
   const isClosed = CLOSED_STATUSES.has(booking?.status) || session?.state === "closed";
+  const canSendChatMessage = Boolean(session?.can_join && !isClosed);
   const canJoinCall = Boolean(callEnabled && session?.can_join && session?.zego?.call);
   const isCallConnected = callState === "live" || callState === "room-connected";
   const backHref = isAstrologerViewer ? "/astrologer/dashboard" : "/my-bookings";
@@ -300,6 +281,8 @@ export default function ChatPage() {
   }, [effectiveNow, isClosed, session]);
   const sessionTimerLabel = session?.is_live ? "Remaining Time" : "Starts In";
   const showLowTimeWarning = Boolean(session?.is_live && displayRemainingSeconds > 0 && displayRemainingSeconds <= 120);
+  const extensionOptions = session?.extension?.options || [];
+  const availableExtensionOptions = extensionOptions.filter((option) => option.is_available);
   const sessionHeadline = useMemo(() => {
     if (isClosed) {
       return "This consultation has ended.";
@@ -366,24 +349,10 @@ export default function ChatPage() {
     return "Join Audio Call";
   }, [callLoading, callState, isAstrologerViewer, isCallConnected, session?.is_live]);
 
-  const visibleMessages = useMemo(() => {
-    const combined = [...messages];
-
-    pendingMessages.forEach((pendingMessage) => {
-      const exists = combined.some(
-        (message) =>
-          message.id === pendingMessage.id ||
-          (message.clientUuid && pendingMessage.clientUuid && message.clientUuid === pendingMessage.clientUuid)
-      );
-
-      if (!exists) {
-        combined.push(pendingMessage);
-      }
-    });
-
-    combined.sort((left, right) => left.timestamp - right.timestamp);
-    return combined;
-  }, [messages, pendingMessages]);
+  const visibleMessages = useMemo(
+    () => [...messages, ...pendingMessages].sort((left, right) => left.timestamp - right.timestamp),
+    [messages, pendingMessages]
+  );
 
   useEffect(() => {
     const viewport = messageViewportRef.current;
@@ -413,49 +382,8 @@ export default function ChatPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const mergeMessages = (nextMessages, replace = false) => {
-    setMessages((previous) => {
-      const base = replace ? [] : [...previous];
-      const keySet = replace ? new Set() : new Set(messageKeysRef.current);
-
-      nextMessages.forEach((message) => {
-        const messageKey = message.id;
-        const clientUuid = message.clientUuid || "";
-        const existingIndex = base.findIndex(
-          (item) =>
-            item.id === messageKey ||
-            (clientUuid && item.clientUuid && item.clientUuid === clientUuid)
-        );
-
-        if (existingIndex >= 0) {
-          base[existingIndex] = {
-            ...base[existingIndex],
-            ...message,
-          };
-          if (messageKey) {
-            keySet.add(messageKey);
-          }
-          return;
-        }
-
-        if (!messageKey || keySet.has(messageKey)) {
-          return;
-        }
-
-        keySet.add(messageKey);
-        base.push(message);
-      });
-
-      base.sort((left, right) => left.timestamp - right.timestamp);
-      messageKeysRef.current = keySet;
-      return base;
-    });
-  };
-
   const resetMessages = (nextMessages) => {
-    messageKeysRef.current = new Set();
-    setMessages([]);
-    mergeMessages(nextMessages, true);
+    setMessages(nextMessages);
   };
 
   const handleMessageViewportScroll = () => {
@@ -473,29 +401,41 @@ export default function ChatPage() {
     if (zim) {
       try {
         zim.off("roomMessageReceived");
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
 
       try {
         zim.off("connectionStateChanged");
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
 
       try {
         zim.off("tokenWillExpire");
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
 
       try {
         if (roomId) {
           await zim.leaveRoom(roomId);
         }
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
 
       try {
         zim.logout();
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
 
       try {
         zim.destroy();
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
     }
 
     zimRef.current = null;
@@ -520,31 +460,41 @@ export default function ChatPage() {
     if (engine && publishedStreamIdRef.current) {
       try {
         engine.stopPublishingStream(publishedStreamIdRef.current);
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
     }
 
     if (engine) {
       activeRemoteStreamsRef.current.forEach((streamId) => {
         try {
           engine.stopPlayingStream(streamId);
-        } catch { }
+        } catch {
+          /* Ignore cleanup failures. */
+        }
       });
 
       try {
         if (roomId) {
           engine.logoutRoom(roomId);
         }
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
 
       try {
         engine.destroyEngine();
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
     }
 
     if (localStreamRef.current) {
       try {
         localStreamRef.current.getTracks().forEach((track) => track.stop());
-      } catch { }
+      } catch {
+        /* Ignore cleanup failures. */
+      }
     }
 
     stopAllRemoteAudio();
@@ -566,24 +516,32 @@ export default function ChatPage() {
       return;
     }
 
-    const response = await api.get(`/bookings/${bookingId}/messages`);
-    const normalized = (response.data?.messages || [])
-      .map((message) => mapStoredMessage(message, currentUserId))
-      .filter((message) => message.text || message.mediaUrl);
+    try {
+      const response = await api.get(`/bookings/${bookingId}/messages`);
+      const normalized = (response.data?.messages || [])
+        .map((message) => mapStoredMessage(message, currentUserId))
+        .filter((message) => message.text || message.mediaUrl)
+        .sort((left, right) => left.timestamp - right.timestamp);
 
-    mergeMessages(normalized);
-    setPendingMessages((previous) =>
-      previous.filter(
-        (pendingMessage) =>
-          !normalized.some(
-            (storedMessage) =>
-              (pendingMessage.clientUuid &&
-                storedMessage.clientUuid &&
-                pendingMessage.clientUuid === storedMessage.clientUuid) ||
-              pendingMessage.id === storedMessage.id
-          )
-      )
-    );
+      setMessages(normalized);
+      setMessageLoadError("");
+      setPendingMessages((previous) =>
+        previous.filter(
+          (pendingMessage) =>
+            !normalized.some(
+              (storedMessage) =>
+                (pendingMessage.clientUuid &&
+                  storedMessage.clientUuid &&
+                  pendingMessage.clientUuid === storedMessage.clientUuid) ||
+                pendingMessage.id === storedMessage.id
+            )
+        )
+      );
+    } catch (error) {
+      console.error("Failed to load stored chat messages", error);
+      setMessageLoadError(error?.response?.data?.message || "Messages could not be loaded.");
+      throw error;
+    }
   };
 
   const persistBookingMessage = async ({
@@ -637,6 +595,62 @@ export default function ChatPage() {
     setPendingMessages((previous) => previous.filter((message) => message.clientUuid !== clientUuid));
   };
 
+  const sendTypingCommand = (isTyping) => {
+    if (!chatReady || !zimRef.current || !session?.rooms?.chat || !bookingId) {
+      return;
+    }
+
+    if (isTyping) {
+      const now = Date.now();
+      if (now - lastTypingNotifyAtRef.current < TYPING_NOTIFY_INTERVAL_MS) {
+        return;
+      }
+      lastTypingNotifyAtRef.current = now;
+    } else {
+      lastTypingNotifyAtRef.current = 0;
+    }
+
+    zimRef.current.sendMessage(
+      {
+        type: ZIMMessageType.Command,
+        message: encodeTypingCommand({ bookingId, isTyping }),
+      },
+      session.rooms.chat,
+      ZIMConversationType.Room,
+      {
+        priority: ZIMMessagePriority.Low,
+      }
+    ).catch((error) => {
+      console.error("Failed to send typing status", error);
+    });
+  };
+
+  const clearCounterpartTyping = () => {
+    setCounterpartTyping(false);
+    if (typingClearTimerRef.current) {
+      window.clearTimeout(typingClearTimerRef.current);
+      typingClearTimerRef.current = null;
+    }
+  };
+
+  const showCounterpartTyping = () => {
+    setCounterpartTyping(true);
+
+    if (typingClearTimerRef.current) {
+      window.clearTimeout(typingClearTimerRef.current);
+    }
+
+    typingClearTimerRef.current = window.setTimeout(() => {
+      setCounterpartTyping(false);
+      typingClearTimerRef.current = null;
+    }, TYPING_VISIBLE_TIMEOUT_MS);
+  };
+
+  const handleDraftChange = (value) => {
+    setDraft(value);
+    sendTypingCommand(value.trim().length > 0);
+  };
+
   const ensureChatConnection = async (currentBooking, currentSession) => {
     if (!currentSession?.can_join || !currentSession?.zego?.chat) {
       if (zimRef.current) {
@@ -688,10 +702,21 @@ export default function ChatPage() {
     });
 
     zimInstance.on("roomMessageReceived", (_zim, data) => {
-      const normalized = (data?.messageList || []).map((message) =>
-        mapChatMessage(message, currentSession.viewer.zego_user_id)
-      );
-      mergeMessages(normalized);
+      const incomingMessages = data?.messageList || [];
+      const typingMessage = incomingMessages.find((message) => {
+        const payload = decodeTypingCommand(message);
+        return payload?.bookingId === String(bookingId || "") && message?.senderUserID !== currentSession.viewer.zego_user_id;
+      });
+
+      if (typingMessage) {
+        const payload = decodeTypingCommand(typingMessage);
+        if (payload?.isTyping) {
+          showCounterpartTyping();
+        } else {
+          clearCounterpartTyping();
+        }
+      }
+
       void fetchPersistedMessages().catch((error) => {
         console.error("Failed to refresh stored messages after room update", error);
       });
@@ -731,7 +756,9 @@ export default function ChatPage() {
   const stopRemoteStream = (engine, streamId) => {
     try {
       engine.stopPlayingStream(streamId);
-    } catch { }
+    } catch {
+      /* Ignore cleanup failures. */
+    }
 
     const audioEl = remoteAudioMapRef.current.get(streamId);
     if (audioEl) {
@@ -926,6 +953,15 @@ export default function ChatPage() {
   }, [bookingId]);
 
   useEffect(() => {
+    if (!session?.is_live || isClosed || displayRemainingSeconds > 0) {
+      return;
+    }
+
+    destroyCallConnection(session?.rooms?.call || "");
+    void refreshSession({ silent: true });
+  }, [displayRemainingSeconds, isClosed, session?.is_live, session?.rooms?.call]);
+
+  useEffect(() => {
     if (!bookingId) {
       resetMessages([]);
       setPendingMessages([]);
@@ -988,6 +1024,9 @@ export default function ChatPage() {
       if (chatSyncTimerRef.current) {
         window.clearInterval(chatSyncTimerRef.current);
       }
+      if (typingClearTimerRef.current) {
+        window.clearTimeout(typingClearTimerRef.current);
+      }
       void teardownRealtime();
     };
   }, []);
@@ -1036,10 +1075,30 @@ export default function ChatPage() {
     }
   };
 
+  const handleExtendSession = async (duration) => {
+    if (!bookingId || !duration) return;
+
+    try {
+      setExtendingDuration(duration);
+      const response = await extendBookingSession(bookingId, {
+        duration,
+        payment_method: "mock_extension",
+      });
+      setBooking(response.booking);
+      setSession(response.session);
+      setBanner(response.message || `Consultation extended by ${duration} minutes.`);
+    } catch (error) {
+      console.error("Failed to extend session", error);
+      setBanner(error?.response?.data?.message || "Session could not be extended.");
+    } finally {
+      setExtendingDuration(null);
+    }
+  };
+
   const handleSendMessage = async () => {
     const trimmed = draft.trim();
 
-    if (!trimmed || !chatReady || !zimRef.current || !session?.rooms?.chat) {
+    if (!trimmed || !canSendChatMessage) {
       return;
     }
 
@@ -1049,7 +1108,6 @@ export default function ChatPage() {
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     try {
-      setSending(true);
       setPendingMessages((previous) => [
         ...previous,
         createOptimisticMessage({
@@ -1059,48 +1117,58 @@ export default function ChatPage() {
         }),
       ]);
       setDraft("");
-      const result = await zimRef.current.sendMessage(
-        {
-          type: ZIMMessageType.Text,
-          message: trimmed,
-        },
-        session.rooms.chat,
-        ZIMConversationType.Room,
-        {
-          priority: ZIMMessagePriority.Low,
-        }
-      );
-
-      const zegoMessageId =
-        result?.message?.messageID || result?.message?.localMessageID || "";
+      sendTypingCommand(false);
       const persistedMessage = await persistBookingMessage({
         messageType: "text",
         text: trimmed,
-        zegoMessageId,
         clientUuid,
       });
-      const sentMessage = persistedMessage || mapChatMessage(result.message, viewerZegoId);
-      if (!persistedMessage) {
-        sentMessage.clientUuid = clientUuid;
+      if (persistedMessage) {
+        setMessages((previous) => [
+          ...previous.filter(
+            (message) =>
+              message.id !== persistedMessage.id &&
+              (!message.clientUuid ||
+                !persistedMessage.clientUuid ||
+                message.clientUuid !== persistedMessage.clientUuid)
+          ),
+          persistedMessage,
+        ].sort((left, right) => left.timestamp - right.timestamp));
+        removeOptimisticMessage(clientUuid);
       }
-      mergeMessages([sentMessage]);
+
+      if (chatReady && zimRef.current && session?.rooms?.chat) {
+        zimRef.current.sendMessage(
+          {
+            type: ZIMMessageType.Text,
+            message: trimmed,
+          },
+          session.rooms.chat,
+          ZIMConversationType.Room,
+          {
+            priority: ZIMMessagePriority.Low,
+          }
+        ).catch((error) => {
+          console.error("Failed to notify ZEGO room after saving message", error);
+          setChatStatus("Messages are saved. Live delivery is reconnecting...");
+        });
+      }
+
       void fetchPersistedMessages().catch((error) => {
         console.error("Failed to refresh stored messages after send", error);
       });
     } catch (error) {
       console.error("Failed to send message", error);
       removeOptimisticMessage(clientUuid);
-      setDraft(trimmed);
+      setDraft((currentDraft) => (currentDraft ? currentDraft : trimmed));
       setBanner("Message could not be sent.");
-    } finally {
-      setSending(false);
     }
   };
 
   const handleSendImage = async (event) => {
     const file = event.target.files?.[0];
 
-    if (!file || !chatReady || !zimRef.current || !session?.rooms?.chat) {
+    if (!file || !canSendChatMessage) {
       return;
     }
 
@@ -1136,31 +1204,42 @@ export default function ChatPage() {
         }),
       ]);
 
-      const result = await zimRef.current.sendMessage(
-        {
-          type: ZIMMessageType.Text,
-          message: `${IMAGE_MESSAGE_PREFIX}${imageUrl}`,
-        },
-        session.rooms.chat,
-        ZIMConversationType.Room,
-        {
-          priority: ZIMMessagePriority.Low,
-        }
-      );
-
-      const zegoMessageId =
-        result?.message?.messageID || result?.message?.localMessageID || "";
       const persistedMessage = await persistBookingMessage({
         messageType: "image",
         mediaUrl: imageUrl,
-        zegoMessageId,
         clientUuid,
       });
-      const sentMessage = persistedMessage || mapChatMessage(result.message, viewerZegoId);
-      if (!persistedMessage) {
-        sentMessage.clientUuid = clientUuid;
+      if (persistedMessage) {
+        setMessages((previous) => [
+          ...previous.filter(
+            (message) =>
+              message.id !== persistedMessage.id &&
+              (!message.clientUuid ||
+                !persistedMessage.clientUuid ||
+                message.clientUuid !== persistedMessage.clientUuid)
+          ),
+          persistedMessage,
+        ].sort((left, right) => left.timestamp - right.timestamp));
+        removeOptimisticMessage(clientUuid);
       }
-      mergeMessages([sentMessage]);
+
+      if (chatReady && zimRef.current && session?.rooms?.chat) {
+        zimRef.current.sendMessage(
+          {
+            type: ZIMMessageType.Text,
+            message: `${IMAGE_MESSAGE_PREFIX}${imageUrl}`,
+          },
+          session.rooms.chat,
+          ZIMConversationType.Room,
+          {
+            priority: ZIMMessagePriority.Low,
+          }
+        ).catch((error) => {
+          console.error("Failed to notify ZEGO room after saving image", error);
+          setChatStatus("Messages are saved. Live delivery is reconnecting...");
+        });
+      }
+
       void fetchPersistedMessages().catch((error) => {
         console.error("Failed to refresh stored messages after image send", error);
       });
@@ -1362,7 +1441,35 @@ export default function ChatPage() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:px-8">
         {showLowTimeWarning && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 shadow-sm">
-            Less than two minutes remain in this consultation. The session will automatically close when the booked duration ends.
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="font-semibold">Less than two minutes remain in this consultation.</p>
+                <p className="mt-1">
+                  The session will automatically close when the booked duration ends.
+                  {session?.extension?.can_extend
+                    ? " You can extend now because the astrologer has no conflicting booking."
+                    : " Extension is unavailable when the astrologer has another booking after this session."}
+                </p>
+              </div>
+
+              {session?.extension?.can_extend && (
+                <div className="flex flex-wrap gap-2">
+                  {availableExtensionOptions.slice(0, 3).map((option) => (
+                    <button
+                      key={option.duration}
+                      type="button"
+                      onClick={() => void handleExtendSession(option.duration)}
+                      disabled={extendingDuration !== null}
+                      className="rounded-xl bg-[#1E3557] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#162744] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {extendingDuration === option.duration
+                        ? "Extending..."
+                        : `+${option.duration} min Rs ${option.amount}`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1412,10 +1519,16 @@ export default function ChatPage() {
                     </h2>
                     <p className="text-sm text-gray-500">
                       {callEnabled
-                        ? chatReady
-                          ? "Backup chat is ready for notes, links, and image sharing during the call."
+                        ? canSendChatMessage
+                          ? chatReady
+                            ? "Backup chat is ready for notes, links, and image sharing during the call."
+                            : "Backup chat is saving messages. Live delivery is reconnecting."
                           : "Use the audio controls on the right. This chat becomes available once the room connects."
-                        : chatStatus}
+                        : chatReady
+                          ? chatStatus
+                          : canSendChatMessage
+                            ? "Messages are saving. Live delivery is reconnecting..."
+                            : chatStatus}
                     </p>
                   </div>
                 </div>
@@ -1429,44 +1542,13 @@ export default function ChatPage() {
                 onScroll={handleMessageViewportScroll}
                 className="flex-1 overflow-y-auto px-5 py-5"
               >
-                {!session?.can_join ? (
-                  <div className="flex h-full min-h-[320px] items-center justify-center">
-                    <div className="max-w-md text-center">
-                      <p className="text-xl font-bold text-[#1E3557]">
-                        {isClosed
-                          ? "This consultation is closed."
-                          : callEnabled
-                            ? "The call room is scheduled and not live yet."
-                            : "Chat room access is not open yet."}
-                      </p>
-                      <p className="mt-3 text-sm leading-6 text-gray-500">
-                        {isClosed
-                          ? "The live connection is no longer active, but the booking summary remains available."
-                          : "The astrologer can open the consultation from this screen. Once the booking is live, both participants can use the room."}
-                      </p>
-                    </div>
+                {messageLoadError ? (
+                  <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {messageLoadError}
                   </div>
-                ) : !chatServiceEnabled ? (
-                  <div className="flex h-full min-h-[320px] items-center justify-center">
-                    <div className="max-w-md text-center">
-                      <p className="text-xl font-bold text-[#1E3557]">Live chat service is unavailable.</p>
-                      <p className="mt-3 text-sm leading-6 text-gray-500">
-                        The booking is open, but the ZEGO chat project is not responding for this session right now.
-                      </p>
-                    </div>
-                  </div>
-                ) : !chatReady ? (
-                  <div className="flex h-full min-h-[320px] items-center justify-center">
-                    <div className="max-w-md text-center">
-                      <p className="text-xl font-bold text-[#1E3557]">
-                        {callEnabled ? "Connecting backup chat..." : "Connecting live chat..."}
-                      </p>
-                      <p className="mt-3 text-sm leading-6 text-gray-500">
-                        {chatStatus}
-                      </p>
-                    </div>
-                  </div>
-                ) : visibleMessages.length > 0 ? (
+                ) : null}
+
+                {visibleMessages.length > 0 ? (
                   <div className="space-y-4">
                     {visibleMessages.map((message) => (
                       <div
@@ -1503,6 +1585,43 @@ export default function ChatPage() {
                       </div>
                     ))}
                   </div>
+                ) : !session?.can_join ? (
+                  <div className="flex h-full min-h-[320px] items-center justify-center">
+                    <div className="max-w-md text-center">
+                      <p className="text-xl font-bold text-[#1E3557]">
+                        {isClosed
+                          ? "This consultation is closed."
+                          : callEnabled
+                            ? "The call room is scheduled and not live yet."
+                            : "Chat room access is not open yet."}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-gray-500">
+                        {isClosed
+                          ? "The live connection is no longer active, but the booking summary remains available."
+                          : "The astrologer can open the consultation from this screen. Once the booking is live, both participants can use the room."}
+                      </p>
+                    </div>
+                  </div>
+                ) : !chatServiceEnabled ? (
+                  <div className="flex h-full min-h-[320px] items-center justify-center">
+                    <div className="max-w-md text-center">
+                      <p className="text-xl font-bold text-[#1E3557]">Chat is ready.</p>
+                      <p className="mt-3 text-sm leading-6 text-gray-500">
+                        Messages will be saved and synced here while the live delivery service reconnects.
+                      </p>
+                    </div>
+                  </div>
+                ) : !chatReady ? (
+                  <div className="flex h-full min-h-[320px] items-center justify-center">
+                    <div className="max-w-md text-center">
+                      <p className="text-xl font-bold text-[#1E3557]">
+                        {callEnabled ? "Connecting backup chat..." : "Connecting live chat..."}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-gray-500">
+                        {chatStatus}
+                      </p>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex h-full min-h-[320px] items-center justify-center">
                     <div className="max-w-md text-center">
@@ -1518,6 +1637,9 @@ export default function ChatPage() {
               </div>
 
               <div className="border-t border-gray-100 px-5 py-4">
+                <div className="mb-2 h-5 text-xs font-semibold text-[#D4A73C]">
+                  {counterpartTyping ? `${counterpart?.name || "Other user"} is typing...` : ""}
+                </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#F8F9FC] px-4 py-3">
                   <input
                     ref={fileInputRef}
@@ -1529,7 +1651,7 @@ export default function ChatPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={!chatReady || isClosed || uploadingImage}
+                    disabled={!canSendChatMessage || uploadingImage}
                     className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C] disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Upload image"
                   >
@@ -1538,16 +1660,16 @@ export default function ChatPage() {
                   <input
                     type="text"
                     value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
+                    onChange={(event) => handleDraftChange(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
                         void handleSendMessage();
                       }
                     }}
-                    disabled={!chatReady || isClosed || sending || uploadingImage}
+                    disabled={!canSendChatMessage || uploadingImage}
                     placeholder={
-                      chatReady
+                      canSendChatMessage
                         ? callEnabled
                           ? "Send a note, link, or follow-up message..."
                           : "Type your message here..."
@@ -1560,7 +1682,7 @@ export default function ChatPage() {
                   <button
                     type="button"
                     onClick={() => void handleSendMessage()}
-                    disabled={!chatReady || isClosed || sending || uploadingImage || !draft.trim()}
+                    disabled={!canSendChatMessage || uploadingImage || !draft.trim()}
                     className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#D4A73C] text-[#1E3557] transition hover:bg-[#c49530] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <FaPaperPlane />

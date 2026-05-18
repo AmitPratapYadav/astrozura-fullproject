@@ -38,11 +38,11 @@ const staticServices = [
     slug: "tarot-reading",
     title: "Tarot Reading",
     category: "Calculators",
-    summary: "A guided tarot-style consultation page for insight-seeking and follow-up booking.",
+    summary: "Live Tarot API readings for love, career, finance, and yes/no questions.",
     description:
-      "Use this service page as the dedicated entry point for tarot-focused consultations and user guidance until the live tarot calculation workflow is expanded.",
-    ctaLabel: "Book Tarot Consultation",
-    ctaTo: "/astrologers",
+      "Use the active tarot reading workflow for card-based predictions, then continue to an astrologer consultation when deeper interpretation is needed.",
+    ctaLabel: "Open Tarot Reading",
+    ctaTo: "/services/tarot-reading",
     accent: "from-[#5F3150] to-[#B56D8C]",
   },
   {
@@ -72,7 +72,7 @@ const staticServices = [
 const vedicServiceEntries = vedicCalculatorTools.map((tool) => ({
   slug: tool.slug,
   title: tool.title,
-  category: "Calculators",
+  category: tool.category || "Calculators",
   summary: tool.summary,
   description: tool.description,
   ctaLabel: tool.externalFlow ? "Open Calculator" : "Run Calculator",
@@ -106,17 +106,16 @@ export const groupedServices = {
   reports: [
     { label: "Lal Kitab Reports", to: "/services/lal-kitab-report" },
     { label: "Kundli Matching", to: "/matching" },
-    { label: "Nakshatra Porutham", to: "/matching-calculators?tool=nakshatra-porutham" },
-    { label: "Thirumana Porutham", to: "/matching-calculators?tool=thirumana-porutham" },
-    { label: "Porutham", to: "/matching-calculators?tool=porutham" },
-    { label: "Papasamyam Check", to: "/matching-calculators?tool=papasamyam-check" },
+    { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
     { label: "Detailed Kundali", to: "/services/detailed-kundali" },
   ],
   calculators: [
-    ...vedicCalculatorTools.map((tool) => ({
-      label: tool.title,
-      to: tool.route,
-    })),
+    ...vedicCalculatorTools
+      .filter((tool) => !tool.hideFromCalculators)
+      .map((tool) => ({
+        label: tool.title,
+        to: tool.route,
+      })),
     { label: "Numerology", to: "/numerology" },
     { label: "Tarot Reading", to: "/services/tarot-reading" },
     { label: "Palm Reading", to: "/services/palm-reading" },

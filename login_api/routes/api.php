@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bookings/{booking}/session/start', [BookingSessionController::class, 'start']);
     Route::post('/bookings/{booking}/session/end', [BookingSessionController::class, 'end']);
     Route::post('/bookings/{booking}/session/ping', [BookingSessionController::class, 'ping']);
+    Route::post('/bookings/{booking}/session/extend', [BookingSessionController::class, 'extend']);
     Route::get('/bookings/{booking}/messages', [BookingMessageController::class, 'index']);
     Route::post('/bookings/{booking}/messages', [BookingMessageController::class, 'store']);
     Route::post('/media/chat-image', [MediaController::class, 'uploadChatImage']);
@@ -146,8 +147,10 @@ Route::get('/prokerala/horoscope/{sign}', [AstrologyController::class, 'getDaily
 Route::get('/prokerala/horoscope-weekly/{sign}', [AstrologyController::class, 'getWeeklyHoroscope']);
 Route::get('/prokerala/horoscope-monthly/{sign}', [AstrologyController::class, 'getMonthlyHoroscope']);
 Route::post('/prokerala/kundli', [AstrologyController::class, 'generateKundli']);
+Route::post('/prokerala/kundli/detail-section/{section}', [AstrologyController::class, 'getKundliDetailSection']);
 Route::post('/prokerala/kundli/free-pdf', [AstrologyController::class, 'downloadFreeKundliPdf']);
 Route::post('/prokerala/matching', [AstrologyController::class, 'matchMaking']);
+Route::post('/prokerala/matching/pdf', [AstrologyController::class, 'downloadMatchMakingPdf']);
 Route::post('/prokerala/panchang', [AstrologyController::class, 'getPanchang']);
 Route::get('/prokerala/location/search', [AstrologyController::class, 'searchLocation']);
 
@@ -159,3 +162,4 @@ Route::post('/prokerala/matching-calculators/{calculator}', [AstrologyController
 Route::post('/prokerala/numerology', [AstrologyController::class, 'getNumerology']);
 Route::post('/prokerala/sadesati', [AstrologyController::class, 'getSadesati']);
 Route::post('/prokerala/lal-kitab', [AstrologyController::class, 'getLalKitab']);
+Route::post('/prokerala/tarot', [AstrologyController::class, 'getTarotReading']);

@@ -5,6 +5,7 @@ import astro1 from "../assets/astro1.png";
 import astro2 from "../assets/astro2.png";
 import astro3 from "../assets/astro3.png";
 import { usePushNotifications } from "../context/PushNotificationsContext";
+import { subscribeToLiveStatusChanges } from "../lib/liveStatusBroadcast";
 
 export default function MainSections() {
   const { t } = useTranslation();
@@ -56,12 +57,14 @@ export default function MainSections() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchLiveSession = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
         const response = await fetch(`${apiUrl}/live-sessions/current`);
         const data = await response.json();
-        if (data?.success) {
+        if (!cancelled && data?.success) {
           setLiveSession(data.session || null);
         }
       } catch (error) {
@@ -70,6 +73,24 @@ export default function MainSections() {
     };
 
     void fetchLiveSession();
+
+    const refreshTimer = window.setInterval(() => {
+      void fetchLiveSession();
+    }, 5000);
+
+    const handleLiveStatusChanged = () => {
+      void fetchLiveSession();
+    };
+
+    const unsubscribeLiveStatus = subscribeToLiveStatusChanges(handleLiveStatusChanged);
+    window.addEventListener("astrozura:push-message", handleLiveStatusChanged);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshTimer);
+      unsubscribeLiveStatus();
+      window.removeEventListener("astrozura:push-message", handleLiveStatusChanged);
+    };
   }, []);
 
   const notify = (text) => {
@@ -93,9 +114,7 @@ export default function MainSections() {
   const getImageUrl = (path, fallback) => {
     if (!path) return fallback;
     if (path.startsWith("http")) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL
-      ? import.meta.env.VITE_API_BASE_URL.replace("/api", "")
-      : "http://localhost:8000";
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
     return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
   };
 

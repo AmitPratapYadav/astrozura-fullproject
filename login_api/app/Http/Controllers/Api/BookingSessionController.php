@@ -7,16 +7,19 @@ use App\Models\Booking;
 use App\Support\Zego\ZegoTokenService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class BookingSessionController extends Controller
 {
     private array $closedStatuses = ['completed', 'cancelled', 'declined'];
+    private array $extensionDurations = [5, 10, 15, 20, 30];
 
     public function show(Request $request, Booking $booking)
     {
         $user = $request->user();
         $this->authorizeBooking($booking, $user->id);
 
+        $booking = $this->closeExpiredSessionIfNeeded($booking);
         $booking = $this->ensureSessionRoomId($booking->fresh(['user', 'astrologer.astrologerDetail']));
         $session = $this->buildSessionPayload($booking, $user->id);
 
@@ -31,6 +34,7 @@ class BookingSessionController extends Controller
     {
         $user = $request->user();
         $this->authorizeBooking($booking, $user->id);
+        $booking = $this->closeExpiredSessionIfNeeded($booking);
 
         if ((int) $booking->astrologer_id !== (int) $user->id) {
             return response()->json([
@@ -82,6 +86,7 @@ class BookingSessionController extends Controller
     {
         $user = $request->user();
         $this->authorizeBooking($booking, $user->id);
+        $booking = $this->closeExpiredSessionIfNeeded($booking);
 
         if ((int) $booking->astrologer_id !== (int) $user->id) {
             return response()->json([
@@ -132,6 +137,16 @@ class BookingSessionController extends Controller
     {
         $user = $request->user();
         $this->authorizeBooking($booking, $user->id);
+        $booking = $this->closeExpiredSessionIfNeeded($booking);
+
+        if (in_array($booking->status, $this->closedStatuses, true)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Session already closed.',
+                'booking' => $booking->fresh(['user', 'astrologer.astrologerDetail']),
+                'session' => $this->buildSessionPayload($booking, $user->id),
+            ]);
+        }
 
         $booking->update([
             'session_last_activity_at' => Carbon::now($booking->timezone ?: 'Asia/Kolkata'),
@@ -140,6 +155,85 @@ class BookingSessionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Session ping recorded.',
+            'booking' => $booking->fresh(['user', 'astrologer.astrologerDetail']),
+            'session' => $this->buildSessionPayload($booking->fresh(['user', 'astrologer.astrologerDetail']), $user->id),
+        ]);
+    }
+
+    public function extend(Request $request, Booking $booking)
+    {
+        $user = $request->user();
+        $this->authorizeBooking($booking, $user->id);
+        $booking = $this->closeExpiredSessionIfNeeded($booking);
+
+        if ((int) $booking->user_id !== (int) $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the customer can extend this consultation.',
+            ], 403);
+        }
+
+        if ($booking->status !== 'in_progress') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only a live consultation can be extended.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'duration' => ['required', 'integer', Rule::in($this->extensionDurations)],
+            'payment_method' => 'nullable|string|max:50',
+        ]);
+
+        $timezone = $booking->timezone ?: 'Asia/Kolkata';
+        $booking = $booking->fresh(['astrologer.astrologerDetail', 'user']);
+        $currentEnd = $booking->ends_at?->copy()->timezone($timezone);
+
+        if (!$currentEnd) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This consultation does not have a scheduled end time.',
+            ], 422);
+        }
+
+        $duration = (int) $validated['duration'];
+        $newEnd = $currentEnd->copy()->addMinutes($duration);
+
+        if (!$this->isAstrologerAvailableForExtension($booking, $currentEnd, $newEnd)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The astrologer has another booking after this session, so this consultation cannot be extended by that duration.',
+            ], 422);
+        }
+
+        $rate = $booking->consultation_type === 'chat'
+            ? (float) ($booking->astrologer?->astrologerDetail?->chat_price ?? 0)
+            : (float) ($booking->astrologer?->astrologerDetail?->call_price ?? 0);
+        $extensionAmount = $rate * $duration;
+        $now = Carbon::now($timezone);
+
+        $booking->update([
+            'duration' => (int) $booking->duration + $duration,
+            'ends_at' => $newEnd,
+            'amount' => (float) $booking->amount + $extensionAmount,
+            'payment_status' => 'paid',
+            'payment_method' => $validated['payment_method'] ?? 'mock_extension',
+            'session_warning_sent_at' => null,
+            'session_last_activity_at' => $now,
+        ]);
+
+        $booking = $booking->fresh(['user', 'astrologer.astrologerDetail']);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Consultation extended by {$duration} minutes.",
+            'extension' => [
+                'duration' => $duration,
+                'amount' => $extensionAmount,
+                'rate_per_minute' => $rate,
+            ],
+            'booking' => $booking,
+            'session' => $this->buildSessionPayload($booking, $user->id),
         ]);
     }
 
@@ -164,6 +258,44 @@ class BookingSessionController extends Controller
         $booking->save();
 
         return $booking;
+    }
+
+    private function closeExpiredSessionIfNeeded(Booking $booking): Booking
+    {
+        if (!in_array($booking->status, ['confirmed', 'in_progress'], true) || !$booking->ends_at) {
+            return $booking;
+        }
+
+        $now = Carbon::now($booking->timezone ?: 'Asia/Kolkata');
+        $endsAt = $booking->ends_at->copy()->timezone($booking->timezone ?: 'Asia/Kolkata');
+
+        if ($endsAt->greaterThan($now)) {
+            return $booking;
+        }
+
+        $booking->update([
+            'status' => 'completed',
+            'completed_at' => $booking->completed_at ?: $now,
+            'session_ended_at' => $booking->session_ended_at ?: $now,
+            'session_end_reason' => $booking->session_end_reason ?: 'time_limit_reached',
+            'session_ended_by' => $booking->session_ended_by ?: 'system',
+            'session_last_activity_at' => $now,
+        ]);
+
+        return $booking->fresh();
+    }
+
+    private function isAstrologerAvailableForExtension(Booking $booking, Carbon $from, Carbon $to): bool
+    {
+        return !Booking::query()
+            ->where('astrologer_id', $booking->astrologer_id)
+            ->where('id', '!=', $booking->id)
+            ->whereIn('status', ['confirmed', 'in_progress'])
+            ->where(function ($query) use ($from, $to) {
+                $query->where('scheduled_at', '<', $to->copy()->utc())
+                    ->where('ends_at', '>', $from->copy()->utc());
+            })
+            ->exists();
     }
 
     private function buildSessionPayload(Booking $booking, int $viewerId): array
@@ -196,6 +328,7 @@ class BookingSessionController extends Controller
         $canJoin = !$isClosed && $withinJoinWindow;
         $canEnd = $isAstrologer && $isLive && !$isClosed;
         $needsLowTimeWarning = $isLive && $remainingSeconds > 0 && $remainingSeconds <= $lowTimeWarningSeconds;
+        $extension = $this->buildExtensionPayload($booking, $viewerId, $endsAt, $isLive, $isClosed);
 
         $zegoUserId = $this->buildZegoUserId($viewerId, $isAstrologer ? 'astro' : 'user');
         $zegoUserName = $this->buildZegoUserName($booking, $viewerId);
@@ -210,6 +343,7 @@ class BookingSessionController extends Controller
             'can_end' => $canEnd,
             'remaining_seconds' => $remainingSeconds,
             'needs_low_time_warning' => $needsLowTimeWarning,
+            'extension' => $extension,
             'server_now' => $now->toIso8601String(),
             'scheduled_at' => $scheduledAt?->toIso8601String(),
             'scheduled_end_at' => $endsAt?->toIso8601String(),
@@ -236,6 +370,43 @@ class BookingSessionController extends Controller
                 'chat' => $this->buildZegoProjectPayload('chat', $zegoUserId, $zegoUserName),
                 'call' => $this->buildZegoProjectPayload('call', $zegoUserId, $zegoUserName),
             ],
+        ];
+    }
+
+    private function buildExtensionPayload(Booking $booking, int $viewerId, ?Carbon $endsAt, bool $isLive, bool $isClosed): array
+    {
+        $isCustomer = (int) $booking->user_id === $viewerId;
+        $rate = $booking->consultation_type === 'chat'
+            ? (float) ($booking->astrologer?->astrologerDetail?->chat_price ?? 0)
+            : (float) ($booking->astrologer?->astrologerDetail?->call_price ?? 0);
+
+        if (!$isCustomer || !$isLive || $isClosed || !$endsAt) {
+            return [
+                'can_extend' => false,
+                'rate_per_minute' => $rate,
+                'options' => [],
+            ];
+        }
+
+        $options = collect($this->extensionDurations)
+            ->map(function (int $duration) use ($booking, $endsAt, $rate) {
+                $newEnd = $endsAt->copy()->addMinutes($duration);
+                $isAvailable = $this->isAstrologerAvailableForExtension($booking, $endsAt, $newEnd);
+
+                return [
+                    'duration' => $duration,
+                    'amount' => $rate * $duration,
+                    'new_end_at' => $newEnd->toIso8601String(),
+                    'is_available' => $isAvailable,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return [
+            'can_extend' => collect($options)->contains(fn (array $option) => $option['is_available']),
+            'rate_per_minute' => $rate,
+            'options' => $options,
         ];
     }
 

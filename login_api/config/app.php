@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'test_access_enabled' => filter_var(env('TEST_ACCESS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+
+    'test_access_password' => env('TEST_ACCESS_PASSWORD'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

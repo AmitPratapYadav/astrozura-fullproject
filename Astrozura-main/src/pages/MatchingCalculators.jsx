@@ -86,7 +86,7 @@ function ResultTree({ value, label }) {
 
 export default function MatchingCalculators() {
   const [searchParams] = useSearchParams();
-  const toolKey = searchParams.get("tool") || "nakshatra-porutham";
+  const toolKey = searchParams.get("tool") || "kundli-matching";
   const tool = getMatchingCalculatorTool(toolKey);
 
   const [girl, setGirl] = useState(emptyPerson);

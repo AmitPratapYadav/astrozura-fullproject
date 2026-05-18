@@ -1,4 +1,9 @@
 import axios from 'axios';
+import {
+  TEST_ACCESS_ENABLED,
+  TEST_ACCESS_HEADER,
+  getTestingAccessPassword,
+} from '../lib/testingAccess';
 
 // Create an instance of axios
 const api = axios.create({
@@ -14,6 +19,13 @@ api.interceptors.request.use(
     const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (TEST_ACCESS_ENABLED) {
+      const testingPassword = getTestingAccessPassword();
+      if (testingPassword) {
+        config.headers[TEST_ACCESS_HEADER] = testingPassword;
+      }
     }
 
     const isFormData =

@@ -127,6 +127,10 @@ export function PushNotificationsProvider({ children }) {
         success: true,
         message: "Live notifications enabled for this browser.",
       };
+    } catch (error) {
+      setPermission(typeof Notification !== "undefined" ? Notification.permission : "default");
+      setIsSubscribed(Boolean(getStoredPushToken()));
+      throw error;
     } finally {
       setIsLoading(false);
     }

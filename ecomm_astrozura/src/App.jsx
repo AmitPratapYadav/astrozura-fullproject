@@ -22,6 +22,7 @@ import UserOrders from "./pages/Dashboard/UserOrders";
 import UserWishlist from "./pages/Dashboard/UserWishlist";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
+import TestingAccessGate from "./components/TestingAccessGate";
 
 function AppContent() {
   const location = useLocation();
@@ -62,13 +63,15 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <AppContent />
-        </CartProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <TestingAccessGate>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TestingAccessGate>
   );
 }
 

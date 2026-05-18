@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { ProviderSections } from "../components/report/ReportDataRenderer";
 import { getLalKitabReport, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 
@@ -114,7 +115,7 @@ export default function LalKitabReport() {
       setReport(null);
 
       const datetime = `${form.date_of_birth}T${form.time_of_birth}:00+05:30`;
-      const response = await getLalKitabReport(datetime, form.coordinates);
+      const response = await getLalKitabReport(datetime, form.coordinates, { la: form.language });
 
       if (response?.status === "success") {
         setReport({
@@ -132,16 +133,6 @@ export default function LalKitabReport() {
       setLoading(false);
     }
   };
-
-  const hasRemedies = Array.isArray(report?.remedies) && report.remedies.length > 0;
-  const hasPlanets = Array.isArray(report?.planets) && report.planets.length > 0;
-  const hasHouses = Array.isArray(report?.houses) && report.houses.length > 0;
-  const hasHoroscope = Array.isArray(report?.horoscope) && report.horoscope.length > 0;
-
-  const occupiedSigns = useMemo(() => {
-    if (!hasHoroscope) return [];
-    return report.horoscope.filter((entry) => Array.isArray(entry.planet) && entry.planet.length > 0);
-  }, [hasHoroscope, report]);
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] text-[#1E3557]">
@@ -262,71 +253,7 @@ export default function LalKitabReport() {
                   </div>
                 </div>
 
-                <div className="rounded-[2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm">
-                  <h3 className="text-xl font-bold">Remedies & Observations</h3>
-                  <div className="mt-5 space-y-4">
-                    {hasRemedies ? (
-                      report.remedies.map((item, index) => (
-                        <div key={`${item}-${index}`} className="flex gap-4 rounded-2xl border border-slate-100 bg-[#f8f9fc] p-5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white font-bold text-[#C86B3C] shadow-sm">
-                            {index + 1}
-                          </div>
-                          <p className="text-sm leading-7 text-slate-600">{item}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">No Lal Kitab remedies were returned for this input.</p>
-                    )}
-                  </div>
-                </div>
-
-                {hasPlanets && (
-                  <div className="rounded-[2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm">
-                    <h3 className="text-xl font-bold">Planet Positions</h3>
-                    <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {report.planets.map((planet) => (
-                        <div key={planet.planet} className="rounded-2xl border border-slate-100 bg-[#f8f9fc] p-4">
-                          <p className="font-bold text-[#1E3557]">{planet.planet}</p>
-                          <p className="mt-2 text-sm text-slate-600">Rashi: {planet.rashi || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-600">Nature: {planet.nature || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-600">Position: {planet.position || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-600">Soya: {planet.soya ? "Yes" : "No"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {hasHouses && (
-                  <div className="rounded-[2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm">
-                    <h3 className="text-xl font-bold">House Summary</h3>
-                    <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {report.houses.map((house) => (
-                        <div key={house.khana_number} className="rounded-2xl border border-slate-100 bg-[#f8f9fc] p-4">
-                          <p className="font-bold text-[#1E3557]">House {house.khana_number}</p>
-                          <p className="mt-2 text-sm text-slate-600">Maalik: {house.maalik || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-600">Pakka Ghar: {house.pakka_ghar || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-600">Kismat: {house.kismat || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-600">Soya: {house.soya ? "Yes" : "No"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {occupiedSigns.length > 0 && (
-                  <div className="rounded-[2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm">
-                    <h3 className="text-xl font-bold">Occupied Signs</h3>
-                    <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {occupiedSigns.map((entry) => (
-                        <div key={entry.sign} className="rounded-2xl border border-slate-100 bg-[#f8f9fc] p-4">
-                          <p className="font-bold text-[#1E3557]">{entry.sign_name}</p>
-                          <p className="mt-2 text-sm text-slate-600">Planets: {entry.planet.join(", ")}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <ProviderSections sections={report.provider_sections || []} />
               </>
             )}
           </main>

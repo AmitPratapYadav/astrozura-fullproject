@@ -38,7 +38,7 @@ export default function UserWishlist() {
   const getImage = (img) => {
     if (!img) return "https://placehold.co/400x400?text=No+Image";
     if (img.startsWith("http")) return img;
-    const host = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || "http://127.0.0.1:8000";
+    const host = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
     return `${host}/${img}`;
   };
 

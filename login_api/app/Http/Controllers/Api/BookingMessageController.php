@@ -31,6 +31,14 @@ class BookingMessageController extends Controller
     {
         $user = $request->user();
         $this->authorizeBooking($booking, $user->id);
+        $booking = $this->closeExpiredSessionIfNeeded($booking);
+
+        if (in_array($booking->status, ['completed', 'cancelled', 'declined'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This consultation has ended. New messages cannot be sent.',
+            ], 422);
+        }
 
         $validated = $request->validate([
             'message_type' => 'required|in:text,image',
@@ -83,6 +91,31 @@ class BookingMessageController extends Controller
         if ((int) $booking->user_id !== $userId && (int) $booking->astrologer_id !== $userId) {
             abort(403, 'You are not allowed to access this consultation.');
         }
+    }
+
+    private function closeExpiredSessionIfNeeded(Booking $booking): Booking
+    {
+        if (!in_array($booking->status, ['confirmed', 'in_progress'], true) || !$booking->ends_at) {
+            return $booking;
+        }
+
+        $timezone = $booking->timezone ?: 'Asia/Kolkata';
+        $now = Carbon::now($timezone);
+
+        if ($booking->ends_at->copy()->timezone($timezone)->greaterThan($now)) {
+            return $booking;
+        }
+
+        $booking->update([
+            'status' => 'completed',
+            'completed_at' => $booking->completed_at ?: $now,
+            'session_ended_at' => $booking->session_ended_at ?: $now,
+            'session_end_reason' => $booking->session_end_reason ?: 'time_limit_reached',
+            'session_ended_by' => $booking->session_ended_by ?: 'system',
+            'session_last_activity_at' => $now,
+        ]);
+
+        return $booking->fresh();
     }
 
     private function serializeMessage(BookingMessage $message): array

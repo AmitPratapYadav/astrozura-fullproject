@@ -4,14 +4,15 @@ import api from '../api/axios';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
+  const initialUser = (() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
-  });
+  })();
+  const initialToken = localStorage.getItem('auth_token') || null;
 
-  const [token, setToken] = useState(() => localStorage.getItem('auth_token') || null);
-  
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(initialUser);
+  const [token, setToken] = useState(initialToken);
+  const [loading, setLoading] = useState(Boolean(initialToken && !initialUser));
 
   // Check auth status on load
   useEffect(() => {
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.error("Token verification failed", error);
           logout();
+          return;
         }
       }
       setLoading(false);

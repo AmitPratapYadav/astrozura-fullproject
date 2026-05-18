@@ -19,3 +19,8 @@ export const pingBookingSession = async (bookingId) => {
   const response = await api.post(`/bookings/${bookingId}/session/ping`);
   return response.data;
 };
+
+export const extendBookingSession = async (bookingId, payload) => {
+  const response = await api.post(`/bookings/${bookingId}/session/extend`, payload);
+  return response.data;
+};

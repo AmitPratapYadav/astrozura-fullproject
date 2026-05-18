@@ -1,24 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaBroadcastTower, FaPaperPlane, FaPlay, FaPowerOff, FaVideo } from "react-icons/fa";
-import { ZegoExpressEngine } from "zego-express-engine-webrtc";
 
 import api from "../api/axios";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { usePushNotifications } from "../context/PushNotificationsContext";
+import { publishLiveStatusChange, subscribeToLiveStatusChanges } from "../lib/liveStatusBroadcast";
 
 const ZEGO_BROADCAST_SCENARIO = 8;
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api").replace(
-  /\/index\.php\/api$|\/api$/,
-  ""
-);
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+let zegoExpressEnginePromise = null;
+
+const getZegoExpressEngineClass = async () => {
+  if (!zegoExpressEnginePromise) {
+    zegoExpressEnginePromise = import("zego-express-engine-webrtc").then(
+      (module) => module.ZegoExpressEngine
+    );
+  }
+
+  return zegoExpressEnginePromise;
+};
 
 const resolveImageUrl = (path) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  return `${API_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${BACKEND_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
 const formatLiveTime = (value) =>
@@ -45,6 +53,7 @@ export default function LiveSessions() {
   const [session, setSession] = useState(null);
   const [viewerConfig, setViewerConfig] = useState(null);
   const [comments, setComments] = useState([]);
+  const [pendingComments, setPendingComments] = useState([]);
   const [commentDraft, setCommentDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
@@ -58,10 +67,33 @@ export default function LiveSessions() {
   const engineRef = useRef(null);
   const localStreamRef = useRef(null);
   const playingStreamRef = useRef("");
-  const commentTimerRef = useRef(null);
+  const liveRefreshTimerRef = useRef(null);
+  const commentRefreshTimerRef = useRef(null);
+  const autoJoinRequestedRef = useRef(false);
+  const currentSessionIdRef = useRef(null);
 
   const isFeaturedAstrologer = Boolean(user?.role === "astrologer" && astrologerDetail?.is_featured);
   const isHost = Boolean(viewerConfig?.viewer?.role === "host");
+  const visibleComments = useMemo(() => {
+    const combined = [...comments];
+
+    pendingComments.forEach((pendingComment) => {
+      const exists = combined.some(
+        (comment) =>
+          comment.id === pendingComment.id ||
+          (comment.user?.id === pendingComment.user?.id &&
+            comment.message === pendingComment.message &&
+            Math.abs(new Date(comment.created_at).getTime() - new Date(pendingComment.created_at).getTime()) < 15000)
+      );
+
+      if (!exists) {
+        combined.push(pendingComment);
+      }
+    });
+
+    combined.sort((left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime());
+    return combined;
+  }, [comments, pendingComments]);
 
   const loadCurrentSession = async () => {
     const response = await api.get("/live-sessions/current");
@@ -88,11 +120,24 @@ export default function LiveSessions() {
   const loadComments = async (liveSessionId) => {
     if (!liveSessionId) {
       setComments([]);
+      setPendingComments([]);
       return;
     }
 
     const response = await api.get(`/live-sessions/${liveSessionId}/comments`);
-    setComments(response.data?.comments || []);
+    const nextComments = response.data?.comments || [];
+    setComments(nextComments);
+    setPendingComments((previous) =>
+      previous.filter(
+        (pendingComment) =>
+          !nextComments.some(
+            (comment) =>
+              comment.user?.id === pendingComment.user?.id &&
+              comment.message === pendingComment.message &&
+              Math.abs(new Date(comment.created_at).getTime() - new Date(pendingComment.created_at).getTime()) < 15000
+          )
+      )
+    );
   };
 
   const teardownLiveRoom = () => {
@@ -142,49 +187,181 @@ export default function LiveSessions() {
     setLiveState("idle");
   };
 
+  const connectToLiveSession = async (targetSession, viewer) => {
+    const engine = await startEngine(targetSession, {
+      zego: viewer.viewer.zego,
+    });
+
+    if (viewer.viewer.role === "host") {
+      const localStream = await engine.createStream({
+        camera: {
+          audio: true,
+          video: true,
+        },
+      });
+
+      localStreamRef.current = localStream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream;
+        await localVideoRef.current.play().catch(() => undefined);
+      }
+
+      engine.startPublishingStream(targetSession.stream_id, localStream);
+      setLiveState("live");
+      setLiveStatus("You are live now.");
+      return;
+    }
+
+    const remoteStream = await engine.startPlayingStream(targetSession.stream_id).catch(() => null);
+    if (remoteStream && remoteVideoRef.current) {
+      playingStreamRef.current = targetSession.stream_id;
+      remoteVideoRef.current.srcObject = remoteStream;
+      await remoteVideoRef.current.play().catch(() => undefined);
+    }
+
+    setLiveState("watching");
+    setLiveStatus("Watching the live broadcast.");
+  };
+
+  const syncLiveSnapshot = async ({ silent = false } = {}) => {
+    const current = await loadCurrentSession();
+    const nextSessionId = current?.id || null;
+    const previousSessionId = currentSessionIdRef.current;
+    const sessionChanged = previousSessionId !== nextSessionId;
+
+    currentSessionIdRef.current = nextSessionId;
+
+    if (!current) {
+      setSession(null);
+      setViewerConfig(null);
+      setComments([]);
+      setPendingComments([]);
+
+      if (engineRef.current) {
+        teardownLiveRoom();
+      }
+
+      setLiveStatus("No active live session right now.");
+      if (sessionChanged) {
+        publishLiveStatusChange(null);
+      }
+      return null;
+    }
+
+    setSession(current);
+    const [_, viewer] = await Promise.all([
+      loadComments(current.id),
+      user ? loadViewerConfig() : Promise.resolve(null),
+    ]);
+
+    if (sessionChanged) {
+      publishLiveStatusChange(current);
+    }
+
+    if (sessionChanged && engineRef.current) {
+      teardownLiveRoom();
+    }
+
+    if (autoJoinRequestedRef.current && user && viewer?.viewer?.zego && (sessionChanged || !engineRef.current)) {
+      await connectToLiveSession(current, viewer);
+    } else if (!silent && !engineRef.current) {
+      setLiveStatus("Active spiritual live session is ready.");
+    }
+
+    return current;
+  };
+
   useEffect(() => {
+    let cancelled = false;
+
+    const idlePreload =
+      typeof window !== "undefined" && "requestIdleCallback" in window
+        ? window.requestIdleCallback(() => {
+            void getZegoExpressEngineClass().catch((error) => {
+              console.error("Failed to preload ZEGO live SDK", error);
+            });
+          })
+        : window.setTimeout(() => {
+            void getZegoExpressEngineClass().catch((error) => {
+              console.error("Failed to preload ZEGO live SDK", error);
+            });
+          }, 1200);
+
     const bootstrap = async () => {
       try {
         setLoading(true);
-        const current = await loadCurrentSession();
-        if (current?.id) {
-          await loadComments(current.id);
-        }
-        if (user) {
-          await loadViewerConfig();
-        }
-        setLiveStatus(current ? "Active spiritual live session is ready." : "No active live session right now.");
+        await syncLiveSnapshot();
       } catch (error) {
-        console.error("Failed to load live session", error);
-        setLiveStatus("Live session details could not be loaded.");
+        if (!cancelled) {
+          console.error("Failed to load live session", error);
+          setLiveStatus("Live session details could not be loaded.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     void bootstrap();
+
+    if (liveRefreshTimerRef.current) {
+      window.clearInterval(liveRefreshTimerRef.current);
+    }
+
+    liveRefreshTimerRef.current = window.setInterval(() => {
+      void syncLiveSnapshot({ silent: true }).catch((error) => {
+        console.error("Failed to refresh live session", error);
+      });
+    }, 2000);
+
+    const handlePushMessage = () => {
+      void syncLiveSnapshot({ silent: true }).catch((error) => {
+        console.error("Failed to refresh live session after push", error);
+      });
+    };
+
+    const unsubscribeLiveStatus = subscribeToLiveStatusChanges(() => {
+      void syncLiveSnapshot({ silent: true }).catch((error) => {
+        console.error("Failed to refresh live session after broadcast", error);
+      });
+    });
+
+    window.addEventListener("astrozura:push-message", handlePushMessage);
+
+    return () => {
+      cancelled = true;
+      if (liveRefreshTimerRef.current) {
+        window.clearInterval(liveRefreshTimerRef.current);
+      }
+      if (typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idlePreload);
+      } else {
+        window.clearTimeout(idlePreload);
+      }
+      unsubscribeLiveStatus();
+      window.removeEventListener("astrozura:push-message", handlePushMessage);
+    };
   }, [user]);
 
   useEffect(() => {
+    if (commentRefreshTimerRef.current) {
+      window.clearInterval(commentRefreshTimerRef.current);
+    }
+
     if (!session?.id) {
-      if (commentTimerRef.current) {
-        window.clearInterval(commentTimerRef.current);
-      }
       return undefined;
     }
 
-    if (commentTimerRef.current) {
-      window.clearInterval(commentTimerRef.current);
-    }
-
-    commentTimerRef.current = window.setInterval(() => {
-      void loadComments(session.id).catch((error) => console.error("Failed to refresh live comments", error));
-      void loadCurrentSession().catch((error) => console.error("Failed to refresh current live session", error));
-    }, 5000);
+    commentRefreshTimerRef.current = window.setInterval(() => {
+      void loadComments(session.id).catch((error) => {
+        console.error("Failed to refresh live comments", error);
+      });
+    }, 1500);
 
     return () => {
-      if (commentTimerRef.current) {
-        window.clearInterval(commentTimerRef.current);
+      if (commentRefreshTimerRef.current) {
+        window.clearInterval(commentRefreshTimerRef.current);
       }
     };
   }, [session?.id]);
@@ -198,13 +375,17 @@ export default function LiveSessions() {
   useEffect(() => {
     return () => {
       teardownLiveRoom();
-      if (commentTimerRef.current) {
-        window.clearInterval(commentTimerRef.current);
+      if (liveRefreshTimerRef.current) {
+        window.clearInterval(liveRefreshTimerRef.current);
+      }
+      if (commentRefreshTimerRef.current) {
+        window.clearInterval(commentRefreshTimerRef.current);
       }
     };
-  }, [session?.room_id, session?.stream_id]);
+  }, []);
 
   const startEngine = async (currentSession, config) => {
+    const ZegoExpressEngine = await getZegoExpressEngineClass();
     const serverList = [config.zego.server_url, config.zego.secondary_server_url].filter(Boolean);
     const engine = new ZegoExpressEngine(config.zego.app_id, serverList, {
       scenario: ZEGO_BROADCAST_SCENARIO,
@@ -215,7 +396,7 @@ export default function LiveSessions() {
     engine.on("roomStateUpdate", (_roomId, state, errorCode) => {
       if (state === "CONNECTED") {
         setLiveState("connected");
-        setLiveStatus(isHost ? "Studio connected." : "Live stream connected.");
+        setLiveStatus(config.zego.role === "host" ? "Studio connected." : "Live stream connected.");
         return;
       }
 
@@ -292,26 +473,12 @@ export default function LiveSessions() {
         role: startedViewer?.role,
         zego: startedViewer?.zego,
       });
-
-      const engine = await startEngine(startedSession, {
-        zego: startedViewer.zego,
+      currentSessionIdRef.current = startedSession?.id || null;
+      autoJoinRequestedRef.current = true;
+      publishLiveStatusChange(startedSession);
+      await connectToLiveSession(startedSession, {
+        viewer: startedViewer,
       });
-      const localStream = await engine.createStream({
-        camera: {
-          audio: true,
-          video: true,
-        },
-      });
-
-      localStreamRef.current = localStream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = localStream;
-        await localVideoRef.current.play().catch(() => undefined);
-      }
-
-      engine.startPublishingStream(startedSession.stream_id, localStream);
-      setLiveState("live");
-      setLiveStatus("You are live now.");
       setBanner("Live session started.");
     } catch (error) {
       console.error("Failed to start live session", error);
@@ -339,37 +506,8 @@ export default function LiveSessions() {
       if (!viewer?.viewer?.zego) {
         throw new Error("Viewer access could not be prepared.");
       }
-
-      const engine = await startEngine(session, {
-        zego: viewer.viewer.zego,
-      });
-
-      if (viewer.viewer.role === "host") {
-        const localStream = await engine.createStream({
-          camera: {
-            audio: true,
-            video: true,
-          },
-        });
-
-        localStreamRef.current = localStream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStream;
-          await localVideoRef.current.play().catch(() => undefined);
-        }
-
-        engine.startPublishingStream(session.stream_id, localStream);
-      } else {
-        const remoteStream = await engine.startPlayingStream(session.stream_id).catch(() => null);
-        if (remoteStream && remoteVideoRef.current) {
-          playingStreamRef.current = session.stream_id;
-          remoteVideoRef.current.srcObject = remoteStream;
-          await remoteVideoRef.current.play().catch(() => undefined);
-        }
-      }
-
-      setLiveState(viewer.viewer.role === "host" ? "live" : "watching");
-      setLiveStatus(viewer.viewer.role === "host" ? "Studio reconnected." : "Watching the live broadcast.");
+      autoJoinRequestedRef.current = true;
+      await connectToLiveSession(session, viewer);
     } catch (error) {
       console.error("Failed to join live session", error);
       teardownLiveRoom();
@@ -384,16 +522,28 @@ export default function LiveSessions() {
       return;
     }
 
+    const activeSession = session;
+
     try {
-      await api.post(`/live-sessions/${session.id}/stop`);
       teardownLiveRoom();
-      setBanner("Live session stopped.");
+      autoJoinRequestedRef.current = false;
+      currentSessionIdRef.current = null;
       setSession(null);
       setViewerConfig(null);
       setComments([]);
+      setPendingComments([]);
       setLiveStatus("No active live session right now.");
+      publishLiveStatusChange(null);
+      setBanner("Live session stopped.");
+      await api.post(`/live-sessions/${activeSession.id}/stop`);
     } catch (error) {
       console.error("Failed to stop live session", error);
+      currentSessionIdRef.current = activeSession.id;
+      setSession(activeSession);
+      publishLiveStatusChange(activeSession);
+      void syncLiveSnapshot().catch((syncError) => {
+        console.error("Failed to restore live session after stop error", syncError);
+      });
       setBanner(error?.response?.data?.message || "Live session could not be stopped.");
     }
   };
@@ -404,16 +554,47 @@ export default function LiveSessions() {
       return;
     }
 
+    const optimisticId =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? `optimistic-${crypto.randomUUID()}`
+        : `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const optimisticComment = {
+      id: optimisticId,
+      message: trimmed,
+      created_at: new Date().toISOString(),
+      user: {
+        id: user?.id,
+        name: user?.name || "You",
+      },
+      is_pending: true,
+    };
+
     try {
       setSendingComment(true);
+      setPendingComments((previous) => [...previous, optimisticComment]);
+      setCommentDraft("");
       const response = await api.post(`/live-sessions/${session.id}/comments`, {
         message: trimmed,
       });
 
-      setComments((previous) => [...previous, response.data.comment]);
-      setCommentDraft("");
+      setPendingComments((previous) => previous.filter((comment) => comment.id !== optimisticId));
+      setComments((previous) =>
+        previous.some((comment) => comment.id === response.data.comment?.id)
+          ? previous
+          : [...previous, response.data.comment]
+      );
+      void loadComments(session.id).catch((syncError) => {
+        console.error("Failed to refresh live comments after send", syncError);
+      });
     } catch (error) {
       console.error("Failed to send live comment", error);
+      setPendingComments((previous) => previous.filter((comment) => comment.id !== optimisticId));
+      setCommentDraft((currentValue) => currentValue || trimmed);
+      if (error?.response?.status === 422 || error?.response?.status === 404) {
+        void syncLiveSnapshot({ silent: true }).catch((syncError) => {
+          console.error("Failed to refresh live session after comment failure", syncError);
+        });
+      }
       setBanner(error?.response?.data?.message || "Comment could not be sent.");
     } finally {
       setSendingComment(false);
@@ -610,9 +791,14 @@ export default function LiveSessions() {
               <div className="rounded-[2rem] border border-[#E8DEC8] bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-[#1E3557]">Live Comments</h3>
                 <div className="mt-4 max-h-[340px] space-y-3 overflow-y-auto pr-1">
-                  {comments.length > 0 ? (
-                    comments.map((comment) => (
-                      <div key={comment.id} className="rounded-2xl border border-gray-100 bg-[#F8F9FC] px-4 py-3">
+                  {visibleComments.length > 0 ? (
+                    visibleComments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className={`rounded-2xl border border-gray-100 bg-[#F8F9FC] px-4 py-3 ${
+                          comment.is_pending ? "opacity-70" : ""
+                        }`}
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-[#1E3557]">{comment.user?.name || "Viewer"}</p>
                           <p className="text-[11px] text-gray-400">{formatLiveTime(comment.created_at)}</p>
@@ -645,7 +831,7 @@ export default function LiveSessions() {
                     <button
                       type="button"
                       onClick={() => void handleSendComment()}
-                      disabled={sendingComment || !commentDraft.trim()}
+                      disabled={!commentDraft.trim()}
                       className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4A73C] text-[#1E3557] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <FaPaperPlane />

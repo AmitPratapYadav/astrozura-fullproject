@@ -7,6 +7,7 @@ import Footer from "../components/Footer";
 import avatar from "../assets/astrologer-avatar.jpg";
 import api from "../api/axios";
 import { createBooking, getBookingAvailability } from "../api/bookingApi";
+import { searchLocation } from "../api/prokeralaApi";
 
 const formatDateValue = (date) => {
   if (!date) return "";
@@ -24,9 +25,7 @@ const formatDisplayDate = (date) =>
 const getImageUrl = (path) => {
   if (!path) return avatar;
   if (path.startsWith("http")) return path;
-  const baseUrl = import.meta.env.VITE_API_BASE_URL
-    ? import.meta.env.VITE_API_BASE_URL.replace(/\/index\.php\/api$|\/api$/, "")
-    : "http://localhost:8000";
+  const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   return `${baseUrl}${path}`;
 };
 
@@ -47,8 +46,13 @@ export default function ConsultationPage() {
     date_of_birth: "",
     time_of_birth: "",
     place_of_birth: "",
+    latitude: "",
+    longitude: "",
+    coordinates: "",
     gender: "",
   });
+  const [birthPlaceResults, setBirthPlaceResults] = useState([]);
+  const [loadingBirthPlaces, setLoadingBirthPlaces] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [step, setStep] = useState("details");
   const [paymentMethod, setPaymentMethod] = useState("upi");
@@ -117,6 +121,11 @@ export default function ConsultationPage() {
         date_of_birth: current.date_of_birth || parsed?.date_of_birth || "",
         time_of_birth: current.time_of_birth || parsed?.time_of_birth || "",
         place_of_birth: current.place_of_birth || parsed?.place_of_birth || "",
+        latitude: current.latitude || parsed?.latitude || "",
+        longitude: current.longitude || parsed?.longitude || "",
+        coordinates:
+          current.coordinates ||
+          (parsed?.latitude != null && parsed?.longitude != null ? `${parsed.latitude},${parsed.longitude}` : ""),
         gender: current.gender || parsed?.gender || "",
       }));
     } catch (error) {
@@ -141,6 +150,46 @@ export default function ConsultationPage() {
       ...current,
       [name]: value,
     }));
+  };
+
+  const handleBirthPlaceSearch = async (event) => {
+    const value = event.target.value;
+    setBirthDetails((current) => ({
+      ...current,
+      place_of_birth: value,
+      latitude: "",
+      longitude: "",
+      coordinates: "",
+    }));
+
+    if (value.trim().length < 3) {
+      setBirthPlaceResults([]);
+      return;
+    }
+
+    try {
+      setLoadingBirthPlaces(true);
+      const response = await searchLocation(value.trim());
+      setBirthPlaceResults(response?.data || []);
+    } catch (error) {
+      console.error("Failed to search birth place", error);
+      setBirthPlaceResults([]);
+    } finally {
+      setLoadingBirthPlaces(false);
+    }
+  };
+
+  const selectBirthPlace = (place) => {
+    const latitude = place.coordinates?.latitude ?? "";
+    const longitude = place.coordinates?.longitude ?? "";
+    setBirthDetails((current) => ({
+      ...current,
+      place_of_birth: place.name,
+      latitude,
+      longitude,
+      coordinates: latitude !== "" && longitude !== "" ? `${latitude},${longitude}` : "",
+    }));
+    setBirthPlaceResults([]);
   };
 
   const confirmBooking = async () => {
@@ -254,14 +303,33 @@ export default function ConsultationPage() {
                       </div>
                       <div>
                         <label className="mb-2 block text-sm font-medium text-gray-600">Place of Birth</label>
-                        <input
-                          type="text"
-                          name="place_of_birth"
-                          value={birthDetails.place_of_birth}
-                          onChange={handleBirthDetailChange}
-                          placeholder="City, State, Country"
-                          className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            name="place_of_birth"
+                            value={birthDetails.place_of_birth}
+                            onChange={handleBirthPlaceSearch}
+                            placeholder="Search city and select from dropdown"
+                            autoComplete="off"
+                            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 pr-10 text-sm outline-none focus:border-[#D4A73C]"
+                          />
+                          {loadingBirthPlaces && <div className="absolute right-4 top-3.5 h-4 w-4 animate-spin rounded-full border-b-2 border-[#D4A73C]" />}
+                          {birthPlaceResults.length > 0 && (
+                            <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl">
+                              {birthPlaceResults.map((place, index) => (
+                                <button
+                                  key={`${place.name}-${index}`}
+                                  type="button"
+                                  onClick={() => selectBirthPlace(place)}
+                                  className="block w-full border-b border-gray-50 px-4 py-3 text-left text-sm hover:bg-gray-50 last:border-0"
+                                >
+                                  {place.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {birthDetails.coordinates && <p className="mt-2 text-xs text-gray-500">Coordinates: {birthDetails.coordinates}</p>}
                       </div>
                       <div>
                         <label className="mb-2 block text-sm font-medium text-gray-600">Gender</label>
@@ -306,6 +374,7 @@ export default function ConsultationPage() {
                       {birthDetails.date_of_birth && <p><span className="font-semibold">DOB:</span> {birthDetails.date_of_birth}</p>}
                       {birthDetails.time_of_birth && <p><span className="font-semibold">Time:</span> {birthDetails.time_of_birth}</p>}
                       {birthDetails.place_of_birth && <p><span className="font-semibold">Place:</span> {birthDetails.place_of_birth}</p>}
+                      {birthDetails.coordinates && <p><span className="font-semibold">Coordinates:</span> {birthDetails.coordinates}</p>}
                       {birthDetails.gender && <p><span className="font-semibold">Gender:</span> {birthDetails.gender}</p>}
                     </div>
                   </div>

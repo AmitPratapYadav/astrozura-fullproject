@@ -10,7 +10,8 @@ import {
   getPredictions, 
   getNumerologyReport, 
   getSadesatiReport, 
-  getLalKitabReport 
+  getLalKitabReport,
+  getKundliDetailSection,
 } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -18,16 +19,26 @@ import {
   getLanguageLabel,
   getLocaleForLanguage,
 } from "../constants/prokeralaLanguages";
+import { KeyValueTable, ReportPanel, ReportTable, SimpleTextTable } from "../components/report/ReportTables";
+import { ProviderSections } from "../components/report/ReportDataRenderer";
+import { displayCell, formatReportLabel } from "../components/report/reportUtils";
 
 const chartTypeOptions = [
   { value: "rasi", label: "D1 - Rasi Chart" },
   { value: "hora", label: "D2 - Hora Chart" },
   { value: "drekkana", label: "D3 - Drekkana Chart" },
   { value: "chaturthamsa", label: "D4 - Chaturthamsa Chart" },
+  { value: "panchamsa", label: "D5 - Panchamsa Chart" },
+  { value: "shashtamsa", label: "D6 - Shashtamsa Chart" },
   { value: "saptamsa", label: "D7 - Saptamsa Chart" },
+  { value: "ashtamsa", label: "D8 - Ashtamsa Chart" },
   { value: "navamsa", label: "D9 - Navamsa Chart" },
   { value: "dasamsa", label: "D10 - Dasamsa Chart" },
+  { value: "rudramsa", label: "D11 - Rudramsa Chart" },
   { value: "dwadasamsa", label: "D12 - Dwadasamsa Chart" },
+  { value: "trayodashamsa", label: "D13 - Trayodashamsa Chart" },
+  { value: "chaturdashamsa", label: "D14 - Chaturdashamsa Chart" },
+  { value: "panchdashamsa", label: "D15 - Panchdashamsa Chart" },
   { value: "shodasamsa", label: "D16 - Shodasamsa Chart" },
   { value: "vimsamsa", label: "D20 - Vimsamsa Chart" },
   { value: "chaturvimsamsa", label: "D24 - Chaturvimsamsa Chart" },
@@ -37,6 +48,10 @@ const chartTypeOptions = [
   { value: "akshavedamsa", label: "D45 - Akshavedamsa Chart" },
   { value: "shastiamsa", label: "D60 - Shastiamsa Chart" },
 ];
+
+const d1ToD16ChartOptions = chartTypeOptions.filter((item) =>
+  ["rasi", "hora", "drekkana", "chaturthamsa", "panchamsa", "shashtamsa", "saptamsa", "ashtamsa", "navamsa", "dasamsa", "rudramsa", "dwadasamsa", "trayodashamsa", "chaturdashamsa", "panchdashamsa", "shodasamsa"].includes(item.value)
+);
 
 const predictionTypes = [
   { value: "career", label: "Career & Business", icon: "💼" },
@@ -53,7 +68,6 @@ const initialDetails = {
   place: "",
   coordinates: "",
   gender: "Male",
-  chartType: "rasi",
   chartStyle: "north-indian",
   language: "en",
 };
@@ -88,6 +102,119 @@ const getRelevantSadesatiTransits = (transits) => {
   return sorted.slice(startIndex, startIndex + 8);
 };
 
+const formatReportKey = (key = "") =>
+  String(key)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const isPrimitive = (value) =>
+  value === null || ["string", "number", "boolean"].includes(typeof value);
+
+const renderDetailValue = (value, depth = 0) => {
+  if (value === null || value === undefined || value === "") {
+    return <span className="text-gray-400">-</span>;
+  }
+
+  if (typeof value === "string" && value.trim().startsWith("<svg")) {
+    return <span className="text-gray-500">SVG chart image available in chart section.</span>;
+  }
+
+  if (isPrimitive(value)) {
+    return <span className="break-words text-gray-700">{String(value)}</span>;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="text-gray-400">No data returned.</span>;
+
+    if (value.every((item) => item && typeof item === "object" && !Array.isArray(item))) {
+      const keys = Array.from(new Set(value.flatMap((item) => Object.keys(item)))).slice(0, 8);
+      return (
+        <ReportTable
+          columns={keys.map((key) => ({ key, label: formatReportKey(key) }))}
+          rows={value.slice(0, 30)}
+          compact
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {value.slice(0, 30).map((item, index) => (
+          <div key={index} className="border border-gray-200 bg-white p-3">
+            {isPrimitive(item) ? renderDetailValue(item, depth + 1) : renderDetailValue(item, depth + 1)}
+          </div>
+        ))}
+        {value.length > 30 && <p className="text-xs font-medium text-gray-400">Showing first 30 of {value.length} records.</p>}
+      </div>
+    );
+  }
+
+  const entries = Object.entries(value);
+  if (entries.length === 0) return <span className="text-gray-400">No data returned.</span>;
+
+  if (entries.every(([, item]) => isPrimitive(item) || (item && typeof item === "object" && "name" in item))) {
+    return <KeyValueTable columns={depth < 2 ? 2 : 1} rows={entries.map(([key, item]) => [formatReportKey(key), displayCell(item)])} />;
+  }
+
+  return <KeyValueTable columns={1} rows={entries.map(([key, item]) => [formatReportKey(key), renderDetailValue(item, depth + 1)])} />;
+};
+
+const DetailedReportSection = ({ section, defaultOpen = false, loading = false, onOpen }) => {
+  const items = section?.items || {};
+  const entries = Object.entries(items);
+  const successCount = entries.filter(([, item]) => item?.status === "success").length;
+  const pendingCount = entries.filter(([, item]) => item?.status === "pending").length;
+  const errorCount = entries.length - successCount - pendingCount;
+
+  useEffect(() => {
+    if (defaultOpen) onOpen?.();
+  }, []);
+
+  return (
+    <details open={defaultOpen} onToggle={(event) => event.currentTarget.open && onOpen?.()} className="group rounded-3xl border border-gray-100 bg-white shadow-sm">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-5 md:p-6">
+        <div>
+          <h4 className="text-lg font-bold text-[#1E3557]">{section.title}</h4>
+          {section.summary && <p className="mt-1 text-sm text-gray-500">{section.summary}</p>}
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{successCount} loaded</span>
+            {pendingCount > 0 && <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">{pendingCount} loads on open</span>}
+            {errorCount > 0 && <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">{errorCount} unavailable</span>}
+            {loading && <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-600">Loading...</span>}
+          </div>
+        </div>
+        <span className="rounded-full border border-gray-200 px-3 py-1 text-sm font-bold text-gray-500 transition group-open:rotate-180">⌄</span>
+      </summary>
+
+      <div className="border-t border-gray-100 p-5 md:p-6">
+        <div className="grid gap-4 xl:grid-cols-2">
+          {entries.map(([key, item]) => (
+            <div key={key} className="rounded-2xl border border-gray-100 bg-[#fbfcfd] p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-bold text-[#1E3557]">{formatReportKey(key)}</p>
+                  {item?.endpoint && <p className="mt-1 text-xs text-gray-400">{item.endpoint}</p>}
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item?.status === "success" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                  {item?.status === "success" ? "Loaded" : "Unavailable"}
+                </span>
+              </div>
+
+              {item?.status === "success" ? (
+                renderDetailValue(item.data)
+              ) : item?.status === "pending" ? (
+                <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-800">{loading ? "Loading this module..." : item?.message || "Open this section to load this module."}</p>
+              ) : (
+                <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{item?.message || "This module is not available in the current response."}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </details>
+  );
+};
+
 export default function Kundli() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -99,13 +226,14 @@ export default function Kundli() {
   const [kundliData, setKundliData] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [apiMeta, setApiMeta] = useState(null);
+  const [detailedSections, setDetailedSections] = useState([]);
+  const [loadingDetailedSections, setLoadingDetailedSections] = useState({});
 
   // Premium Features States
   const [activeTab, setActiveTab] = useState("free"); // free, premium
   const [premiumTab, setPremiumTab] = useState("charts"); // charts, predictions, numerology, etc.
   const [loadingPremium, setLoadingPremium] = useState(false);
   const [premiumData, setPremiumData] = useState({});
-  const [activeChartType, setActiveChartType] = useState("rasi");
   const [activePredictionType, setActivePredictionType] = useState("career");
 
   const isPaid = user?.subscription_status === "active" || user?.plan_name?.toLowerCase().includes("premium");
@@ -171,16 +299,23 @@ export default function Kundli() {
       setApiMeta(null);
       setKundliData(null);
       setChartData(null);
+      setDetailedSections([]);
+      setLoadingDetailedSections({});
       showToast("Generating your kundli...");
       const datetime = `${details.dob}T${details.time}:00+05:30`;
       const response = await generateKundli(datetime, details.coordinates, 1, {
-        chart_type: details.chartType,
+        chart_types: d1ToD16ChartOptions.map((item) => item.value),
         chart_style: details.chartStyle,
         la: details.language,
       });
       if (response?.status === "success" && response?.data?.kundli) {
         setKundliData(response.data.kundli);
-        setChartData(response.data.chart || null);
+        setChartData(response.data.charts || (response.data.chart ? [{
+          status: "success",
+          chart_id: response.data.chart_meta?.chart_type || "D1",
+          label: "D1 - Rasi Chart",
+          chart_svg: response.data.chart,
+        }] : []));
         setApiMeta({
           requestedDatetime: response.data.requested_datetime,
           effectiveDatetime: response.data.effective_datetime,
@@ -189,7 +324,9 @@ export default function Kundli() {
           dashaSummary: response.data.dasha_summary || {},
           language: response.data.language || details.language,
           supportedLanguages: response.data.supported_languages || [],
+          providerPayload: response.data.provider_payload || {},
         });
+        setDetailedSections(response.data.detailed_report || []);
         setPremiumData({}); // Reset premium data on new search
         setActiveTab("free"); // Default to free view
         return showToast("Kundli generated successfully.");
@@ -199,6 +336,37 @@ export default function Kundli() {
       showToast(error?.response?.data?.message || "Failed to connect to API.");
     } finally {
       setLoadingKundli(false);
+    }
+  };
+
+  const loadDetailedSection = async (sectionId) => {
+    const currentSection = detailedSections.find((section) => section.id === sectionId);
+    if (!currentSection || loadingDetailedSections[sectionId]) return;
+
+    const entries = Object.values(currentSection.items || {});
+    const hasPendingItems = entries.some((item) => item?.status === "pending");
+    if (!hasPendingItems) return;
+
+    try {
+      setLoadingDetailedSections((prev) => ({ ...prev, [sectionId]: true }));
+      const datetime = `${details.dob}T${details.time}:00+05:30`;
+      const response = await getKundliDetailSection(sectionId, {
+        datetime,
+        coordinates: details.coordinates,
+        ayanamsa: 1,
+        chart_style: details.chartStyle,
+        la: details.language,
+      });
+
+      if (response?.status === "success" && response.data) {
+        setDetailedSections((prev) =>
+          prev.map((section) => (section.id === sectionId ? response.data : section))
+        );
+      }
+    } catch (error) {
+      showToast(error?.response?.data?.message || "Failed to load this Kundli section.");
+    } finally {
+      setLoadingDetailedSections((prev) => ({ ...prev, [sectionId]: false }));
     }
   };
 
@@ -213,10 +381,16 @@ export default function Kundli() {
       
       switch (type) {
         case "charts":
-          res = await getDivisionalCharts(datetime, details.coordinates, activeChartType, details.chartStyle);
+          res = await getDivisionalCharts(
+            datetime,
+            details.coordinates,
+            d1ToD16ChartOptions.map((item) => item.value),
+            details.chartStyle,
+            { la: details.language }
+          );
           break;
         case "predictions":
-          res = await getPredictions(datetime, details.coordinates, activePredictionType);
+          res = await getPredictions(datetime, details.coordinates, activePredictionType, { la: details.language });
           break;
         case "numerology":
           {
@@ -236,10 +410,10 @@ export default function Kundli() {
           }
           break;
         case "sadesati":
-          res = await getSadesatiReport(datetime, details.coordinates);
+            res = await getSadesatiReport(datetime, details.coordinates, { la: details.language });
           break;
         case "lalkitab":
-          res = await getLalKitabReport(datetime, details.coordinates);
+          res = await getLalKitabReport(datetime, details.coordinates, { la: details.language });
           break;
         default: break;
       }
@@ -247,7 +421,7 @@ export default function Kundli() {
       if (res?.status === "success") {
         setPremiumData(prev => ({ ...prev, [type]: res.data }));
       }
-    } catch (error) {
+    } catch {
       showToast("Failed to load premium data.");
     } finally {
       setLoadingPremium(false);
@@ -258,21 +432,76 @@ export default function Kundli() {
     if (activeTab === "premium" && kundliData) {
       loadPremiumFeature(premiumTab);
     }
-  }, [activeTab, premiumTab, activeChartType, activePredictionType]);
+  }, [activeTab, premiumTab, activePredictionType]);
 
   const birth = kundliData?.nakshatra_details;
   const info = birth?.additional_info || {};
   const dosha = kundliData?.mangal_dosha;
   const dasha = apiMeta?.dashaSummary || {};
+  const detailedReport = Array.isArray(detailedSections) ? detailedSections : [];
   const activeLanguage = apiMeta?.language || details.language;
   const yogas = Array.isArray(kundliData?.yoga_details) ? kundliData.yoga_details : [];
-  const activeYogas = yogas.flatMap((group) => (group.yoga_list || []).filter((item) => item.has_yoga).map((item) => ({ ...item, group: group.name })));
   const visibleSadesatiTransits = getRelevantSadesatiTransits(premiumData.sadesati?.transits || []);
   const profileItems = [
     ["Nakshatra", birth?.nakshatra?.name], ["Pada", birth?.nakshatra?.pada], ["Nakshatra Lord", birth?.nakshatra?.lord?.name],
     ["Moon Sign", birth?.chandra_rasi?.name], ["Sun Sign", birth?.soorya_rasi?.name], ["Zodiac", birth?.zodiac?.name],
     ["Birth Stone", info.birth_stone], ["Ganam", info.ganam], ["Nadi", info.nadi], ["Animal Sign", info.animal_sign], ["Syllables", info.syllables], ["Best Direction", info.best_direction],
   ];
+  const providerPayload = apiMeta?.providerPayload || {};
+  const planetRows = Array.isArray(providerPayload.planets)
+    ? providerPayload.planets.map((planet, index) => ({
+        id: `${planet.name || planet.planet || "planet"}-${index}`,
+        planet: planet.name || planet.planet,
+        sign: planet.sign,
+        sign_lord: planet.signLord || planet.sign_lord,
+        nakshatra: planet.nakshatra || planet.nakshatra_name,
+        nakshatra_lord: planet.nakshatraLord || planet.nakshatra_lord,
+        degree: planet.normDegree || planet.fullDegree || planet.degree,
+        house: planet.house,
+        retro: planet.isRetro || planet.retro || planet.is_retro,
+        combust: planet.is_planet_set || planet.combust,
+        status: planet.planet_awastha || planet.awastha,
+      }))
+    : [];
+  const astroRows = Object.entries(providerPayload.astro_details || {}).map(([key, value]) => ({
+    field: formatReportLabel(key),
+    value: displayCell(value),
+  }));
+  const chartRows = Array.isArray(chartData)
+    ? chartData.map((chart, index) => ({
+        sn: index + 1,
+        chart: chart.label || chart.chart_id,
+        style: apiMeta?.chartMeta?.chart_style || details.chartStyle,
+        status: chart.status === "error" ? "Unavailable" : "Available",
+        note: chart.message || "-",
+      }))
+    : [];
+  const dashaRows = [
+    ["Maha Dasha", dasha.current_mahadasha],
+    ["Antar Dasha", dasha.current_antardasha],
+    ["Pratyantar Dasha", dasha.current_pratyantardasha],
+  ].map(([period, value]) => ({
+    period,
+    planet: value?.name,
+    start: formatDateTime(value?.start, activeLanguage),
+    end: formatDateTime(value?.end, activeLanguage),
+  }));
+  const upcomingDashaRows = Array.isArray(dasha.next_mahadasha)
+    ? dasha.next_mahadasha.map((period, index) => ({
+        sn: index + 1,
+        planet: period.name,
+        start: formatDateTime(period.start, activeLanguage),
+        end: formatDateTime(period.end, activeLanguage),
+      }))
+    : [];
+  const yogaRows = yogas.flatMap((group) =>
+    (group.yoga_list || []).map((item) => ({
+      group: group.name,
+      yoga: item.name,
+      status: item.has_yoga ? "Present" : "Not present",
+      description: item.description,
+    }))
+  );
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
@@ -319,7 +548,9 @@ export default function Kundli() {
               )}
               {details.coordinates && <p className="mt-2 text-xs text-gray-500">Coordinates: {details.coordinates}</p>}
             </div>
-            <select value={details.chartType} onChange={(e) => updateDetails("chartType", e.target.value)} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl">{chartTypeOptions.slice(0, 3).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+              Charts included: D1 through D16.
+            </div>
             <select value={details.chartStyle} onChange={(e) => updateDetails("chartStyle", e.target.value)} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl">
               <option value="north-indian">North Indian</option>
               <option value="south-indian">South Indian</option>
@@ -360,58 +591,174 @@ export default function Kundli() {
 
               {activeTab === "free" ? (
                 <>
-                  <div className="text-center">
-                    <h3 className="text-2xl font-bold text-[#1E3557]">Your Kundli Results</h3>
-                    <p className="mt-2 text-sm text-gray-500">Chart: {apiMeta?.chartMeta?.chart_type || details.chartType} in {apiMeta?.chartMeta?.chart_style || details.chartStyle} style</p>
-                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-gray-400">Locale: {getLanguageLabel(activeLanguage)}</p>
+                  <div className="rounded-sm border border-gray-200 bg-white shadow-sm">
+                    <div className="border-b border-gray-200 bg-white px-5 py-5">
+                      <h3 className="text-2xl font-bold text-gray-950">{details.name || "Birth"}'s Birth/Natal Report</h3>
+                      <p className="mt-1 text-sm text-gray-500">Locale: {getLanguageLabel(activeLanguage)} | Chart style: {apiMeta?.chartMeta?.chart_style || details.chartStyle}</p>
+                    </div>
+                    <div className="space-y-5 p-4">
+                      <ReportPanel title="Birth Details">
+                        <KeyValueTable
+                          rows={[
+                            ["Name", details.name],
+                            ["Gender", details.gender],
+                            ["Birth Date", details.dob],
+                            ["Birth Time", details.time],
+                            ["Place of Birth", details.place],
+                            ["Coordinates", details.coordinates],
+                            ["Nakshatra", birth?.nakshatra?.name],
+                            ["Rashi", birth?.chandra_rasi?.name],
+                            ["Sun Sign", birth?.soorya_rasi?.name],
+                            ["Current Maha Dasha", dasha.current_mahadasha?.name || kundliData?.dasha_balance?.lord?.name],
+                          ]}
+                        />
+                      </ReportPanel>
+
+                      <ReportPanel title="Charts Summary">
+                        <ReportTable
+                          columns={[
+                            { key: "sn", label: "S.N." },
+                            { key: "chart", label: "Chart" },
+                            { key: "style", label: "Style" },
+                            { key: "status", label: "Status" },
+                            { key: "note", label: "Note" },
+                          ]}
+                          rows={chartRows}
+                          compact
+                        />
+                      </ReportPanel>
+
+                      <div className="grid gap-5 lg:grid-cols-2">
+                        {Array.isArray(chartData) && chartData.length > 0 ? chartData.map((chart, index) => (
+                          <ReportPanel key={chart.chart_id || chart.label || index} title={chart.label || chart.chart_id || `Chart ${index + 1}`}>
+                            <div className="flex min-h-[300px] items-center justify-center overflow-x-auto border border-gray-200 bg-[#fff8df] p-3">
+                              {chart.chart_svg ? <div dangerouslySetInnerHTML={{ __html: chart.chart_svg }} className="max-w-full" style={{ minWidth: "280px", minHeight: "280px" }} /> : <p className="text-center text-sm text-gray-500">{chart.message || "Chart image is not available for this response."}</p>}
+                            </div>
+                            <div className="mt-3">
+                              <KeyValueTable
+                                columns={1}
+                                rows={[
+                                  ["Chart", chart.label || chart.chart_id],
+                                  ["Style", apiMeta?.chartMeta?.chart_style || details.chartStyle],
+                                  ["Status", chart.status === "error" ? "Unavailable" : "Available"],
+                                ]}
+                              />
+                            </div>
+                          </ReportPanel>
+                        )) : (
+                          <ReportPanel title="Charts">
+                            <p className="text-sm text-gray-500">Chart images are not available for this response.</p>
+                          </ReportPanel>
+                        )}
+                      </div>
+
+                      <ReportPanel title="Planets">
+                        <ReportTable
+                          columns={[
+                            { key: "planet", label: "Planet" },
+                            { key: "sign", label: "Sign" },
+                            { key: "sign_lord", label: "Sign Lord" },
+                            { key: "nakshatra", label: "Nakshatra" },
+                            { key: "nakshatra_lord", label: "Nakshatra Lord" },
+                            { key: "degree", label: "Degree" },
+                            { key: "house", label: "House" },
+                            { key: "retro", label: "Retro" },
+                            { key: "combust", label: "Combust" },
+                            { key: "status", label: "Avastha" },
+                          ]}
+                          rows={planetRows}
+                          compact
+                        />
+                      </ReportPanel>
+
+                      <ReportPanel title="Astro Details">
+                        <ReportTable
+                          columns={[
+                            { key: "field", label: "Field" },
+                            { key: "value", label: "Value" },
+                          ]}
+                          rows={astroRows}
+                          compact
+                        />
+                      </ReportPanel>
+
+                      <ReportPanel title="Birth Profile Snapshot">
+                        <KeyValueTable rows={profileItems} />
+                      </ReportPanel>
+
+                      <ReportPanel title="Mangal Dosha Summary">
+                        <KeyValueTable
+                          rows={[
+                            ["Status", dosha?.type ? `${dosha.type} Manglik` : dosha?.has_dosha ? "Manglik" : "No Mangal Dosha"],
+                            ["Description", dosha?.description || "No dosha details returned."],
+                          ]}
+                          columns={1}
+                        />
+                        {Array.isArray(dosha?.exceptions) && dosha.exceptions.length > 0 && <div className="mt-4"><SimpleTextTable title="Exception" items={dosha.exceptions} /></div>}
+                      </ReportPanel>
+
+                      <ReportPanel title="Dasha Timing">
+                        <ReportTable
+                          columns={[
+                            { key: "period", label: "Period" },
+                            { key: "planet", label: "Planet" },
+                            { key: "start", label: "Start Date" },
+                            { key: "end", label: "End Date" },
+                          ]}
+                          rows={dashaRows}
+                        />
+                        {upcomingDashaRows.length > 0 && (
+                          <div className="mt-5">
+                            <ReportTable
+                              columns={[
+                                { key: "sn", label: "S.N." },
+                                { key: "planet", label: "Upcoming Maha Dasha" },
+                                { key: "start", label: "Start Date" },
+                                { key: "end", label: "End Date" },
+                              ]}
+                              rows={upcomingDashaRows}
+                            />
+                          </div>
+                        )}
+                      </ReportPanel>
+                    </div>
                   </div>
 
-                  <div className="grid xl:grid-cols-[1.1fr_0.9fr] gap-8">
-                    <div className="rounded-2xl border border-gray-100 bg-[#f8f9fa] p-4">
-                      <div className="mb-4"><p className="text-lg font-bold text-[#1E3557]">Birth Chart</p></div>
-                      <div className="flex min-h-[340px] items-center justify-center overflow-x-auto rounded-2xl border border-gray-200 bg-white p-4">
-                        {chartData ? <div dangerouslySetInnerHTML={{ __html: chartData }} className="max-w-full" style={{ minWidth: "300px", minHeight: "300px" }} /> : <p className="text-sm text-gray-500 text-center">Chart image is not available for this response.</p>}
-                      </div>
-                    </div>
-
+                  {detailedReport.length > 0 && (
                     <div className="space-y-4">
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Moon Sign</p><p className="mt-2 text-xl font-bold text-[#1E3557]">{birth?.chandra_rasi?.name || "-"}</p><p className="mt-1 text-sm text-gray-500">Lord: {birth?.chandra_rasi?.lord?.name || "-"}</p></div>
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Sun Sign</p><p className="mt-2 text-xl font-bold text-[#1E3557]">{birth?.soorya_rasi?.name || "-"}</p><p className="mt-1 text-sm text-gray-500">Zodiac: {birth?.zodiac?.name || "-"}</p></div>
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Current Maha Dasha</p><p className="mt-2 text-xl font-bold text-[#1E3557]">{dasha.current_mahadasha?.name || kundliData?.dasha_balance?.lord?.name || "-"}</p><p className="mt-1 text-sm text-gray-500">{kundliData?.dasha_balance?.description || "Dasha balance not available."}</p></div>
-                        <div className="rounded-2xl border border-gray-100 bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Active Yogas</p><p className="mt-2 text-xl font-bold text-[#1E3557]">{activeYogas.length}</p><p className="mt-1 text-sm text-gray-500">Detailed list shown below</p></div>
-                      </div>
-                      <div className="rounded-2xl border border-gray-100 bg-white p-5">
-                        <div className="flex items-center gap-2">{dosha?.has_dosha ? <FaExclamationTriangle className="text-orange-500" /> : <FaCheckCircle className="text-emerald-500" />}<h4 className="font-bold text-[#1E3557] text-lg">Mangal Dosha Summary</h4></div>
-                        <p className={`mt-3 text-sm font-semibold ${dosha?.has_dosha ? "text-orange-700" : "text-emerald-700"}`}>{dosha?.type ? `${dosha.type} Manglik` : dosha?.has_dosha ? "Manglik" : "No Mangal Dosha"}</p>
-                        <p className="mt-2 text-sm text-gray-600">{dosha?.description || "No dosha details returned."}</p>
-                        {Array.isArray(dosha?.exceptions) && dosha.exceptions.length > 0 && <div className="mt-4 rounded-xl bg-orange-50 p-4"><p className="font-semibold text-orange-900">Dosha Exceptions</p><ul className="mt-2 space-y-2 text-sm text-orange-800">{dosha.exceptions.slice(0, 3).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul></div>}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                    <h4 className="text-xl font-bold text-[#1E3557] mb-5">Birth Profile Snapshot</h4>
-                    <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">{profileItems.map(([label, value]) => <div key={label} className="rounded-2xl border border-gray-100 bg-[#f8f9fa] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p><p className="mt-2 text-base font-semibold text-[#1E3557]">{value || "-"}</p></div>)}</div>
-                  </div>
-
-                  <div className="grid lg:grid-cols-2 gap-8">
-                    <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h4 className="text-xl font-bold text-[#1E3557] mb-5">Yoga Details</h4>
-                      <div className="space-y-4">{yogas.map((group) => { const active = (group.yoga_list || []).filter((item) => item.has_yoga); return <div key={group.name} className="rounded-2xl border border-gray-100 bg-[#f8f9fa] p-4"><div className="flex items-start justify-between gap-4"><div><p className="font-semibold text-[#1E3557]">{group.name}</p><p className="mt-1 text-sm text-gray-500">{group.description}</p></div><span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1E3557] shadow-sm">{active.length} active</span></div><div className="mt-4 space-y-3">{active.length > 0 ? active.map((item) => <div key={`${group.name}-${item.name}`} className="rounded-xl bg-white p-3 border border-gray-100"><p className="font-semibold text-[#1E3557]">{item.name}</p><p className="mt-1 text-sm text-gray-600">{item.description}</p></div>) : <p className="text-sm text-gray-500">No active yoga from this category in the current response.</p>}</div></div>; })}</div>
-                    </div>
-
-                    <div className="space-y-8">
                       <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h4 className="text-xl font-bold text-[#1E3557] mb-5">Dasha Timing</h4>
-                        <div className="space-y-4">
-                          {[["Current Maha Dasha", dasha.current_mahadasha], ["Current Antar Dasha", dasha.current_antardasha], ["Current Pratyantar Dasha", dasha.current_pratyantardasha]].map(([label, value]) => <div key={label} className="rounded-2xl bg-[#f8f9fa] p-4 border border-gray-100"><p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p><p className="mt-2 text-lg font-bold text-[#1E3557]">{value?.name || "-"}</p><p className="mt-1 text-sm text-gray-500">{formatDateTime(value?.start, activeLanguage)} to {formatDateTime(value?.end, activeLanguage)}</p></div>)}
-                        </div>
-                        {Array.isArray(dasha.next_mahadasha) && dasha.next_mahadasha.length > 0 && <div className="mt-6"><p className="font-semibold text-[#1E3557] mb-3">Upcoming Maha Dashas</p><div className="space-y-3">{dasha.next_mahadasha.map((period) => <div key={`${period.name}-${period.start}`} className="rounded-xl border border-gray-100 bg-[#f8f9fa] p-3"><div className="flex items-center justify-between gap-4"><p className="font-semibold text-[#1E3557]">{period.name}</p><p className="text-xs text-gray-500">{formatDateTime(period.start, activeLanguage)}</p></div></div>)}</div></div>}
+                        <h4 className="text-xl font-bold text-[#1E3557]">Detailed Kundli Modules</h4>
+                        <p className="mt-2 text-sm text-gray-500">Each section can be opened as needed, so the full Kundli stays readable without a long forced scroll.</p>
                       </div>
-                      {Array.isArray(dosha?.remedies) && dosha.remedies.length > 0 && <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"><h4 className="text-xl font-bold text-[#1E3557] mb-5">Suggested Remedies</h4><ul className="space-y-3 text-sm text-gray-600">{dosha.remedies.slice(0, 6).map((item, index) => <li key={`${item}-${index}`} className="rounded-xl bg-[#f8f9fa] p-4 border border-gray-100">{item}</li>)}</ul></div>}
+                      {detailedReport.map((section, index) => (
+                        <DetailedReportSection
+                          key={section.id || section.title}
+                          section={section}
+                          defaultOpen={index < 2}
+                          loading={!!loadingDetailedSections[section.id]}
+                          onOpen={() => loadDetailedSection(section.id)}
+                        />
+                      ))}
                     </div>
-                  </div>
+                  )}
+
+                  <ReportPanel title="Yoga Details">
+                    <ReportTable
+                      columns={[
+                        { key: "group", label: "Group" },
+                        { key: "yoga", label: "Yoga" },
+                        { key: "status", label: "Status" },
+                        { key: "description", label: "Description" },
+                      ]}
+                      rows={yogaRows}
+                    />
+                  </ReportPanel>
+
+                  {Array.isArray(dosha?.remedies) && dosha.remedies.length > 0 && (
+                    <ReportPanel title="Suggested Remedies">
+                      <SimpleTextTable title="Remedy" items={dosha.remedies.slice(0, 6)} />
+                    </ReportPanel>
+                  )}
                 </>
               ) : (
                 <div className="space-y-8 animate-fadeIn">
@@ -421,7 +768,7 @@ export default function Kundli() {
                         <FaStar className="text-[#D4A73C] text-4xl animate-pulse" />
                       </div>
                       <h3 className="text-2xl font-bold text-[#1E3557]">Premium Reports are Locked</h3>
-                      <p className="text-gray-500 mt-4 max-w-md mx-auto">Get full access to D1-D60 charts, detailed life predictions, Sadesati reports, and Vedic remedies.</p>
+                      <p className="text-gray-500 mt-4 max-w-md mx-auto">Get full access to D1-D16 charts, detailed life predictions, Sadesati reports, and Vedic remedies.</p>
                       <button type="button" onClick={() => window.location.href='/subscriptions'} className="mt-8 bg-[#D4A73C] text-white px-10 py-3.5 rounded-xl font-bold shadow-lg shadow-[#D4A73C]/20 pointer-events-auto hover:scale-105 transition-transform">Unlock All Premium Features</button>
                     </div>
                   ) : (
@@ -449,12 +796,20 @@ export default function Kundli() {
                             <div className="space-y-6">
                               <div className="flex items-center justify-between gap-4 flex-wrap">
                                 <h4 className="text-xl font-bold text-[#1E3557]">Divisional Charts (Varga)</h4>
-                                <select value={activeChartType} onChange={(e) => setActiveChartType(e.target.value)} className="bg-gray-50 border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold">
-                                  {chartTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                                </select>
+                                <span className="rounded-full bg-gray-50 px-4 py-2 text-sm font-bold text-gray-500">D1-D16 included</span>
                               </div>
-                              <div className="flex items-center justify-center p-8 bg-white rounded-3xl border border-gray-100 shadow-sm min-h-[400px]">
-                                {premiumData.charts ? <div dangerouslySetInnerHTML={{ __html: premiumData.charts }} className="max-w-full" /> : <p className="text-gray-400">Select a chart type to display.</p>}
+                              <div className="grid gap-6 lg:grid-cols-2">
+                                {Array.isArray(premiumData.charts?.charts) && premiumData.charts.charts.length > 0 ? premiumData.charts.charts.map((chart) => (
+                                  <div key={chart.chart_id || chart.label} className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                      <h5 className="font-bold text-[#1E3557]">{chart.label || chart.chart_id}</h5>
+                                      {chart.status === "error" && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Unavailable</span>}
+                                    </div>
+                                    <div className="flex min-h-[320px] items-center justify-center overflow-x-auto rounded-2xl bg-gray-50 p-4">
+                                      {chart.chart_svg ? <div dangerouslySetInnerHTML={{ __html: chart.chart_svg }} className="max-w-full" /> : <p className="text-sm text-gray-400">{chart.message || "Chart image is not available."}</p>}
+                                    </div>
+                                  </div>
+                                )) : <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center text-gray-400 shadow-sm">No divisional charts available.</div>}
                               </div>
                             </div>
                           )}
@@ -532,49 +887,9 @@ export default function Kundli() {
 
                           {premiumTab === "lalkitab" && (
                             <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
-                              <div className="flex items-center gap-3"><FaStar className="text-[#D4A73C] text-xl" /><h4 className="text-xl font-bold text-[#1E3557]">Lal Kitab Remedies</h4></div>
+                              <div className="flex items-center gap-3"><FaStar className="text-[#D4A73C] text-xl" /><h4 className="text-xl font-bold text-[#1E3557]">Lal Kitab Report</h4></div>
                               {premiumData.lalkitab ? (
-                                <div className="space-y-4">
-                                  {Array.isArray(premiumData.lalkitab.remedies) ? premiumData.lalkitab.remedies.map((r, i) => (
-                                    <div key={i} className="p-5 rounded-2xl bg-gray-50 border border-gray-100 flex gap-4">
-                                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 shadow-sm font-bold text-[#D4A73C]">{i + 1}</div>
-                                      <p className="text-gray-600 text-sm leading-relaxed">{r}</p>
-                                    </div>
-                                  )) : <p className="text-gray-400">No Lal Kitab remedies available.</p>}
-
-                                  {Array.isArray(premiumData.lalkitab.planets) && premiumData.lalkitab.planets.length > 0 && (
-                                    <div className="rounded-2xl border border-gray-100 bg-[#f8f9fa] p-5">
-                                      <h5 className="text-lg font-bold text-[#1E3557]">Planet Positions</h5>
-                                      <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                        {premiumData.lalkitab.planets.map((planet) => (
-                                          <div key={planet.planet} className="rounded-xl border border-gray-100 bg-white p-4">
-                                            <p className="font-bold text-[#1E3557]">{planet.planet}</p>
-                                            <p className="mt-2 text-sm text-gray-600">Rashi: {planet.rashi || "-"}</p>
-                                            <p className="mt-1 text-sm text-gray-600">Nature: {planet.nature || "-"}</p>
-                                            <p className="mt-1 text-sm text-gray-600">Position: {planet.position || "-"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {Array.isArray(premiumData.lalkitab.houses) && premiumData.lalkitab.houses.length > 0 && (
-                                    <div className="rounded-2xl border border-gray-100 bg-[#f8f9fa] p-5">
-                                      <h5 className="text-lg font-bold text-[#1E3557]">House Summary</h5>
-                                      <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                        {premiumData.lalkitab.houses.map((house) => (
-                                          <div key={house.khana_number} className="rounded-xl border border-gray-100 bg-white p-4">
-                                            <p className="font-bold text-[#1E3557]">House {house.khana_number}</p>
-                                            <p className="mt-2 text-sm text-gray-600">Maalik: {house.maalik || "-"}</p>
-                                            <p className="mt-1 text-sm text-gray-600">Pakka Ghar: {house.pakka_ghar || "-"}</p>
-                                            <p className="mt-1 text-sm text-gray-600">Kismat: {house.kismat || "-"}</p>
-                                            <p className="mt-1 text-sm text-gray-600">Soya: {house.soya ? "Yes" : "No"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
+                                <ProviderSections sections={premiumData.lalkitab.provider_sections || []} />
                               ) : <p className="text-gray-400">No Lal Kitab data available.</p>}
                             </div>
                           )}

@@ -81,6 +81,18 @@ export const getMarriageMatching = async (
   }
 };
 
+export const downloadMatchMakingPdf = async (payload) => {
+  try {
+    const response = await api.post('/prokerala/matching/pdf', payload, {
+      responseType: 'blob',
+    });
+    return response;
+  } catch (error) {
+    console.error("Error downloading match-making PDF:", error);
+    throw error;
+  }
+};
+
 export const getPanchang = async (datetime, coordinates, ayanamsa = 1, options = {}) => {
   try {
     const response = await api.post(`/prokerala/panchang`, {
@@ -108,9 +120,19 @@ export const downloadFreeKundliPdf = async (payload) => {
   }
 };
 
-export const getDivisionalCharts = async (datetime, coordinates, chartType, chartStyle = 'north-indian') => {
+export const getDivisionalCharts = async (datetime, coordinates, chartTypeOrTypes, chartStyle = 'north-indian', options = {}) => {
   try {
-    const response = await api.post('/prokerala/divisional-charts', { datetime, coordinates, chart_type: chartType, chart_style: chartStyle });
+    const chartPayload = Array.isArray(chartTypeOrTypes)
+      ? { chart_types: chartTypeOrTypes }
+      : { chart_type: chartTypeOrTypes };
+
+    const response = await api.post('/prokerala/divisional-charts', {
+      datetime,
+      coordinates,
+      ...chartPayload,
+      chart_style: chartStyle,
+      ...options,
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching divisional charts:", error);
@@ -118,9 +140,9 @@ export const getDivisionalCharts = async (datetime, coordinates, chartType, char
   }
 };
 
-export const getPredictions = async (datetime, coordinates, type) => {
+export const getPredictions = async (datetime, coordinates, type, options = {}) => {
   try {
-    const response = await api.post('/prokerala/predictions', { datetime, coordinates, type });
+    const response = await api.post('/prokerala/predictions', { datetime, coordinates, type, ...options });
     return response.data;
   } catch (error) {
     console.error("Error fetching predictions:", error);
@@ -143,9 +165,9 @@ export const getNumerologyReport = async (payloadOrDatetime, legacyName = "") =>
   }
 };
 
-export const getSadesatiReport = async (datetime, coordinates) => {
+export const getSadesatiReport = async (datetime, coordinates, options = {}) => {
   try {
-    const response = await api.post('/prokerala/sadesati', { datetime, coordinates });
+    const response = await api.post('/prokerala/sadesati', { datetime, coordinates, ...options });
     return response.data;
   } catch (error) {
     console.error("Error fetching sadesati report:", error);
@@ -153,9 +175,9 @@ export const getSadesatiReport = async (datetime, coordinates) => {
   }
 };
 
-export const getLalKitabReport = async (datetime, coordinates) => {
+export const getLalKitabReport = async (datetime, coordinates, options = {}) => {
   try {
-    const response = await api.post('/prokerala/lal-kitab', { datetime, coordinates });
+    const response = await api.post('/prokerala/lal-kitab', { datetime, coordinates, ...options });
     return response.data;
   } catch (error) {
     console.error("Error fetching lal kitab report:", error);
@@ -179,6 +201,26 @@ export const getMatchingCalculator = async (calculator, payload) => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching matching calculator ${calculator}:`, error);
+    throw error;
+  }
+};
+
+export const getTarotReading = async (payload) => {
+  try {
+    const response = await api.post('/prokerala/tarot', payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching tarot reading:", error);
+    throw error;
+  }
+};
+
+export const getKundliDetailSection = async (section, payload) => {
+  try {
+    const response = await api.post(`/prokerala/kundli/detail-section/${section}`, payload);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching Kundli detail section ${section}:`, error);
     throw error;
   }
 };

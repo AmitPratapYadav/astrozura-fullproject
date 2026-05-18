@@ -1,5 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-const APP_BASE = API_BASE.replace(/\/index\.php\/api$|\/api$/, "");
+const APP_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
 export async function apiRequest(path, options = {}) {
   const {

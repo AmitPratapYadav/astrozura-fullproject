@@ -72,7 +72,22 @@ export const isMessagingSupportedInBrowser = async () => {
 };
 
 export const registerFirebaseMessagingServiceWorker = async () => {
-  return navigator.serviceWorker.register("/firebase-messaging-sw.js");
+  const existingRegistration = await navigator.serviceWorker.getRegistration("/firebase-messaging-sw.js");
+  const registration =
+    existingRegistration ||
+    (await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+      scope: "/",
+    }));
+
+  await navigator.serviceWorker.ready;
+
+  try {
+    await registration.update();
+  } catch {
+    // Ignore service worker update failures during token bootstrap.
+  }
+
+  return registration;
 };
 
 export const getMessagingInstance = async () => {

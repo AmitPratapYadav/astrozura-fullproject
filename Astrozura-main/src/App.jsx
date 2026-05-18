@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
@@ -6,7 +7,6 @@ import AstrologerProfile from "./pages/AstrologerProfile";
 import ConsultationPage from "./pages/ConsultationPage";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
-import ChatPage from "./pages/ChatPage"; 
 import Subscription from "./pages/Subscription";
 import Rituals from "./pages/Rituals";
 import RitualDetail from "./pages/RitualDetail";
@@ -19,16 +19,17 @@ import Panchang from "./pages/Panchang";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import LalKitabReport from "./pages/LalKitabReport";
+import TarotReading from "./pages/TarotReading";
 import VedicCalculators from "./pages/VedicCalculators";
 import MatchingCalculators from "./pages/MatchingCalculators";
 import AboutUs from "./pages/AboutUs";
 import ContactSupport from "./pages/ContactSupport";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
-import LiveSessions from "./pages/LiveSessions";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import OAuthCallback from "./pages/OAuthCallback";
+import GoogleOAuthBridge from "./pages/GoogleOAuthBridge";
 import AstrologerLogin from "./pages/astrologer/AstrologerLogin";
 import AstrologerDashboard from "./pages/astrologer/Dashboard";
 import UserDashboard from "./pages/user/UserDashboard";
@@ -38,18 +39,31 @@ import { AuthProvider } from "./context/AuthContext";
 import { PushNotificationsProvider } from "./context/PushNotificationsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
+import TestingAccessGate from "./components/TestingAccessGate";
+
+const ChatPage = lazy(() => import("./pages/ChatPage"));
+const LiveSessions = lazy(() => import("./pages/LiveSessions"));
+
+const RouteLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-[#FBF7F0]">
+    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#D4A73C]" />
+  </div>
+);
 
 function App() {
   return (
-    <AuthProvider>
-      <PushNotificationsProvider>
-        <BrowserRouter>
-          <ScrollToTop />
+    <TestingAccessGate>
+      <AuthProvider>
+        <PushNotificationsProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Suspense fallback={<RouteLoader />}>
           <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
+          <Route path="/api/auth/google/callback" element={<GoogleOAuthBridge />} />
           <Route path="/" element={<Home />} />
           <Route path="/astrologers" element={<Astrologers />} />
           <Route path="/profile/:id" element={<AstrologerProfile />} />
@@ -64,6 +78,7 @@ function App() {
           } />
           <Route path="/services" element={<Services />} />
           <Route path="/services/lal-kitab-report" element={<LalKitabReport />} />
+          <Route path="/services/tarot-reading" element={<TarotReading />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/vedic-calculators" element={<VedicCalculators />} />
           <Route path="/matching-calculators" element={<MatchingCalculators />} />
@@ -131,9 +146,11 @@ function App() {
             </ProtectedRoute>
           } />
           </Routes>
-        </BrowserRouter>
-      </PushNotificationsProvider>
-    </AuthProvider>
+            </Suspense>
+          </BrowserRouter>
+        </PushNotificationsProvider>
+      </AuthProvider>
+    </TestingAccessGate>
   );
 }
 

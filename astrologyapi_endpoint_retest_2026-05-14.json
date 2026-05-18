@@ -1,0 +1,2356 @@
+[
+  {
+    "name": "general_ascendant_report",
+    "path": "general_ascendant_report",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "asc_report": {
+        "ascendant": "Virgo",
+        "report": "Your Ascendant (also known as your Rising sign) is the first impression others have of you, before getting to know the 'real' you. Becoming acquainted with one’s Rising Sign (which is only possible if your exact time of birth is known), can help you figure out what your soul is drawn to, and it also reveals ways you may feel 'seen' by others, and by the world. With your Ascendant in Virgo, you naturally give off an aura of being well-put-together, organized, and composed. You’ve mastered the art of looking like you’ve got it all figured out—even if you’re just holding it together with caffeine and a to-do list. Your superpower lies in your attention to detail. Nothing slips past you, and your analytical mind is always sorting, refining, and improving. But, let’s keep it real: Sometimes your inner critic goes off like a broken record. Your lesson is to learn that not everything needs fixing. Self-compassion is your secret weapon—treat yourself with the same kindness you so freely give others. The world doesn’t need a perfect you; it needs the real you, flaws and all."
+      }
+    }
+  },
+  {
+    "name": "general_nakshatra_report",
+    "path": "general_nakshatra_report",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "physical": [
+        "Her face is innocent looking. Even an ugly looking woman with beautiful waist is attracted to man. Whereas, in the Anuradha native, in addition to her attractive face and beautiful body her beautiful waist is further added to her attraction to males."
+      ],
+      "character": [
+        "There is no room for arrogancy in her life. She is pure hearted. She does not believe a life of fashion whereas she likes to lead a simple life. A selfless, agreeable and  attractive disposition. She can shine well in social and political field. She will respect her elders. She will be cordoned by her friends as if she is the head of friend's circle."
+      ],
+      "education": [
+        "She will be more interested in music and fine arts. She may obtain an academic degree or high degree of knowledge in music and dance. Professional dancers are also found to have been born in this Nakshatra."
+      ],
+      "family": [
+        "She is very much devoted to her husband and observe religious norms. She can be called as a model mothers as far as upbringing of her own children are concerned. Her devotion to her in-laws pours further glory in her personal life. "
+      ],
+      "health": [
+        "She may suffer from irregular menses. Severe pain will be felt at the time of bleeding as the flow of spoiled blood will be quite intermittent. In some cases it has been told that, after appearance of monthly menses, there will be a break for some hours or for one or two days before commencing actual flow. She may also suffer from headache, nasal catarrh. "
+      ]
+    }
+  },
+  {
+    "name": "manglik",
+    "path": "manglik",
+    "status_code": null,
+    "ok": false,
+    "content_type": null,
+    "reason": "MISSING_POSTMAN_TEMPLATE",
+    "preview": null
+  },
+  {
+    "name": "kalsarpa_details",
+    "path": "kalsarpa_details",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "present": true,
+      "type": "Partial Descending",
+      "one_line": "You have descending kalsarpa dosha direction, which is not very powerful. The KalSarpa Dosha is having partial effect in your horoscope.",
+      "name": "Padma",
+      "report": {
+        "house_id": 5,
+        "report": "<p>In your horoscope the Padma Kaal Sarp Yog is present . Due to this reason the native remains worried about continuation of family tree(vansh). He is blessed by children late in life or the native may live away from children. </p>\n\n<p>There may be hurdles in obtaining good education but later on things are all right. The married life though normal could be painful and disturbed. </p>\n\n<p>The family members cause loss of esteem to native and happiness remains away from home. The friends of the native try to deceive him again and again.</p>\n\n<p>The enemies of the native hatch conspiracies against him and try to cause harm. There are hurdles in life and native has to struggle for moving ahead. Due to Kaal Sarp Yog the native suffers from sexual diseases many times that cause loss of money and the native may suffer due to debts. If at all the native is able to accumulate some wealth; others usurp it.</p>\n\n<p>The second half of life may be full of struggles or the native may remain worried about old age and he may think of leading a secluded life. Still the native gets success in politcs. </p>"
+      }
+    }
+  },
+  {
+    "name": "sadhesati_current_status",
+    "path": "sadhesati_current_status",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "consideration_date": "14-5-2026",
+      "is_saturn_retrograde": false,
+      "moon_sign": "Scorpio",
+      "saturn_sign": "Pisces",
+      "is_undergoing_sadhesati": "No, currently you are not undergoing Sadhesati.",
+      "sadhesati_status": false,
+      "what_is_sadhesati": "Sadhe Sati refers to the seven-and-a-half year period in which Saturn moves through three signs, the moon sign, one before the moon and the one after it. Sadhe Sati starts when Saturn (Shani) enters the 12th sign from the birth Moon sign and ends when Saturn leaves 2nd sign from the birth Moon sign.  Since Saturn approximately takes around two and half years to transit a sign which is called Shani's dhaiya  it takes around seven and half year to transit three signs  and that is why it is known as Sadhe Sati. Generally Sade-Sati comes thrice in a horoscope in the life time - first in childhood, second in youth & third in old-age. First Sade-Sati has effect on education & parents. Second Sade-Sati has effect on profession, finance & family. The last one affects health more than anything else."
+    }
+  },
+  {
+    "name": "sadhesati_life_details",
+    "path": "sadhesati_life_details",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": true,
+        "type": "SETTING_START",
+        "millisecond": "645843600000",
+        "date": "20-6-1990",
+        "summary": "Sadhesati Setting Phase starting with Peak Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_END",
+        "millisecond": "661222800000",
+        "date": "15-12-1990",
+        "summary": "Sadhesati Setting Phase ending and with this Sadhesati is also ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Libra",
+        "is_saturn_retrograde": false,
+        "type": "RISING_START",
+        "millisecond": "1321318800000",
+        "date": "15-11-2011",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Libra",
+        "is_saturn_retrograde": true,
+        "type": "RISING_END",
+        "millisecond": "1337130000000",
+        "date": "16-5-2012",
+        "summary": "Sadhesati Rise Phase ending and with this Sadhesati is also ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Libra",
+        "is_saturn_retrograde": false,
+        "type": "RISING_START",
+        "millisecond": "1344042000000",
+        "date": "4-8-2012",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": false,
+        "type": "PEAK_START",
+        "millisecond": "1414890000000",
+        "date": "2-11-2014",
+        "summary": "Sadhesati Peak Phase starting with Rise Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Sagittarius",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_START",
+        "millisecond": "1485478800000",
+        "date": "27-1-2017",
+        "summary": "Sadhesati Setting Phase starting with Peak Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Sagittarius",
+        "is_saturn_retrograde": true,
+        "type": "PEAK_START",
+        "millisecond": "1498006800000",
+        "date": "21-6-2017",
+        "summary": "Sadhesati Peak Phase starting with Rise Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Sagittarius",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_START",
+        "millisecond": "1508979600000",
+        "date": "26-10-2017",
+        "summary": "Sadhesati Setting Phase starting with Peak Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_END",
+        "millisecond": "1579827600000",
+        "date": "24-1-2020",
+        "summary": "Sadhesati Setting Phase ending and with this Sadhesati is also ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Libra",
+        "is_saturn_retrograde": false,
+        "type": "RISING_START",
+        "millisecond": "2242947600000",
+        "date": "28-1-2041",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Libra",
+        "is_saturn_retrograde": true,
+        "type": "RISING_END",
+        "millisecond": "2243725200000",
+        "date": "6-2-2041",
+        "summary": "Sadhesati Rise Phase ending and with this Sadhesati is also ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Libra",
+        "is_saturn_retrograde": false,
+        "type": "RISING_START",
+        "millisecond": "2263770000000",
+        "date": "26-9-2041",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": false,
+        "type": "PEAK_START",
+        "millisecond": "2333494800000",
+        "date": "12-12-2043",
+        "summary": "Sadhesati Peak Phase starting with Rise Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": true,
+        "type": "RISING_START",
+        "millisecond": "2350256400000",
+        "date": "23-6-2044",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": false,
+        "type": "PEAK_START",
+        "millisecond": "2356131600000",
+        "date": "30-8-2044",
+        "summary": "Sadhesati Peak Phase starting with Rise Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Sagittarius",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_START",
+        "millisecond": "2427843600000",
+        "date": "8-12-2046",
+        "summary": "Sadhesati Setting Phase starting with Peak Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_END",
+        "millisecond": "2498605200000",
+        "date": "6-3-2049",
+        "summary": "Sadhesati Setting Phase ending and with this Sadhesati is also ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": true,
+        "type": "SETTING_START",
+        "millisecond": "2509405200000",
+        "date": "9-7-2049",
+        "summary": "Sadhesati Setting Phase starting with Peak Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_END",
+        "millisecond": "2522192400000",
+        "date": "4-12-2049",
+        "summary": "Sadhesati Setting Phase ending and with this Sadhesati is also ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Libra",
+        "is_saturn_retrograde": false,
+        "type": "RISING_START",
+        "millisecond": "3182288400000",
+        "date": "4-11-2070",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": false,
+        "type": "PEAK_START",
+        "millisecond": "3253482000000",
+        "date": "5-2-2073",
+        "summary": "Sadhesati Peak Phase starting with Rise Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": true,
+        "type": "RISING_START",
+        "millisecond": "3258061200000",
+        "date": "30-3-2073",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": true,
+        "type": "RISING_START",
+        "millisecond": "3258234000000",
+        "date": "1-4-2073",
+        "summary": "Sadhesati Rise Phase starting."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Scorpio",
+        "is_saturn_retrograde": false,
+        "type": "PEAK_START",
+        "millisecond": "3275946000000",
+        "date": "23-10-2073",
+        "summary": "Sadhesati Peak Phase starting with Rise Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Sagittarius",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_START",
+        "millisecond": "3346362000000",
+        "date": "16-1-2076",
+        "summary": "Sadhesati Setting Phase starting with Peak Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Sagittarius",
+        "is_saturn_retrograde": true,
+        "type": "PEAK_START",
+        "millisecond": "3361568400000",
+        "date": "10-7-2076",
+        "summary": "Sadhesati Peak Phase starting with Rise Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Sagittarius",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_START",
+        "millisecond": "3369690000000",
+        "date": "12-10-2076",
+        "summary": "Sadhesati Setting Phase starting with Peak Phase ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_END",
+        "millisecond": "3440883600000",
+        "date": "14-1-2079",
+        "summary": "Sadhesati Setting Phase ending and with this Sadhesati is also ending."
+      },
+      {
+        "moon_sign": "Scorpio",
+        "saturn_sign": "Capricorn",
+        "is_saturn_retrograde": false,
+        "type": "SETTING_END",
+        "millisecond": "3440970000000",
+        "date": "15-1-2079",
+        "summary": "Sadhesati Setting Phase ending and with this Sadhesati is also ending."
+      }
+    ]
+  },
+  {
+    "name": "pitra_dosha_report",
+    "path": "pitra_dosha_report",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "what_is_pitri_dosha": "Pitra Dosha is a Karmic Debt of the ancestors and reflected in the horoscope in the form of planetary combinations. It can also happen due to the neglect of ancestors and not providing them their proper due in the form of shraddh or charity or spiritual upliftments.",
+      "is_pitri_dosha_present": true,
+      "rules_matched": [
+        "Rahu or Ketu is in eleventh house and/or Rahu or Ketu with Moon in fourth or ninth house causes Pitri Dosha."
+      ],
+      "conclusion": "Your horoscope is having Pitra Dosha as it is satisfying 1 rules laid down for Pitra Dosha. You should not worry as there are remedies for Pitra Dosha which you can perform and be relieved from this dosha.",
+      "remedies": [
+        "Following are the remedies to be performed for Pitra Dosha",
+        "Pitra dosha nivaran puja should be performed to pacify that malefic planet in Pitra paksha.",
+        "Auspicious Puja, Vrat for destroying the effects of past sinful deeds or Pitra Dosha.",
+        "Charity on Akshaya Tritiya.",
+        "Perform Trapandi Shraad to get rid of Pitra dosha.",
+        "Giving water to the Banyan tree is also a remedial measure for pitra dosha.",
+        "Offer food to Brahmins on every \"Amavasya\".",
+        "Donate food items on every \"Amavasya\" and \"Poornima\" in some temple or other religious places.",
+        "Conduct Mantra Jap, Puja, Charity in Adhik or Purushottam Maas.",
+        "Perform Puja, Vrat on Falharini Kalika Jyeshtha Amvasya.",
+        "Worship Lord Shiva regularly to have peace to you and your ancestors."
+      ],
+      "effects": [
+        "Following are the effects of Pitri Dosha - ",
+        "Pitra Dosha leads to unfavorable environment in the family.",
+        "It also leads to delay in marriage and having unsuccessful marriages.",
+        "Pitra Dosh can also cause accidents or unwanted incidents in the family.",
+        "It can cause delay or obstructions in education with or may land one into never ending debts.",
+        "Inherited diseases and prolong illness is one of the ill effects of pitra dosha"
+      ]
+    }
+  },
+  {
+    "name": "puja_suggestion",
+    "path": "puja_suggestion",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "summary": "Following are the puja suggestions based on your horoscope and planetary combinations.",
+      "suggestions": [
+        {
+          "status": true,
+          "priority": 5,
+          "title": "Kal Sarpa Dosha Shanti Pujan",
+          "puja_id": "KAL_SARPA",
+          "summary": "If all the 7 planets are situated between Rahu and Ketu then Kaal Sarp Yog is formed.According to the situation of Rahu in 12 houses of horoscope there are Kaal Sarp Yogas of 12 types.  These are : 1. Anant, 2. Kulik, 3. Vasuki, 4. Shankhpal, 5. Padma, 6. Mahapadma, 7. Takshak, 8. Karkotak, 9. Shankhchud, 10. Ghaatak, 11. Vishdhar and 12. Sheshnag. The Kaal Sarp Yog is of two types- Ascending and Descending. If all the 7 planets are eaten away by Rahu's mouth then it is Ascending Kaal Sarp Yog. If all planets are situated in back of Rahu then Descending Kaal Sarp Yog is formed.",
+          "one_line": "You have descending kalsarpa dosha direction, which is not very powerful. The KalSarpa Dosha is having partial effect in your horoscope."
+        },
+        {
+          "status": true,
+          "priority": 4,
+          "title": "Pitri Dosha Shanti Pujan ",
+          "puja_id": "PITRI_DOSHA",
+          "summary": "Pitra Dosha is a Karmic Debt of the ancestors and reflected in the horoscope in the form of planetary combinations. It can also happen due to the neglect of ancestors and not providing them their proper due in the form of shraddh or charity or spiritual upliftments.",
+          "one_line": "Your horoscope has pitri dosha. The pitri dosha can lead to unfavorable environment in family, delay in marriages or having unsuccessful marriage. It can also cause obstructions in education, career and business growth. It is recommended that Pitri dosha nivaran puja should be performed to pacify that malefic planet in Pitri Paksha"
+        }
+      ]
+    }
+  },
+  {
+    "name": "basic_gem_suggestion",
+    "path": "basic_gem_suggestion",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "LIFE": {
+        "name": "Emerald",
+        "gem_key": "emerald",
+        "semi_gem": "Onyx",
+        "wear_finger": "Little",
+        "weight_caret": " 4 - 6.25",
+        "wear_metal": "Gold",
+        "wear_day": "Wednesday",
+        "gem_deity": "Mercury"
+      },
+      "BENEFIC": {
+        "name": "Blue Sapphire",
+        "gem_key": "blue_sapphire",
+        "semi_gem": "Amethyst",
+        "wear_finger": "Middle",
+        "weight_caret": "3 - 4.25",
+        "wear_metal": "Silver",
+        "wear_day": "Saturday",
+        "gem_deity": "Saturn"
+      },
+      "LUCKY": {
+        "name": "Diamond",
+        "gem_key": "diamond",
+        "semi_gem": "Opal/Zircon",
+        "wear_finger": "Index",
+        "weight_caret": "1 - 4.25",
+        "wear_metal": "Silver",
+        "wear_day": "Friday",
+        "gem_deity": "Venus"
+      }
+    }
+  },
+  {
+    "name": "rudraksha_suggestion",
+    "path": "rudraksha_suggestion",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "img_url": "/img/9-mukhi2.jpg",
+      "rudraksha_key": "nine_faced",
+      "name": "Nine Faced Rudraksha (Nau Mukhi)",
+      "recommend": "You are recommended to wear NINE FACED Rudraksha.",
+      "detail": "Its ruling planet is Ketu. Nine Faced Rudraksha is the form of Goddess Durga (Shakti). It increases self-power. This mukhi is beneficial to sublimate the ill effects of Ketu. Ketu inflicts the diseases of lung, fever, eye-pain, bowel pain, skin disease, body pain etc. It is useful for concentration of peace of mind and spiritual awaking. It helps in cultivating patience, controlling unnecessary anger and a feeling of non-fear. It is very dear to Maa Shakti and worn by the devotee of Devi. It can be wear at neck or on right arm."
+    }
+  },
+  {
+    "name": "sadhesati_remedies",
+    "path": "sadhesati_remedies",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "what_is_sadhesati": "Sadhe Sati refers to the seven-and-a-half year period in which Saturn moves through three signs, the moon sign, one before the moon and the one after it. Sadhe Sati starts when Saturn (Shani) enters the 12th sign from the birth Moon sign and ends when Saturn leaves 2nd sign from the birth Moon sign.  Since Saturn approximately takes around two and half years to transit a sign which is called Shani's dhaiya  it takes around seven and half year to transit three signs  and that is why it is known as Sadhe Sati. Generally Sade-Sati comes thrice in a horoscope in the life time - first in childhood, second in youth & third in old-age. First Sade-Sati has effect on education & parents. Second Sade-Sati has effect on profession, finance & family. The last one affects health more than anything else.",
+      "remedies": [
+        "Following are the remedies for Sadhe Sati - ",
+        "Give respect to your subordinate, servant, poor and lower class people.",
+        "Serve and respect your parents and elderly people.",
+        "Recite Shri Hanuman Chalisa.",
+        "Shani Yantra is used to pacify an afflicted Shani and get  blessings of Lord Shani. When Saturn is malefic in a horoscope due to wrong placement, Sadhe Sati or Small Affliction,  use of Shani Yantra is very Beneficial. ",
+        "It is good and beneficial to fast on Saturdays starting from sunrise to ending at sunset when Sadhe Sati is in effect.",
+        "Donate urad (a type of pulse), oil, sapphire, black sesame seeds, black buffalo, iron, money and black clothes as per your financial situation to poor and needy people.",
+        "Wearing of seven faced Rudraksha tends to mitigate the ill effects of Sadhe Sati."
+      ]
+    }
+  },
+  {
+    "name": "lalkitab_horoscope",
+    "path": "lalkitab_horoscope",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "sign": 1,
+        "sign_name": "Aries",
+        "planet": [],
+        "planet_small": [],
+        "planet_degree": []
+      },
+      {
+        "sign": 2,
+        "sign_name": "Taurus",
+        "planet": [],
+        "planet_small": [],
+        "planet_degree": []
+      },
+      {
+        "sign": 3,
+        "sign_name": "Gemini",
+        "planet": [
+          "MOON"
+        ],
+        "planet_small": [
+          "Mo "
+        ],
+        "planet_degree": []
+      },
+      {
+        "sign": 4,
+        "sign_name": "Cancer",
+        "planet": [],
+        "planet_small": [],
+        "planet_degree": []
+      },
+      {
+        "sign": 5,
+        "sign_name": "Leo",
+        "planet": [
+          "SATURN",
+          "RAHU"
+        ],
+        "planet_small": [
+          "Sa ",
+          "Ra "
+        ],
+        "planet_degree": []
+      },
+      {
+        "sign": 6,
+        "sign_name": "Virgo",
+        "planet": [
+          "MARS"
+        ],
+        "planet_small": [
+          "Ma "
+        ],
+        "planet_degree": []
+      },
+      {
+        "sign": 7,
+        "sign_name": "Libra",
+        "planet": [
+          "VENUS"
+        ],
+        "planet_small": [
+          "Ve "
+        ],
+        "planet_degree": []
+      },
+      {
+        "sign": 8,
+        "sign_name": "Scorpio",
+        "planet": [
+          "SUN",
+          "MERCURY"
+        ],
+        "planet_small": [
+          "Su ",
+          "Me "
+        ],
+        "planet_degree": []
+      },
+      {
+        "sign": 9,
+        "sign_name": "Sagittarius",
+        "planet": [],
+        "planet_small": [],
+        "planet_degree": []
+      },
+      {
+        "sign": 10,
+        "sign_name": "Capricorn",
+        "planet": [
+          "JUPITER"
+        ],
+        "planet_small": [
+          "Ju "
+        ],
+        "planet_degree": []
+      },
+      {
+        "sign": 11,
+        "sign_name": "Aquarius",
+        "planet": [
+          "KETU"
+        ],
+        "planet_small": [
+          "Ke "
+        ],
+        "planet_degree": []
+      },
+      {
+        "sign": 12,
+        "sign_name": "Pisces",
+        "planet": [],
+        "planet_small": [],
+        "planet_degree": []
+      }
+    ]
+  },
+  {
+    "name": "lalkitab_debts",
+    "path": "lalkitab_debts",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "debt_name": "Self Debts",
+        "indications": "Fear from King, punishment or payment of penalty in legal suitseven though you are faultless; heart diseases, pain inshoulders, physical weakness, difficulty in eyes, spoiling life.",
+        "events": "The native will become an atheist, do not care dharma/religion,Health will not be favourable; the native will not follow the customs of ancestors."
+      },
+      {
+        "debt_name": "Debts to Relatives",
+        "indications": "killing or getting killed a she buffalo which is going to deliver a calf, performing black magic at the time of construction of a house or laying foundation stone by others, hating those people who mingle with the relatives of the native, keeping away in the functions like birth days of children or family festivals.",
+        "events": "The native cheats his friends, spoils the work done by others or burns the ripe crops in the agricultural fields of others."
+      },
+      {
+        "debt_name": "Debts to Girl Child/Sisters",
+        "indications": "Cheating girls while in youth, murdering or outraging sisters/daughters,selling or exchanging innocent kids out of greediness, or performing secret deeds which will never come out.",
+        "events": "The bad words hurt the others more severely than that caused by a sword. There will be bad and adverseresults to wealth and life of the native who is blessed with a son. Mother wantonly feels irresponsible. Mourning with happiness, bad/adverse results to in-laws and maternal grandfather, loss of entire yearly income at the end of the year."
+      },
+      {
+        "debt_name": "Father Debts",
+        "indications": "Changing or defaming of family priest, districting the shrine constructed along with residence, cutting or having holy long pepper tree.",
+        "events": "The hair of the any one of the elder’s persons in the family will become white. After turning to white,the hair colour starts becoming pale. Complaining of cough, or events like keeping the stigma of the bad actions of all other people on his head, etc., will happen."
+      },
+      {
+        "debt_name": "Godly Debts",
+        "indications": "Dog bites, children falling from upstairs or kids run over by vehicles, pain in ears, pain in the back - bone, not getting progeny or death of progeny after birth, difficulties in the happiness of progeny,urinary problems, loss to maternal grandfather, accidents and harmful events during journeys.",
+        "events": "Dog bites, children falling from upstairs or kids run over by vehicles, pain in ears, pain in the back - bone, not getting progeny or death of progeny after birth, difficulties in the happiness of progeny,urinary problems, loss to maternal grandfather, accidents and harmful events during journeys."
+      }
+    ]
+  },
+  {
+    "name": "lalkitab_houses",
+    "path": "lalkitab_houses",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "khana_number": 1,
+        "maalik": "Mars",
+        "pakka_ghar": "Sun",
+        "kismat": "Mars",
+        "soya": true,
+        "exalt": [
+          "Sun"
+        ],
+        "debilitated": [
+          "Saturn"
+        ]
+      },
+      {
+        "khana_number": 2,
+        "maalik": "Venus",
+        "pakka_ghar": "Jupiter",
+        "kismat": "Moon",
+        "soya": true,
+        "exalt": [
+          "Moon",
+          "Rahu"
+        ],
+        "debilitated": "-"
+      },
+      {
+        "khana_number": 3,
+        "maalik": "Mercury",
+        "pakka_ghar": "Mars",
+        "kismat": "Mercury",
+        "soya": false,
+        "exalt": [
+          "Rahu"
+        ],
+        "debilitated": [
+          "Ketu"
+        ]
+      },
+      {
+        "khana_number": 4,
+        "maalik": "Moon",
+        "pakka_ghar": "Moon",
+        "kismat": "Moon",
+        "soya": true,
+        "exalt": [
+          "Jupiter"
+        ],
+        "debilitated": [
+          "Mars"
+        ]
+      },
+      {
+        "khana_number": 5,
+        "maalik": "Sun",
+        "pakka_ghar": "Jupiter",
+        "kismat": "Sun",
+        "soya": false,
+        "exalt": "-",
+        "debilitated": "-"
+      },
+      {
+        "khana_number": 6,
+        "maalik": "Mercury",
+        "pakka_ghar": "Mars",
+        "kismat": "Rahu",
+        "soya": false,
+        "exalt": [
+          "Mercury"
+        ],
+        "debilitated": [
+          "Venus"
+        ]
+      },
+      {
+        "khana_number": 7,
+        "maalik": "Venus",
+        "pakka_ghar": "Venus",
+        "kismat": "Venus",
+        "soya": false,
+        "exalt": [
+          "Saturn"
+        ],
+        "debilitated": [
+          "Sun"
+        ]
+      },
+      {
+        "khana_number": 8,
+        "maalik": "Mars",
+        "pakka_ghar": "Saturn",
+        "kismat": "Moon",
+        "soya": true,
+        "exalt": [
+          "Ketu"
+        ],
+        "debilitated": [
+          "Moon"
+        ]
+      },
+      {
+        "khana_number": 9,
+        "maalik": "Jupiter",
+        "pakka_ghar": "Sun",
+        "kismat": "Jupiter",
+        "soya": true,
+        "exalt": [
+          "Ketu"
+        ],
+        "debilitated": [
+          "Rahu"
+        ]
+      },
+      {
+        "khana_number": 10,
+        "maalik": "Saturn",
+        "pakka_ghar": "Sun",
+        "kismat": "Saturn",
+        "soya": true,
+        "exalt": [
+          "Mars"
+        ],
+        "debilitated": [
+          "Jupiter"
+        ]
+      },
+      {
+        "khana_number": 11,
+        "maalik": "Saturn",
+        "pakka_ghar": "Jupiter",
+        "kismat": "Jupiter",
+        "soya": false,
+        "exalt": "-",
+        "debilitated": "-"
+      },
+      {
+        "khana_number": 12,
+        "maalik": "Jupiter",
+        "pakka_ghar": "Saturn",
+        "kismat": "Ketu",
+        "soya": true,
+        "exalt": [
+          "Venus"
+        ],
+        "debilitated": [
+          "Mercury"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "lalkitab_planets",
+    "path": "lalkitab_planets",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "planet": "Sun",
+        "rashi": "Scorpio",
+        "soya": true,
+        "position": "Friend Sign",
+        "nature": "Malefic"
+      },
+      {
+        "planet": "Moon",
+        "rashi": "Gemini",
+        "soya": true,
+        "position": "Friend Sign",
+        "nature": "Benefic"
+      },
+      {
+        "planet": "Mars",
+        "rashi": "Virgo",
+        "soya": true,
+        "position": "Enemy Sign",
+        "nature": "Malefic"
+      },
+      {
+        "planet": "Mercury",
+        "rashi": "Scorpio",
+        "soya": true,
+        "position": "Neutral Sign",
+        "nature": "Benefic"
+      },
+      {
+        "planet": "Jupiter",
+        "rashi": "Capricorn",
+        "soya": true,
+        "position": "Debilitated",
+        "nature": "Benefic"
+      },
+      {
+        "planet": "Venus",
+        "rashi": "Libra",
+        "soya": true,
+        "position": "Own Sign",
+        "nature": "Benefic"
+      },
+      {
+        "planet": "Saturn",
+        "rashi": "Leo",
+        "soya": false,
+        "position": "Enemy Sign",
+        "nature": "Malefic"
+      },
+      {
+        "planet": "Rahu",
+        "rashi": "Leo",
+        "soya": false,
+        "position": "-",
+        "nature": "Malefic"
+      },
+      {
+        "planet": "Ketu",
+        "rashi": "Aquarius",
+        "soya": false,
+        "position": "-",
+        "nature": "Malefic"
+      }
+    ]
+  },
+  {
+    "name": "kp_planets",
+    "path": "kp_planets",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "planet_id": 0,
+        "planet_name": "Sun",
+        "degree": 25.9422,
+        "formatted_degree": "25:56:31",
+        "is_retro": false,
+        "norm_degree": 25.9422,
+        "formatted_norm_degree": "25:56:31",
+        "house": 8,
+        "sign": "Aries",
+        "sign_lord": "Mars",
+        "nakshatra": "Bharni",
+        "nakshatra_lord": "Venus",
+        "charan": 4,
+        "sub_lord": "Ketu",
+        "sub_sub_lord": "Venus"
+      },
+      {
+        "planet_id": 1,
+        "planet_name": "Moon",
+        "degree": 214.5342,
+        "formatted_degree": "214:32:03",
+        "is_retro": false,
+        "norm_degree": 4.5342,
+        "formatted_norm_degree": "04:32:03",
+        "house": 2,
+        "sign": "Scorpio",
+        "sign_lord": "Mars",
+        "nakshatra": "Anuradha",
+        "nakshatra_lord": "Saturn",
+        "charan": 1,
+        "sub_lord": "Saturn",
+        "sub_sub_lord": "Sun"
+      },
+      {
+        "planet_id": 2,
+        "planet_name": "Mars",
+        "degree": 320.9653,
+        "formatted_degree": "320:57:55",
+        "is_retro": false,
+        "norm_degree": 20.9653,
+        "formatted_norm_degree": "20:57:55",
+        "house": 5,
+        "sign": "Aquarius",
+        "sign_lord": "Saturn",
+        "nakshatra": "Purva Bhadrapad",
+        "nakshatra_lord": "Jupiter",
+        "charan": 1,
+        "sub_lord": "Jupiter",
+        "sub_sub_lord": "Venus"
+      },
+      {
+        "planet_id": 3,
+        "planet_name": "Mercury",
+        "degree": 15.7268,
+        "formatted_degree": "15:43:36",
+        "is_retro": true,
+        "norm_degree": 15.7268,
+        "formatted_norm_degree": "15:43:36",
+        "house": 7,
+        "sign": "Aries",
+        "sign_lord": "Mars",
+        "nakshatra": "Bharni",
+        "nakshatra_lord": "Venus",
+        "charan": 1,
+        "sub_lord": "Sun",
+        "sub_sub_lord": "Rahu"
+      },
+      {
+        "planet_id": 4,
+        "planet_name": "Jupiter",
+        "degree": 74.9048,
+        "formatted_degree": "74:54:17",
+        "is_retro": false,
+        "norm_degree": 14.9048,
+        "formatted_norm_degree": "14:54:17",
+        "house": 9,
+        "sign": "Gemini",
+        "sign_lord": "Mercury",
+        "nakshatra": "Ardra",
+        "nakshatra_lord": "Rahu",
+        "charan": 3,
+        "sub_lord": "Ketu",
+        "sub_sub_lord": "Jupiter"
+      },
+      {
+        "planet_id": 5,
+        "planet_name": "Venus",
+        "degree": 343.5249,
+        "formatted_degree": "343:31:29",
+        "is_retro": false,
+        "norm_degree": 13.5249,
+        "formatted_norm_degree": "13:31:29",
+        "house": 6,
+        "sign": "Pisces",
+        "sign_lord": "Jupiter",
+        "nakshatra": "Uttra Bhadrapad",
+        "nakshatra_lord": "Saturn",
+        "charan": 4,
+        "sub_lord": "Rahu",
+        "sub_sub_lord": "Saturn"
+      },
+      {
+        "planet_id": 6,
+        "planet_name": "Saturn",
+        "degree": 271.5876,
+        "formatted_degree": "271:35:15",
+        "is_retro": true,
+        "norm_degree": 1.5876,
+        "formatted_norm_degree": "01:35:15",
+        "house": 4,
+        "sign": "Capricorn",
+        "sign_lord": "Saturn",
+        "nakshatra": "Uttra Shadha",
+        "nakshatra_lord": "Sun",
+        "charan": 2,
+        "sub_lord": "Jupiter",
+        "sub_sub_lord": "Saturn"
+      },
+      {
+        "planet_id": 7,
+        "planet_name": "Rahu",
+        "degree": 287.873,
+        "formatted_degree": "287:52:22",
+        "is_retro": true,
+        "norm_degree": 17.873,
+        "formatted_norm_degree": "17:52:22",
+        "house": 4,
+        "sign": "Capricorn",
+        "sign_lord": "Saturn",
+        "nakshatra": "Shravan",
+        "nakshatra_lord": "Moon",
+        "charan": 3,
+        "sub_lord": "Mercury",
+        "sub_sub_lord": "Mercury"
+      },
+      {
+        "planet_id": 8,
+        "planet_name": "Ketu",
+        "degree": 107.873,
+        "formatted_degree": "107:52:22",
+        "is_retro": true,
+        "norm_degree": 17.873,
+        "formatted_norm_degree": "17:52:22",
+        "house": 10,
+        "sign": "Cancer",
+        "sign_lord": "Moon",
+        "nakshatra": "Ashlesha",
+        "nakshatra_lord": "Mercury",
+        "charan": 1,
+        "sub_lord": "Mercury",
+        "sub_sub_lord": "Rahu"
+      },
+      {
+        "planet_name": "Ascendant",
+        "planet_id": 9,
+        "is_retro": false,
+        "degree": 174.75135734787293,
+        "formatted_degree": "174:45:04",
+        "norm_degree": 24.7514,
+        "formatted_norm_degree": "24:45:05",
+        "house": 1,
+        "sign": "Virgo",
+        "sign_lord": "Mercury",
+        "nakshatra": "Chitra",
+        "nakshatra_lord": "Mars",
+        "charan": 1,
+        "sub_lord": "Rahu",
+        "sub_sub_lord": "Saturn"
+      }
+    ]
+  },
+  {
+    "name": "kp_house_cusps",
+    "path": "kp_house_cusps",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "house_id": 1,
+        "cusp_full_degree": 174.7514,
+        "formatted_degree": "174:45:04",
+        "sign_id": 6,
+        "sign": "Virgo",
+        "sign_lord": "Mercury",
+        "nakshatra": "Chitra",
+        "nakshatra_lord": "Mars",
+        "sub_lord": "Rahu",
+        "sub_sub_lord": "Saturn"
+      },
+      {
+        "house_id": 2,
+        "cusp_full_degree": 204.1986,
+        "formatted_degree": "204:11:55",
+        "sign_id": 7,
+        "sign": "Libra",
+        "sign_lord": "Venus",
+        "nakshatra": "Vishakha",
+        "nakshatra_lord": "Jupiter",
+        "sub_lord": "Mercury",
+        "sub_sub_lord": "Ketu"
+      },
+      {
+        "house_id": 3,
+        "cusp_full_degree": 234.0961,
+        "formatted_degree": "234:05:45",
+        "sign_id": 8,
+        "sign": "Scorpio",
+        "sign_lord": "Mars",
+        "nakshatra": "Jyeshtha",
+        "nakshatra_lord": "Mercury",
+        "sub_lord": "Mars",
+        "sub_sub_lord": "Moon"
+      },
+      {
+        "house_id": 4,
+        "cusp_full_degree": 264.3481,
+        "formatted_degree": "264:20:53",
+        "sign_id": 9,
+        "sign": "Sagittarius",
+        "sign_lord": "Jupiter",
+        "nakshatra": "Purva Shadha",
+        "nakshatra_lord": "Venus",
+        "sub_lord": "Mercury",
+        "sub_sub_lord": "Ketu"
+      },
+      {
+        "house_id": 5,
+        "cusp_full_degree": 295.2303,
+        "formatted_degree": "295:13:49",
+        "sign_id": 10,
+        "sign": "Capricorn",
+        "sign_lord": "Saturn",
+        "nakshatra": "Dhanishtha",
+        "nakshatra_lord": "Mars",
+        "sub_lord": "Rahu",
+        "sub_sub_lord": "Mercury"
+      },
+      {
+        "house_id": 6,
+        "cusp_full_degree": 325.9694,
+        "formatted_degree": "325:58:09",
+        "sign_id": 11,
+        "sign": "Aquarius",
+        "sign_lord": "Saturn",
+        "nakshatra": "Purva Bhadrapad",
+        "nakshatra_lord": "Jupiter",
+        "sub_lord": "Ketu",
+        "sub_sub_lord": "Sun"
+      },
+      {
+        "house_id": 7,
+        "cusp_full_degree": 354.7514,
+        "formatted_degree": "354:45:04",
+        "sign_id": 12,
+        "sign": "Pisces",
+        "sign_lord": "Jupiter",
+        "nakshatra": "Revati",
+        "nakshatra_lord": "Mercury",
+        "sub_lord": "Rahu",
+        "sub_sub_lord": "Saturn"
+      },
+      {
+        "house_id": 8,
+        "cusp_full_degree": 24.1986,
+        "formatted_degree": "24:11:55",
+        "sign_id": 1,
+        "sign": "Aries",
+        "sign_lord": "Mars",
+        "nakshatra": "Bharni",
+        "nakshatra_lord": "Venus",
+        "sub_lord": "Mercury",
+        "sub_sub_lord": "Mercury"
+      },
+      {
+        "house_id": 9,
+        "cusp_full_degree": 54.0961,
+        "formatted_degree": "54:05:45",
+        "sign_id": 2,
+        "sign": "Taurus",
+        "sign_lord": "Venus",
+        "nakshatra": "Mrigshira",
+        "nakshatra_lord": "Mars",
+        "sub_lord": "Mars",
+        "sub_sub_lord": "Moon"
+      },
+      {
+        "house_id": 10,
+        "cusp_full_degree": 84.3481,
+        "formatted_degree": "84:20:53",
+        "sign_id": 3,
+        "sign": "Gemini",
+        "sign_lord": "Mercury",
+        "nakshatra": "Punarvasu",
+        "nakshatra_lord": "Jupiter",
+        "sub_lord": "Mercury",
+        "sub_sub_lord": "Venus"
+      },
+      {
+        "house_id": 11,
+        "cusp_full_degree": 115.2303,
+        "formatted_degree": "115:13:49",
+        "sign_id": 4,
+        "sign": "Cancer",
+        "sign_lord": "Moon",
+        "nakshatra": "Ashlesha",
+        "nakshatra_lord": "Mercury",
+        "sub_lord": "Rahu",
+        "sub_sub_lord": "Mercury"
+      },
+      {
+        "house_id": 12,
+        "cusp_full_degree": 145.9694,
+        "formatted_degree": "145:58:09",
+        "sign_id": 5,
+        "sign": "Leo",
+        "sign_lord": "Sun",
+        "nakshatra": "Purva Phalguni",
+        "nakshatra_lord": "Venus",
+        "sub_lord": "Ketu",
+        "sub_sub_lord": "Venus"
+      }
+    ]
+  },
+  {
+    "name": "kp_birth_chart",
+    "path": "kp_birth_chart",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "signs": [
+          6,
+          7
+        ],
+        "planets": [],
+        "planets_small": [],
+        "planet_signs": []
+      },
+      {
+        "signs": [
+          7,
+          8
+        ],
+        "planets": [
+          "Moon"
+        ],
+        "planets_small": [
+          "Mo "
+        ],
+        "planet_signs": [
+          8
+        ]
+      },
+      {
+        "signs": [
+          8,
+          9
+        ],
+        "planets": [],
+        "planets_small": [],
+        "planet_signs": []
+      },
+      {
+        "signs": [
+          9,
+          10
+        ],
+        "planets": [
+          "Saturn",
+          "Rahu"
+        ],
+        "planets_small": [
+          "Sa ",
+          "Ra "
+        ],
+        "planet_signs": [
+          10,
+          10
+        ]
+      },
+      {
+        "signs": [
+          10,
+          11
+        ],
+        "planets": [
+          "Mars"
+        ],
+        "planets_small": [
+          "Ma "
+        ],
+        "planet_signs": [
+          11
+        ]
+      },
+      {
+        "signs": [
+          11,
+          12
+        ],
+        "planets": [
+          "Venus"
+        ],
+        "planets_small": [
+          "Ve "
+        ],
+        "planet_signs": [
+          12
+        ]
+      },
+      {
+        "signs": [
+          12,
+          1
+        ],
+        "planets": [
+          "Mercury"
+        ],
+        "planets_small": [
+          "Me "
+        ],
+        "planet_signs": [
+          1
+        ]
+      },
+      {
+        "signs": [
+          1,
+          2
+        ],
+        "planets": [
+          "Sun"
+        ],
+        "planets_small": [
+          "Su "
+        ],
+        "planet_signs": [
+          1
+        ]
+      },
+      {
+        "signs": [
+          2,
+          3
+        ],
+        "planets": [
+          "Jupiter"
+        ],
+        "planets_small": [
+          "Ju "
+        ],
+        "planet_signs": [
+          3
+        ]
+      },
+      {
+        "signs": [
+          3,
+          4
+        ],
+        "planets": [
+          "Ketu"
+        ],
+        "planets_small": [
+          "Ke "
+        ],
+        "planet_signs": [
+          4
+        ]
+      },
+      {
+        "signs": [
+          4,
+          5
+        ],
+        "planets": [],
+        "planets_small": [],
+        "planet_signs": []
+      },
+      {
+        "signs": [
+          5,
+          6
+        ],
+        "planets": [],
+        "planets_small": [],
+        "planet_signs": []
+      }
+    ]
+  },
+  {
+    "name": "kp_house_significator",
+    "path": "kp_house_significator",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "house_id": 1,
+        "significators": [
+          "Mercury",
+          "Ketu"
+        ]
+      },
+      {
+        "house_id": 2,
+        "significators": [
+          "Moon",
+          "Rahu",
+          "Venus",
+          "Sun",
+          "Mercury"
+        ]
+      },
+      {
+        "house_id": 3,
+        "significators": [
+          "Mars"
+        ]
+      },
+      {
+        "house_id": 4,
+        "significators": [
+          "Saturn",
+          "Rahu",
+          "Moon",
+          "Jupiter",
+          "Venus",
+          "Mars"
+        ]
+      },
+      {
+        "house_id": 5,
+        "significators": [
+          "Mars",
+          "Saturn",
+          "Moon",
+          "Venus"
+        ]
+      },
+      {
+        "house_id": 6,
+        "significators": [
+          "Venus",
+          "Sun",
+          "Mercury",
+          "Saturn",
+          "Moon"
+        ]
+      },
+      {
+        "house_id": 7,
+        "significators": [
+          "Mercury",
+          "Ketu",
+          "Jupiter",
+          "Mars"
+        ]
+      },
+      {
+        "house_id": 8,
+        "significators": [
+          "Sun",
+          "Saturn",
+          "Mars"
+        ]
+      },
+      {
+        "house_id": 9,
+        "significators": [
+          "Jupiter",
+          "Mars",
+          "Venus",
+          "Sun",
+          "Mercury"
+        ]
+      },
+      {
+        "house_id": 10,
+        "significators": [
+          "Ketu",
+          "Mercury"
+        ]
+      },
+      {
+        "house_id": 11,
+        "significators": [
+          "Moon",
+          "Rahu"
+        ]
+      },
+      {
+        "house_id": 12,
+        "significators": [
+          "Sun",
+          "Saturn"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "kp_planet_significator",
+    "path": "kp_planet_significator",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": [
+      {
+        "planet_id": 0,
+        "planet_name": "Sun",
+        "significators": [
+          2,
+          6,
+          8,
+          9,
+          12
+        ]
+      },
+      {
+        "planet_id": 1,
+        "planet_name": "Moon",
+        "significators": [
+          2,
+          4,
+          5,
+          6,
+          11
+        ]
+      },
+      {
+        "planet_id": 2,
+        "planet_name": "Mars",
+        "significators": [
+          3,
+          4,
+          5,
+          7,
+          8,
+          9
+        ]
+      },
+      {
+        "planet_id": 3,
+        "planet_name": "Mercury",
+        "significators": [
+          1,
+          2,
+          6,
+          7,
+          9,
+          10
+        ]
+      },
+      {
+        "planet_id": 4,
+        "planet_name": "Jupiter",
+        "significators": [
+          4,
+          7,
+          9
+        ]
+      },
+      {
+        "planet_id": 5,
+        "planet_name": "Venus",
+        "significators": [
+          2,
+          4,
+          5,
+          6,
+          9
+        ]
+      },
+      {
+        "planet_id": 6,
+        "planet_name": "Saturn",
+        "significators": [
+          4,
+          5,
+          6,
+          8,
+          12
+        ]
+      },
+      {
+        "planet_id": 7,
+        "planet_name": "Rahu",
+        "significators": [
+          2,
+          4,
+          11
+        ]
+      },
+      {
+        "planet_id": 8,
+        "planet_name": "Ketu",
+        "significators": [
+          1,
+          7,
+          10
+        ]
+      }
+    ]
+  },
+  {
+    "name": "biorhythm",
+    "path": "biorhythm",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "physical": {
+        "percent": -73,
+        "trend": 1
+      },
+      "emotional": {
+        "percent": -100,
+        "trend": 1
+      },
+      "intellectual": {
+        "percent": -45,
+        "trend": 0
+      },
+      "average": {
+        "percent": -72,
+        "trend": 1
+      }
+    }
+  },
+  {
+    "name": "moon_biorhythm",
+    "path": "moon_biorhythm",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "birth_pakshi": "Owl",
+      "bird_id": 1,
+      "birth_pakshi_details": {
+        "name_letter": [
+          "Va",
+          "Vuu"
+        ],
+        "death_day": [
+          "Monday"
+        ],
+        "day_ruling_days": [
+          "Thursday"
+        ],
+        "night_ruling_days": [
+          "Wednesday"
+        ],
+        "color": "Red",
+        "direction": "North",
+        "enemy": [
+          "Vulture",
+          "Peacock"
+        ],
+        "friend": [
+          "Owl",
+          "Cock"
+        ]
+      },
+      "activity_cycle": {
+        "day": [
+          {
+            "start_time": "09:14:47",
+            "end_time": "11:51:07",
+            "start_hours": 9.2467,
+            "end_hours": 11.8522,
+            "activity_id": 1,
+            "activity": "Eat",
+            "activity_meaning": "Energize"
+          },
+          {
+            "start_time": "11:51:07",
+            "end_time": "14:27:27",
+            "start_hours": 11.8522,
+            "end_hours": 14.4577,
+            "activity_id": 4,
+            "activity": "Die",
+            "activity_meaning": "Caution"
+          },
+          {
+            "start_time": "14:27:27",
+            "end_time": "17:03:47",
+            "start_hours": 14.4577,
+            "end_hours": 17.0632,
+            "activity_id": 3,
+            "activity": "Sleep",
+            "activity_meaning": "Relax"
+          },
+          {
+            "start_time": "17:03:47",
+            "end_time": "19:40:07",
+            "start_hours": 17.0632,
+            "end_hours": 19.6687,
+            "activity_id": 0,
+            "activity": "Rule",
+            "activity_meaning": "Succeed"
+          },
+          {
+            "start_time": "19:40:07",
+            "end_time": "22:16:26",
+            "start_hours": 19.6687,
+            "end_hours": 22.2742,
+            "activity_id": 2,
+            "activity": "Walk",
+            "activity_meaning": "Action"
+          }
+        ],
+        "night": [
+          {
+            "start_time": "22:16:26",
+            "end_time": "00:52:51",
+            "start_hours": 22.2742,
+            "end_hours": 24.8809,
+            "activity_id": 3,
+            "activity": "Sleep",
+            "activity_meaning": "Relax"
+          },
+          {
+            "start_time": "00:52:51",
+            "end_time": "03:29:15",
+            "start_hours": 24.8809,
+            "end_hours": 27.4877,
+            "activity_id": 2,
+            "activity": "Walk",
+            "activity_meaning": "Action"
+          },
+          {
+            "start_time": "03:29:15",
+            "end_time": "06:05:40",
+            "start_hours": 27.4877,
+            "end_hours": 30.0945,
+            "activity_id": 4,
+            "activity": "Die",
+            "activity_meaning": "Caution"
+          },
+          {
+            "start_time": "06:05:40",
+            "end_time": "08:42:04",
+            "start_hours": 30.0945,
+            "end_hours": 32.7013,
+            "activity_id": 0,
+            "activity": "Rule",
+            "activity_meaning": "Succeed"
+          },
+          {
+            "start_time": "08:42:04",
+            "end_time": "11:18:29",
+            "start_hours": 32.7013,
+            "end_hours": 35.3081,
+            "activity_id": 1,
+            "activity": "Eat",
+            "activity_meaning": "Energize"
+          }
+        ]
+      },
+      "considered_date": "14-5-2026"
+    }
+  },
+  {
+    "name": "advanced_panchang",
+    "path": "advanced_panchang",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "day": "Thursday",
+      "sunrise": "9:16:33",
+      "sunset": "22:14:47",
+      "moonrise": "22:59:22",
+      "moonset": "9:20:49",
+      "vedic_sunrise": "9:20:19",
+      "vedic_sunset": "22:11:1",
+      "tithi": {
+        "details": {
+          "tithi_number": 16,
+          "tithi_name": "Krishna Pratipada",
+          "special": "Nanda Tithi",
+          "summary": "Auspicious for all types of religious and auspicious ceremonies, festivals and activities related to real estate.",
+          "deity": "Brahma"
+        },
+        "end_time": {
+          "hour": 27,
+          "minute": 25,
+          "second": 34
+        },
+        "end_time_ms": 642376534000
+      },
+      "nakshatra": {
+        "details": {
+          "nak_number": 17,
+          "nak_name": "Anuradha",
+          "ruler": "Saturn",
+          "deity": "Mitra",
+          "special": "-",
+          "summary": "It is a soft and gentle natured constellation and good for fine arts, learning, making friendships, sensual pleasures, decorations, sexual union, wearing new apparel, marriage."
+        },
+        "end_time": {
+          "hour": 44,
+          "minute": 26,
+          "second": 26
+        },
+        "end_time_ms": 642437787000
+      },
+      "yog": {
+        "details": {
+          "yog_number": 19,
+          "yog_name": "Parigh",
+          "special": "It is Inauspicious yoga,Not good for auspicious undertakings.",
+          "meaning": "(Obstruction) — encounters many obstacles to progress in life; irritable and meddlesome."
+        },
+        "end_time": {
+          "hour": 43,
+          "minute": 57,
+          "second": 6
+        },
+        "end_time_ms": 642436026000
+      },
+      "karan": {
+        "details": {
+          "karan_number": 4,
+          "karan_name": "Kaulav",
+          "special": " It is suited for Maitri (Friendship) and for all works of a permanent and durable nature.",
+          "deity": "Chandra"
+        },
+        "end_time": {
+          "hour": 27,
+          "minute": 24,
+          "second": 33
+        },
+        "end_time_ms": 642376474000
+      },
+      "hindu_maah": {
+        "adhik_status": false,
+        "purnimanta": "Jyeshtha",
+        "amanta": "Vaishakh",
+        "amanta_id": 2,
+        "purnimanta_id": 3
+      },
+      "paksha": "Krishna-Paksha",
+      "ritu": "Vasant",
+      "sun_sign": "Aries",
+      "moon_sign": "Scorpio",
+      "ayana": "Uttarayana",
+      "panchang_yog": "",
+      "vikram_samvat": 2047,
+      "shaka_samvat": 1912,
+      "vkram_samvat_name": "Subhanu",
+      "shaka_samvat_name": "Pramod",
+      "disha_shool": "SOUTH",
+      "disha_shool_remedies": "-",
+      "nak_shool": {
+        "direction": "none",
+        "remedies": "-"
+      },
+      "moon_nivas": "NORTH",
+      "abhijit_muhurta": {
+        "start": "15:20",
+        "end": "16:10"
+      },
+      "rahukaal": {
+        "start": "17:22:57",
+        "end": "19:00:14"
+      },
+      "guliKaal": {
+        "start": "12:31:06",
+        "end": "14:08:23"
+      },
+      "yamghant_kaal": {
+        "start": "09:16:33",
+        "end": "10:53:49"
+      }
+    }
+  },
+  {
+    "name": "hora_muhurta",
+    "path": "hora_muhurta",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "hora": {
+        "day": [
+          {
+            "time": "9:16 : 10:16",
+            "hora": "Jupiter"
+          },
+          {
+            "time": "10:16 : 11:16",
+            "hora": "Mars"
+          },
+          {
+            "time": "11:16 : 12:16",
+            "hora": "Sun"
+          },
+          {
+            "time": "12:16 : 13:16",
+            "hora": "Venus"
+          },
+          {
+            "time": "13:16 : 14:16",
+            "hora": "Mercury"
+          },
+          {
+            "time": "14:16 : 15:16",
+            "hora": "Moon"
+          },
+          {
+            "time": "15:16 : 16:16",
+            "hora": "Saturn"
+          },
+          {
+            "time": "16:16 : 17:16",
+            "hora": "Jupiter"
+          },
+          {
+            "time": "17:16 : 18:16",
+            "hora": "Mars"
+          },
+          {
+            "time": "18:16 : 19:16",
+            "hora": "Sun"
+          },
+          {
+            "time": "19:16 : 20:16",
+            "hora": "Venus"
+          },
+          {
+            "time": "20:16 : 21:16",
+            "hora": "Mercury"
+          }
+        ],
+        "night": [
+          {
+            "time": "21:16 : 22:16",
+            "hora": "Moon"
+          },
+          {
+            "time": "22:16 : 23:16",
+            "hora": "Saturn"
+          },
+          {
+            "time": "23:16 : 0:16",
+            "hora": "Jupiter"
+          },
+          {
+            "time": "0:16 : 1:16",
+            "hora": "Mars"
+          },
+          {
+            "time": "1:16 : 2:16",
+            "hora": "Sun"
+          },
+          {
+            "time": "2:16 : 3:16",
+            "hora": "Venus"
+          },
+          {
+            "time": "3:16 : 4:16",
+            "hora": "Mercury"
+          },
+          {
+            "time": "4:16 : 5:16",
+            "hora": "Moon"
+          },
+          {
+            "time": "5:16 : 6:16",
+            "hora": "Saturn"
+          },
+          {
+            "time": "6:16 : 7:16",
+            "hora": "Jupiter"
+          },
+          {
+            "time": "7:16 : 8:16",
+            "hora": "Mars"
+          },
+          {
+            "time": "8:16 : 9:16",
+            "hora": "Sun"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "chaughadiya_muhurta",
+    "path": "chaughadiya_muhurta",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "chaughadiya": {
+        "day": [
+          {
+            "time": "09:16:33 - 10:53:49",
+            "muhurta": "Shubh"
+          },
+          {
+            "time": "10:53:49 - 12:31:06",
+            "muhurta": "Rog"
+          },
+          {
+            "time": "12:31:06 - 14:08:23",
+            "muhurta": "Udveg"
+          },
+          {
+            "time": "14:08:23 - 15:45:40",
+            "muhurta": "Char"
+          },
+          {
+            "time": "15:45:40 - 17:22:57",
+            "muhurta": "Labh"
+          },
+          {
+            "time": "17:22:57 - 19:00:14",
+            "muhurta": "Amrit"
+          },
+          {
+            "time": "19:00:14 - 20:37:31",
+            "muhurta": "Kaal"
+          },
+          {
+            "time": "20:37:31 - 22:14:47",
+            "muhurta": "Shubh"
+          }
+        ],
+        "night": [
+          {
+            "time": "22:14:47 - 23:37:31",
+            "muhurta": "Amrit"
+          },
+          {
+            "time": "23:37:31 - 25:00:14",
+            "muhurta": "Char"
+          },
+          {
+            "time": "25:00:14 - 26:22:57",
+            "muhurta": "Rog"
+          },
+          {
+            "time": "26:22:57 - 27:45:40",
+            "muhurta": "Kaal"
+          },
+          {
+            "time": "27:45:40 - 29:08:23",
+            "muhurta": "Labh"
+          },
+          {
+            "time": "29:08:23 - 30:31:06",
+            "muhurta": "Udveg"
+          },
+          {
+            "time": "30:31:06 - 31:53:49",
+            "muhurta": "Shubh"
+          },
+          {
+            "time": "31:53:49 - 09:16:33",
+            "muhurta": "Amrit"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "daily_nakshatra_prediction",
+    "path": "daily_nakshatra_prediction",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "birth_moon_sign": "Scorpio",
+      "birth_moon_nakshatra": "Anuradha",
+      "prediction": {
+        "health": "You may have to travel for official or study purpose. Be careful with your food and water when you are travelling. ",
+        "emotions": "You will feel positive and creative this day. You shall see things better than they really are. Your passions will run high. ",
+        "profession": "Apply your knowledge and experience to your work to get good results. You shall be able to make the most out of available opportunities. You will also be appreciated by people around you. benefits from lottery or share market. ",
+        "luck": "Good luck surrounds you today. You can use your intuition to take any decision. You shall feel fortunate in more than one way. ",
+        "personal_life": "You would enjoy lovely moments in the company of family members. Love relations will flourish. Today is the right time to propose to your beloved. Attending a party or such event cannot be ruled out. Some of you might like to spend on articles of luxury and comforts. ",
+        "travel": "Today is favorable for official trips. You will have a successful travel plan. "
+      },
+      "prediction_date": "14 May 2026"
+    }
+  },
+  {
+    "name": "panchada_maitri",
+    "path": "panchada_maitri",
+    "status_code": 404,
+    "ok": false,
+    "content_type": "application/json; charset=utf-8",
+    "reason": "{\"status\": false, \"statusCode\": 404, \"error_msg\": \"The requested API endpoint is not available. Kindly check your api name/url or HTTP method type.\"}",
+    "preview": {
+      "status": false,
+      "statusCode": 404,
+      "error_msg": "The requested API endpoint is not available. Kindly check your api name/url or HTTP method type."
+    }
+  },
+  {
+    "name": "general_house_report/Sun",
+    "path": "general_house_report/Sun",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Sun",
+      "house_report": "You may need or get the chance to transform your selfish and self-centered ego through the sharing of your personal resources with others on an equal basis with no strings attached. Perhaps you have the desire to have others take care of you using their personal possessions. Your emotions are generally stable and usually are never portrayed outwardly. There is a striving for self-improvement and regeneration. Finances are usually steady and there is the possibility of an inheritance. There is interest in mystical, occult and psychic realms."
+    }
+  },
+  {
+    "name": "general_rashi_report/Sun",
+    "path": "general_rashi_report/Sun",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Sun",
+      "rashi_report": "Arians can be inspirational, courageous, enthusiastic, original, independent, impatient, aggressive, headstrong, selfish, self-centered, and impulsive. The Arian's energies are directed toward building a new individuality, thus all the Arian's energies are directed towards themself and what they want. An Arian likes roles where there leadership abilities are put on display. Arians have executive and organizing ability which is mainly directed in starting things. Sustaining projects is not their strength, but initiating projects is. The tendency to 'damn the torpedoes' and ram full-speed ahead must be controlled. Arians are capable of great accomplishments if they learn how to constructively use their abundant energies. Arians are naturally enthusiastic and are always ready for activity and competition. They are inspiring to others because of these tendencies. Ideas and creative projects seem to flow from them in a never-ending stream. They are full of energy and never lack courage. Because Arians can be pretty self-centered, they must remember that other people may have good ideas and can assume responsibility and leadership roles, too. The natural tendency for an Arian is to stand alone and do everything themself. But cooperation with others can be very effective in getting things done to the end rather than simply starting things and quitting before completion. Arians have a tendency to start a project, then to suddenly lose interest in it if progress is too slow or things have become too complicated."
+    }
+  },
+  {
+    "name": "lalkitab_remedies/Sun",
+    "path": "lalkitab_remedies/Sun",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Sun",
+      "house": "Eighth",
+      "lal_kitab_desc": "Government favours will accrue from the 22nd year of life.Here the Sun makes the native truthful, saintly and king like. Nobody would be able to harm him.Mercury in the 2nd house will create economic crisis.Native will be short tempered, impatient &amp; will have ill health. ",
+      "lal_kitab_remedies": [
+        "Mercury in the 2nd house will create economic crisis.",
+        "Native will be short tempered, impatient &amp; will have ill health. "
+      ]
+    }
+  },
+  {
+    "name": "general_house_report/Moon",
+    "path": "general_house_report/Moon",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Moon",
+      "house_report": "You possess intellectual curiosity and may well express your true feelings through speech, poetry or writing. Intellectualizing your feelings is probable. There is a strong need for communication and for gathering information, which is later shared with people in general or women in particular. You have a fine sense of humor and like to joke and play around. Travel appeals to you because it affords new opportunities for learning. Routine of any kind probably bores you and you are constantly looking for variety. Your ideas change at a moment's notice and you are forever flexible and adaptable to any situation. Learning is perhaps better accomplished through listening rather than reading. Your mind can be quite emotional at times. Concerning vocation: the emphasis is on communication and information exchange. Your personality gathers, shares and reacts to information. This position represents the intermediary, the go-between, and the dissemination functions."
+    }
+  },
+  {
+    "name": "general_rashi_report/Moon",
+    "path": "general_rashi_report/Moon",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Moon",
+      "rashi_report": "You are secretive and inclined to brood in silence over the wrongs that people have done, either in reality or simply in your own mind. The mental and emotional focus may be on sensual things or on sex or death. You find it difficult to trust people as you are suspicious of their inner thoughts and plans. You open yourself up to very few as you do not find it easy to trust others. Allowing yourself to be vulnerable and to relinquish control in relationships is not easy for you. You love with passion and you hate with passion. Everything is done emotionally, with intensity. You can be very jealous and possessive in your relationships. Perhaps your mother was very controlling. You have a habit of holding on to wrongs that have been done in the past and not forgiving nor forgetting, and to keep such feelings to yourself. Guilt, resentment and vindictiveness need to be overcome. You must learn to let go or your health will suffer. Learn to express your feelings outwardly rather than repressing them within. You are not content with superficial appearances and are always probing beneath the surface of things for hidden motives. You have a great deal of emotional depth. The potential for success is great when control and discipline are learned. You are magnetic, energetic, independent, aggressive, patient, and determined. Self-control of the passions is mandatory."
+    }
+  },
+  {
+    "name": "lalkitab_remedies/Moon",
+    "path": "lalkitab_remedies/Moon",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Moon",
+      "house": "Third",
+      "lal_kitab_desc": "The results of the 3rd house, when the Moon is placed therein, will be influenced by the Mars, Mercury and Moon. Here the Moon proves highly beneficial to ensure a long life and great wealth or riches for the native.  If there are no planet in the 9th and 11th houses, then Mars and Venus will give good results to the native because of the Moon being in the 3rd house.  With the advancement of the native.s education and learning, the economic condition of his father will deteriorate, but without affecting his education adversely. If Ketu.s placing in the horoscope is auspicious and not harming the Moon in the 3rd, the education of the native will bear good fruits and prove advantageous in every manner.  If the Moon is malefic, it will cause great loss of wealth and money at the age of the malefic planet placed in the 9th house. ",
+      "lal_kitab_remedies": [
+        "Offer in donation the things associated with the Moon, e.g., silver or rice, after the birth of a daughter and the things associated with the Sun e.g., wheat and jaggery when a son is born. ",
+        "Do not make use of your daughter.s money and wealth. ",
+        "To avoid the evil effects of a malefic planet in the 8th house, serve the guests and others by offering them milk and water freely. ",
+        "Worshipping Goddess Durga and obtaining the blessings of small girls by touching their feet after serving them food and sweets. "
+      ]
+    }
+  },
+  {
+    "name": "general_house_report/Mars",
+    "path": "general_house_report/Mars",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Mars",
+      "house_report": "You are industrious, efficient, tireless, dynamic and active in work. You may have a tendency towards irritation and impatience with co-workers and employees who lack these qualities. You are mechanically minded with good vitality and strong recuperative powers. You tend to run fevers, perhaps higher than normal, when ill. There is a danger of burns, scalds, and accidents sustained in the course of work or employment. Many of these may happen because of impulse, haste, and impatience."
+    }
+  },
+  {
+    "name": "general_rashi_report/Mars",
+    "path": "general_rashi_report/Mars",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Mars",
+      "rashi_report": "Your energies are expressed in unique and original ways. There may be genius shown in the way you go about things. You are inventive, scientific, a bit eccentric, unconventional and perhaps a bit rebellious. Working with others to get things done appeals to you. You enjoy taking part in sociable, group activities and unite with others of similar ideals and persuasions. You are progressive, democratic and you are not concerned with hogging personal power or having authority over others. You are a team player. New and unusual methods of work, planning and technology appeal to you. Your energy levels are usually high, but they can be erratic at times and you may find a tendency to work in spurts. Thus, you can be impatient and inconstant in pursuing your desires. You are intellectual, cautious, independent, freedom-loving and enterprising. You respond well to emergencies. There may be interests in mechanical or scientific subjects. Science fiction may intrigue you. You may need to control a radical or rebellious streak within and remember that in certain cases haste does make waste. On the negative side you can be too aggressive, quarrelsome, contentious and perverse."
+    }
+  },
+  {
+    "name": "lalkitab_remedies/Mars",
+    "path": "lalkitab_remedies/Mars",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Mars",
+      "house": "Sixth",
+      "lal_kitab_desc": "This house belongs to Mercury and Ketu. Both are mutual enemies and inimical to Mars also. Hence Mars in this house will keep himself away from both. The native will be courageous, adventurous, lover of justice and powerful enough to set fire into water. He will be highly benefited by the trade and business associated with Mercury. His pen will wield more power than the sword. If Sun, Saturn and Mars are placed together in one house, the brothers, mother, sisters and wife will be affected very adversely.",
+      "lal_kitab_remedies": [
+        "Distribute salt in place of sweets on the birth of a male child. ",
+        " His brothers should keep the native happy by offering him something or the other for their protection and prosperity. But if he does not accept such things, the same should be thrown in water. ",
+        "The male children of the native should not wear gold. ",
+        "Adopt remedies of Saturn for family comfort. Worship Ganeshji for parents. health and destruction of enemies."
+      ]
+    }
+  },
+  {
+    "name": "general_house_report/Mercury",
+    "path": "general_house_report/Mercury",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Mercury",
+      "house_report": "You have talent for analysis, research, insight, tax preparation, insurance and perhaps detective work. You want to get to the bottom of who, what, where and why. You are a born investigator. You may tend to worry over fluctuating finances. Watch a tendency to gossip about others. Your mind may be preoccupied with death, sex, healing, magic or psychic phenomena."
+    }
+  },
+  {
+    "name": "general_rashi_report/Mercury",
+    "path": "general_rashi_report/Mercury",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Mercury",
+      "rashi_report": "You are outspoken and direct in speech and actions. Your thoughts are original and filled with enthusiasm and great energy. You love a good argument or debate and like to compete and strategize with your mind. You say what you mean and don't pull any punches. You are opinionated and love to share those opinions, even if not asked to do so. You love controversy and might need to develop a little more tact in how you express your own thoughts. Your mind is restless and filled with much nervous energy. It is hard for you to sit still. You always have to be busy, especially with your hands. Mechanical ability may be present. Your thoughts and words are quick and impulsive and you may at times suffer from foot-in-mouth disease. A lack of patience and concentration in carrying out your plans may be evident. Great wit and an entertaining personality help make you popular. You don't like to be told how to do things and want the freedom to do things your own way. There never seems to be enough time to do all the things you have on your mind. You may be quick-tempered, but hardly ever carry a grudge. You get over things quickly, then move on."
+    }
+  },
+  {
+    "name": "lalkitab_remedies/Mercury",
+    "path": "lalkitab_remedies/Mercury",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Mercury",
+      "house": "Eighth",
+      "lal_kitab_desc": "Mercury gives very bad results in 8th house, but if it is placed along with a male planet it will give good effects of the associated planet. The native lives a hard life, victimised by diseases and during the age 32-34 his income goes down by half. It is more harmful if some planet is placed in the 2nd house. If Rahu is also placed in the same house the native may have to go to jail, may have to be hospitalized or may have to wander from place to place. Bad results accrue if Mars is also placed therein. Mercury here causes disfavour from the government and diseases like blood disorder, eye problem, tooth and vein troubles, as well as big loss in business.",
+      "lal_kitab_remedies": [
+        "Get an earthen pot filled with honey and bury it in the cremation ground or deserted area. ",
+        "Place milk or rain water in a container on the roof of the house.",
+        "Put a ring in the nose of your daughter. "
+      ]
+    }
+  },
+  {
+    "name": "general_house_report/Jupiter",
+    "path": "general_house_report/Jupiter",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Jupiter",
+      "house_report": "This position may bring opportunity and expansion as well as success and honor to you in your profession or in your community. Much of the reason is your congenial and generous nature. You have a magnetic personality and people sense you will not let them down. Many opportunities will arise which are of benefit to you and to society as a whole. There is a strong sense of responsibility toward your career and toward personal achievement. You have the ability to get others to believe in your expansion-oriented, long-range plans, dreams and visions."
+    }
+  },
+  {
+    "name": "general_rashi_report/Jupiter",
+    "path": "general_rashi_report/Jupiter",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Jupiter",
+      "rashi_report": "You are clever, witty, and cheerful. You love traveling because of the knowledge you gain from your experiences and the people you meet. There may be a natural talent for learning and speaking foreign languages. Excessive nervous energy may lead to agitated speech or in the tendency to talk too much or promise more than you can deliver. There can be literary ability of a marked degree. Your mind is inventive, with a love of mathematics or other abstract subjects, along with the ability to understand them. You are constantly looking for those things in life which will expand your horizons and your own mental outlook or philosophy of life. Various religions or aspects of law may interest you mentally."
+    }
+  },
+  {
+    "name": "lalkitab_remedies/Jupiter",
+    "path": "lalkitab_remedies/Jupiter",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Jupiter",
+      "house": "Tenth",
+      "lal_kitab_desc": "This house belongs to Saturn. So the native will have to imbibe the qualities of Saturn only then he will be happy. The native should be cunning and sly. Only then the can enjoy the good results of Jupiter. If Sun is in the 4th house Jupiter will give very good results. Venus and Mars in the 4th house ensure multi-marriages for the native. If friendly planet are placed in the 2nd, 4th and 6th houses, Jupiter provides highly beneficial results in matters of money and wealth. A malefic Jupiter in the 10th makes the native sad and impoverished. He is deprived of ancestral properties, wife and children. ",
+      "lal_kitab_remedies": [
+        "Clean your nose before beginning any work.",
+        "Throw copper coins in the running water of a river for 43 days.",
+        "Offer almonds to religious places.",
+        "A temple with idols must not be established within the house.",
+        "Put Tilak of saffron on the forehead."
+      ]
+    }
+  },
+  {
+    "name": "general_house_report/Venus",
+    "path": "general_house_report/Venus",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Venus",
+      "house_report": "You are charming, sociable and friendly and it is easy for people to see your loving nature. Partnerships are generally happy and harmonious. But your desire for peace and harmony at all costs may be detrimental to you if you do not stand up for your own needs. You desire a spouse who is attractive and probably well off financially. Creature comforts and enjoying them with your partner are desired. Take care that you do not get in the habit of expecting too much from others, though.\r\n\r\nYou have a deep appreciation of the value of relationships. Too great an emphasis on affection might cause problems for you. A desire for the perfect relationship may be so strong that any imperfections in your relationship could be blown up beyond proportion. Balance and poise are necessary.\r\n\r\nYou seek a partner that can supply you with the good life. You want beauty, luxury and the finer things in life and you seek a partner who can provide these. Perhaps marriage will bring you to a higher station in life. Over-indulgence and over-emphasizing the sensual side of life can lead to problems. You must have a partner you feel is cooperative rather than competitive. If Venus is aspected poorly in your chart, then perhaps your partner's moral standards are subject to question.\r\n"
+    }
+  },
+  {
+    "name": "general_rashi_report/Venus",
+    "path": "general_rashi_report/Venus",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Venus",
+      "rashi_report": "Your affections are expressed in sympathetic, compassionate, softhearted, romantic ways. You unselfishly give of yourself to those you love or to those who need or ask for your help. You may be a sucker for any sort of sob story and perhaps give too much at times which make some overly dependent on you. You are very idealistic in matters of love and this sometimes plays itself out whereby you become the martyr or the savior in relationships. You tend to be more compassionate than passionate and you become involved with others because they need love or need to be saved and you want to help them rather than out of mutual attraction or pleasure. You attract and are attracted to those who are sensitive, imaginative, or musically or artistically inclined. Your desire is to find someone you can have a deep, spiritual relationship with. You idealize love and have a very beautiful, romantic vision of what love can be. At times you can simply be in love with love. You may be highly emotional, perhaps overly so, sensitive, artistic, compassionate, gentle and psychic. You can be too easy-going or submissive and allow yourself to be taken advantage of because you do not want other people to feel let down and you don't like to make waves. You may have the attitude that somehow you must suffer in love, and do so willingly."
+    }
+  }
+]

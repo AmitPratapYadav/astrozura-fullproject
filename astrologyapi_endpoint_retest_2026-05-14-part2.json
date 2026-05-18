@@ -1,0 +1,3032 @@
+[
+  {
+    "path": "lalkitab_remedies/Venus",
+    "name": "lalkitab_remedies/Venus",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Venus",
+      "house": "Seventh",
+      "lal_kitab_desc": "This house belongs to Venus, so Venus gives very good results if it is placed in this house. The planet of Ist house offers the effects of 7th house in such a manner as if it is placed in 7th house itself. If a planet inimical to Venus is placed in Ist house e.g. Rahu, the wife and the household affairs of the native will be adversely affected. The native spends his money largely on women. The native should take up the trade or business which is associated wil marriage ceremony, like tent house and beauty parlour. Association with one eyed and black woman will prove useful.",
+      "lal_kitab_remedies": [
+        "Domestication of white cows prohibited. ",
+        "Serving red cows. ",
+        "Donate Jawar equal to the weight of your spouse to a temple.",
+        "Throwing blue flowers in a dirty canal for 43 days."
+      ]
+    }
+  },
+  {
+    "path": "general_house_report/Saturn",
+    "name": "general_house_report/Saturn",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Saturn",
+      "house_report": "You perhaps feel unloved and unappreciated. Romances can turn cold. Love affairs are serious and you may feel emotionally and creatively inhibited. Because of your emotional restriction, you can appear to be cold, unloving, and unresponsive. This prevents you from being as popular as you would like to be. You have a desire for others to look up to you. It is difficult for you to relax. Personal interests and hobbies need to serve a practical purpose for you in order for you to enjoy them. Parenthood may be a burdensome responsibility and you may be too restrictive towards your kids. It is difficult for you to show your love and appreciation. You need to learn how to express your feelings towards those you love, and not just through the giving of presents and material things. It is important for you to forget yourself and to learn to project warmth to others."
+    }
+  },
+  {
+    "path": "general_rashi_report/Saturn",
+    "name": "general_rashi_report/Saturn",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Saturn",
+      "rashi_report": "You are ambitious, self-controlled and you have organizing ability. You can be a disciplined, patient, hard worker who eventually receives the deserved rewards. There is a tendency to take life very seriously and duty and responsibility are very important to you. You understand that time and suffering serve a purpose and that happiness is not the final goal of existence. You may find it difficult to divide your energies between work and play. You have the ability to translate abstract concepts into concrete terms. You may experience feelings of loneliness and inadequacy and that could be one reason why you tend to work so long and hard. On the negative side, prestige and social standing may be extremely important to you and you will be tempted to do whatever you have to in order to acquire them. Selfishness and a great love and desire for power can also be present."
+    }
+  },
+  {
+    "path": "lalkitab_remedies/Saturn",
+    "name": "lalkitab_remedies/Saturn",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Saturn",
+      "house": "Fifth",
+      "lal_kitab_desc": "This house belongs to Sun, which is inimical to Saturn. The native will be proud. He should not construct a house till 48 years, otherwise his son will suffer. He should live in the house bought or constructed by his son. He should keep articles of Jupiter and Mars in his ancestral house for welfare of his children. If the native has hairy body, he will be dishonest.",
+      "lal_kitab_remedies": [
+        "Distributing salty things while celebrating son.s birthday. ",
+        "Offering almonds in the temple and bringing and keeping half of it in the house."
+      ]
+    }
+  },
+  {
+    "path": "general_house_report/Rahu",
+    "name": "general_house_report/Rahu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Rahu",
+      "house_report": "Not available"
+    }
+  },
+  {
+    "path": "general_rashi_report/Rahu",
+    "name": "general_rashi_report/Rahu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Rahu"
+    }
+  },
+  {
+    "path": "lalkitab_remedies/Rahu",
+    "name": "lalkitab_remedies/Rahu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Rahu",
+      "house": "Fifth",
+      "lal_kitab_desc": "5th house belongs to Sun, which signifies male offspring. If Rahu is benefic native will be rich, wise, enjoy good health. He would enjoy good income and good progress. The native would be a devout or philosopher.  If Rahu is malefic it leads to abortions.  After the birth of a son, wife.s health will suffer for twelve years. If Jupiter is also in 5th house father of native will be in trouble.",
+      "lal_kitab_remedies": [
+        "Keep an elephant made of silver.",
+        "Abstain from wine, non-vegetarianism and adultery.",
+        "Remarry your wife."
+      ]
+    }
+  },
+  {
+    "path": "general_house_report/Ketu",
+    "name": "general_house_report/Ketu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Ketu",
+      "house_report": "Not available"
+    }
+  },
+  {
+    "path": "general_rashi_report/Ketu",
+    "name": "general_rashi_report/Ketu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Ketu"
+    }
+  },
+  {
+    "path": "lalkitab_remedies/Ketu",
+    "name": "lalkitab_remedies/Ketu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "planet": "Ketu",
+      "house": "Eleventh",
+      "lal_kitab_desc": "Here Ketu is considered very good. It gives wealth. This house is affected by Jupiter and Saturn.  If Ketu is benefic here and Saturn is in 3rd house, it gives enormous wealth. The wealth earned by the native is more than his paternal wealth, but one tends to worry about his future. If Mercury is in 3rd it leads to Raj Yoga.  If Ketu is malefic here then the native has problem in his abdomen. The more he worries about future, more troubled he is. Grandmother or mother of the native suffers, if Saturn is also malefic.  Then there would be no benefit from son or house.",
+      "lal_kitab_remedies": [
+        "Keep black dog.",
+        "Wear an onyx or emerald."
+      ]
+    }
+  },
+  {
+    "path": "planet_ashtak/sun",
+    "name": "planet_ashtak/sun",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Sun",
+        "sign": "Aries",
+        "sign_id": 1
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 2
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/moon",
+    "name": "planet_ashtak/moon",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Moon",
+        "sign": "Scorpio",
+        "sign_id": 8
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "gemini": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "virgo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 3
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/mars",
+    "name": "planet_ashtak/mars",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Mars",
+        "sign": "Aquarius",
+        "sign_id": 11
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 3
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "gemini": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 2
+        },
+        "leo": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "virgo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "libra": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 2
+        },
+        "scorpio": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 1
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/mercury",
+    "name": "planet_ashtak/mercury",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Mercury",
+        "sign": "Aries",
+        "sign_id": 1
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "virgo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "libra": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "scorpio": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "capricorn": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "pisces": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/jupiter",
+    "name": "planet_ashtak/jupiter",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Jupiter",
+        "sign": "Gemini",
+        "sign_id": 3
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "gemini": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 6
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 2
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 8
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/venus",
+    "name": "planet_ashtak/venus",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Venus",
+        "sign": "Pisces",
+        "sign_id": 12
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 2
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "libra": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "capricorn": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "pisces": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/saturn",
+    "name": "planet_ashtak/saturn",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Saturn",
+        "sign": "Capricorn",
+        "sign_id": 10
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 3
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 1
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Sun",
+    "name": "planet_ashtak/Sun",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Sun",
+        "sign": "Aries",
+        "sign_id": 1
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 2
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Moon",
+    "name": "planet_ashtak/Moon",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Moon",
+        "sign": "Scorpio",
+        "sign_id": 8
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "gemini": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "virgo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 3
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Mars",
+    "name": "planet_ashtak/Mars",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Mars",
+        "sign": "Aquarius",
+        "sign_id": 11
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 3
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "gemini": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 2
+        },
+        "leo": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "virgo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "libra": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 2
+        },
+        "scorpio": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 1
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Mercury",
+    "name": "planet_ashtak/Mercury",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Mercury",
+        "sign": "Aries",
+        "sign_id": 1
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "virgo": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "libra": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "scorpio": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "capricorn": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "pisces": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Jupiter",
+    "name": "planet_ashtak/Jupiter",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Jupiter",
+        "sign": "Gemini",
+        "sign_id": 3
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "gemini": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 6
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 2
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 3
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 8
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Venus",
+    "name": "planet_ashtak/Venus",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Venus",
+        "sign": "Pisces",
+        "sign_id": 12
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "taurus": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "cancer": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 2
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 4
+        },
+        "libra": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "capricorn": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "pisces": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Saturn",
+    "name": "planet_ashtak/Saturn",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Saturn",
+        "sign": "Capricorn",
+        "sign_id": 10
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 3
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 1
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "sagittarius": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 3
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 5
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Rahu",
+    "name": "planet_ashtak/Rahu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Sun",
+        "sign": "Aries",
+        "sign_id": 1
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 2
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "planet_ashtak/Ketu",
+    "name": "planet_ashtak/Ketu",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtak_varga": {
+        "type": "Bhinnashtak",
+        "planet": "Sun",
+        "sign": "Aries",
+        "sign_id": 1
+      },
+      "ashtak_points": {
+        "aries": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "taurus": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        },
+        "gemini": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 2
+        },
+        "cancer": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 0,
+          "mercury": 0,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 3
+        },
+        "leo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 6
+        },
+        "virgo": {
+          "sun": 0,
+          "moon": 1,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 5
+        },
+        "libra": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "scorpio": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 0,
+          "jupiter": 1,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 5
+        },
+        "sagittarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 1,
+          "total": 4
+        },
+        "capricorn": {
+          "sun": 1,
+          "moon": 1,
+          "mars": 0,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 1,
+          "ascendant": 0,
+          "total": 4
+        },
+        "aquarius": {
+          "sun": 1,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 1,
+          "venus": 1,
+          "saturn": 1,
+          "ascendant": 1,
+          "total": 7
+        },
+        "pisces": {
+          "sun": 0,
+          "moon": 0,
+          "mars": 1,
+          "mercury": 1,
+          "jupiter": 0,
+          "venus": 0,
+          "saturn": 0,
+          "ascendant": 0,
+          "total": 2
+        }
+      }
+    }
+  },
+  {
+    "path": "horo_chart_image/D1",
+    "name": "horo_chart_image/D1",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b1467c60-4f84-11f1-ba96-6fff64db4e25.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D2",
+    "name": "horo_chart_image/D2",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b1598f30-4f84-11f1-b840-d31a2a05fda9.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D3",
+    "name": "horo_chart_image/D3",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b16d8c60-4f84-11f1-bd87-bbe8ec2bdf7f.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D4",
+    "name": "horo_chart_image/D4",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b180ed50-4f84-11f1-83d3-af15338404e1.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D7",
+    "name": "horo_chart_image/D7",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b1b829f0-4f84-11f1-bd4c-3db59e152b8a.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D9",
+    "name": "horo_chart_image/D9",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b1cdadc0-4f84-11f1-bc2a-c5356c40ac1b.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D10",
+    "name": "horo_chart_image/D10",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b1e41bf0-4f84-11f1-bae4-71d98ff32540.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D12",
+    "name": "horo_chart_image/D12",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b1fad840-4f84-11f1-9941-13fe2463d0d9.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "horo_chart_image/D16",
+    "name": "horo_chart_image/D16",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "status": true,
+      "chart_url": "https://s3.ap-south-1.amazonaws.com/western-chart/b20deb10-4f84-11f1-9196-25f11e19ff43.png",
+      "msg": "Chart created successfully!"
+    }
+  },
+  {
+    "path": "match_birth_details",
+    "name": "match_birth_details",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "male_astro_details": {
+        "year": 1990,
+        "month": 5,
+        "day": 10,
+        "hour": 19,
+        "minute": 55,
+        "latitude": 19.2,
+        "longitude": 25.2,
+        "timezone": 5.5,
+        "gender": "male",
+        "ayanamsha": 23.722362954519497,
+        "sunrise": "9:16:33",
+        "sunset": "22:14:47"
+      },
+      "female_astro_details": {
+        "year": 1993,
+        "month": 10,
+        "day": 20,
+        "hour": 20,
+        "minute": 55,
+        "latitude": 19.2,
+        "longitude": 25.2,
+        "timezone": 5.5,
+        "gender": "female",
+        "ayanamsha": 23.770512958707116,
+        "sunrise": "9:44:58",
+        "sunset": "21:22:47"
+      }
+    }
+  },
+  {
+    "path": "match_astro_details",
+    "name": "match_astro_details",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "male_astro_details": {
+        "ascendant": "Virgo",
+        "Varna": "Vipra",
+        "Vashya": "Keetak",
+        "Yoni": "Mrig",
+        "Gan": "Dev",
+        "Nadi": "Madhya",
+        "SignLord": "Mars",
+        "sign": "Scorpio",
+        "Naksahtra": "Anuradha",
+        "NaksahtraLord": "Saturn",
+        "Charan": 1,
+        "Yog": "Parigh",
+        "Karan": "Kaulav",
+        "Tithi": "Krishna Pratipada",
+        "yunja": "Madhya",
+        "tatva": "Water",
+        "name_alphabet": "Na",
+        "paya": "Silver"
+      },
+      "female_astro_details": {
+        "ascendant": "Pisces",
+        "Varna": "Kshatriya",
+        "Vashya": "Maanav",
+        "Yoni": "Swaan",
+        "Gan": "Rakshasa",
+        "Nadi": "Adi",
+        "SignLord": "Jupiter",
+        "sign": "Sagittarius",
+        "Naksahtra": "Mool",
+        "NaksahtraLord": "Ketu",
+        "Charan": 4,
+        "Yog": "Atigand",
+        "Karan": "Taitil",
+        "Tithi": "Shukla Shashthi",
+        "yunja": "Parbhaag",
+        "tatva": "Fire",
+        "name_alphabet": "Bhee",
+        "paya": "Copper"
+      }
+    }
+  },
+  {
+    "path": "match_ashtakoot_points",
+    "name": "match_ashtakoot_points",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "varna": {
+        "description": "Natural Refinement  / Work",
+        "male_koot_attribute": "Vipra",
+        "female_koot_attribute": "Kshatriya",
+        "total_points": 1,
+        "received_points": 1
+      },
+      "vashya": {
+        "description": "Innate Giving / Attraction  towards each other",
+        "male_koot_attribute": "Keetak",
+        "female_koot_attribute": "Maanav",
+        "total_points": 2,
+        "received_points": 1
+      },
+      "tara": {
+        "description": "Comfort - Prosperity - Health",
+        "male_koot_attribute": "Anuradha",
+        "female_koot_attribute": "Mool",
+        "total_points": 3,
+        "received_points": 1.5
+      },
+      "yoni": {
+        "description": "Intimate Physical",
+        "male_koot_attribute": "Mrig",
+        "female_koot_attribute": "Swaan",
+        "total_points": 4,
+        "received_points": 0
+      },
+      "maitri": {
+        "description": "Friendship",
+        "male_koot_attribute": "Mars",
+        "female_koot_attribute": "Jupiter",
+        "total_points": 5,
+        "received_points": 5
+      },
+      "gan": {
+        "description": "Temperament",
+        "male_koot_attribute": "Dev",
+        "female_koot_attribute": "Rakshasa",
+        "total_points": 6,
+        "received_points": 0
+      },
+      "bhakut": {
+        "description": "Constructive Ability / Constructivism / Society and Couple",
+        "male_koot_attribute": "Scorpio",
+        "female_koot_attribute": "Sagittarius",
+        "total_points": 7,
+        "received_points": 0
+      },
+      "nadi": {
+        "description": "Progeny / Excess",
+        "male_koot_attribute": "Madhya",
+        "female_koot_attribute": "Adi",
+        "total_points": 8,
+        "received_points": 8
+      },
+      "total": {
+        "total_points": 36,
+        "received_points": 16.5,
+        "minimum_required": 18
+      },
+      "conclusion": {
+        "status": true,
+        "report": "The match has scored 16.5 points outs of 36 points.This is a quite a low score. However, it is seen from your horoscopes that the Moon signs of both the boy and the girl share a friendly relation, which indicates better harmony and coordination between the two. Hence, this can be said to be a positive match as per kundali."
+      }
+    }
+  },
+  {
+    "path": "match_making_detailed_report",
+    "name": "match_making_detailed_report",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "ashtakoota": {
+        "varna": {
+          "description": "Natural Refinement  / Work",
+          "male_koot_attribute": "Vipra",
+          "female_koot_attribute": "Kshatriya",
+          "total_points": 1,
+          "received_points": 1,
+          "male_point": 8,
+          "female_point": 9
+        },
+        "vashya": {
+          "description": "Innate Giving / Attraction  towards each other",
+          "male_koot_attribute": "Keetak",
+          "female_koot_attribute": "Maanav",
+          "total_points": 2,
+          "received_points": 1,
+          "male_point": 4,
+          "female_point": 2
+        },
+        "tara": {
+          "description": "Comfort - Prosperity - Health",
+          "male_koot_attribute": "Anuradha",
+          "female_koot_attribute": "Mool",
+          "total_points": 3,
+          "received_points": 1.5,
+          "male_point": 3,
+          "female_point": 8
+        },
+        "yoni": {
+          "description": "Intimate Physical",
+          "male_koot_attribute": "Mrig",
+          "female_koot_attribute": "Swaan",
+          "total_points": 4,
+          "received_points": 0,
+          "male_point": 11,
+          "female_point": 5
+        },
+        "maitri": {
+          "description": "Friendship",
+          "male_koot_attribute": "Mars",
+          "female_koot_attribute": "Jupiter",
+          "total_points": 5,
+          "received_points": 5,
+          "male_point": 3,
+          "female_point": 5
+        },
+        "gan": {
+          "description": "Temperament",
+          "male_koot_attribute": "Dev",
+          "female_koot_attribute": "Rakshasa",
+          "total_points": 6,
+          "received_points": 0,
+          "male_point": 1,
+          "female_point": 3
+        },
+        "bhakut": {
+          "description": "Constructive Ability / Constructivism / Society and Couple",
+          "male_koot_attribute": "Scorpio",
+          "female_koot_attribute": "Sagittarius",
+          "total_points": 7,
+          "received_points": 0,
+          "male_point": 8,
+          "female_point": 9
+        },
+        "nadi": {
+          "description": "Progeny / Excess",
+          "male_koot_attribute": "Madhya",
+          "female_koot_attribute": "Adi",
+          "total_points": 8,
+          "received_points": 8,
+          "male_point": 3,
+          "female_point": 2
+        },
+        "total": {
+          "total_points": 36,
+          "received_points": 16.5,
+          "minimum_required": 18
+        },
+        "conclusion": {
+          "status": true,
+          "report": "The match has scored 16.5 points outs of 36 points.This is a quite a low score. However, it is seen from your horoscopes that the Moon signs of both the boy and the girl share a friendly relation, which indicates better harmony and coordination between the two. Hence, this can be said to be a positive match as per kundali."
+        }
+      },
+      "manglik": {
+        "status": true,
+        "male_percentage": 17.5,
+        "female_percentage": 13.25
+      },
+      "rajju_dosha": {
+        "status": false
+      },
+      "vedha_dosha": {
+        "status": false
+      },
+      "conclusion": {
+        "match_report": "Though the Ashtakoota matching points are quite less, the remaining factors are indicating positive results. Hence, you are advised to consult an astrologer before going ahead with this alliance."
+      }
+    }
+  },
+  {
+    "path": "match_manglik_report",
+    "name": "match_manglik_report",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "male": {
+        "manglik_present_rule": {
+          "based_on_aspect": [
+            "Seventh house of your birth chart is aspected by Saturn",
+            "Seventh house of your birth chart is aspected by Ketu",
+            "Your first house in birth chart is aspected by planet Mars.",
+            "Your first house in birth chart is aspected by planet Rahu.",
+            "Twelfth house of your birth chart is aspected by Mars.",
+            "Sun is aspecting second house of your birth chart.",
+            "Saturn is aspecting second house of your birth chart."
+          ],
+          "based_on_house": [
+            "Planet Sun is situated in Eighth house in your birth chart."
+          ]
+        },
+        "manglik_cancel_rule": [
+          "Mars mangalik dosha is get cancelled because Mars is situated in Sixth house with their own sign Aries In navmansha chart"
+        ],
+        "is_mars_manglik_cancelled": true,
+        "manglik_status": "INEFFECTIVE",
+        "percentage_manglik_present": 17.5,
+        "percentage_manglik_after_cancellation": 17.5,
+        "manglik_report": "Manglik Dosha is present, but it is very weak and has little to no impact. So, you are not considered Manglik.",
+        "is_present": false
+      },
+      "female": {
+        "manglik_present_rule": {
+          "based_on_aspect": [
+            "Seventh house of your birth chart is aspected by Ketu",
+            "Saturn is aspecting eighth house of your birth chart.",
+            "Your fifth house in birth chart is aspected by planet Saturn.",
+            "Your fifth house in birth chart is aspected by planet Rahu.",
+            "Your first house in birth chart is aspected by planet Saturn.",
+            "Your first house in birth chart is aspected by planet Rahu.",
+            "Sun is aspecting second house of your birth chart.",
+            "Mars is aspecting second house of your birth chart."
+          ],
+          "based_on_house": [
+            "Planet Sun is situated in Eighth house in your birth chart.",
+            "Eighth house is occupied by planet Mars in your birth chart."
+          ]
+        },
+        "manglik_cancel_rule": [
+          "Mars mangalik dosha is get cancelled because Mars is situated in Eighth house with their own sign Aries In navmansha chart"
+        ],
+        "is_mars_manglik_cancelled": true,
+        "manglik_status": "INEFFECTIVE",
+        "percentage_manglik_present": 14.25,
+        "percentage_manglik_after_cancellation": 13.25,
+        "manglik_report": "Manglik Dosha is present, but it is very weak and has little to no impact. So, you are not considered Manglik.",
+        "is_present": false
+      },
+      "conclusion": {
+        "match": true,
+        "report": "The boy is not a Manglik; nor is the girl a Manglik. Mangal Dosha being absent in either horoscopes, there shall be no ill effect on their marriage. This match is recommended."
+      }
+    }
+  },
+  {
+    "path": "numero_report",
+    "name": "numero_report",
+    "status_code": 200,
+    "ok": true,
+    "content_type": "application/json; charset=utf-8",
+    "reason": null,
+    "preview": {
+      "title": "What the Number Says About You",
+      "description": " Due to the influence of Radical number 1, you will be a person with stable beliefs. Whenever you will give your word to anyone, you will try to fulfill it. Your willpower will be unshakable.  There will be stability in your mental and friendly relations.Whatever idea you will form regarding your intimate relations, you will always try to fulfill it for long time.Your love and longtime relations will be everlasting. If due to any reason you develop acrimony or dispute with someone, these will also be long lasting. By virtue of your independent thinking native, you will feel it inconvenient to work according to other wishes. Rather than working under someones regime, you will thrive in self-determining environment. It will be your consistent endeavour that whatever you perform should be unbiased and unconstrained. Interference of anyone will be a taboo to you.As is the lord of Radical number 1, traits related to Sun will be present in you more or less. Due to Suns influence, you will have a tendency to help,cure others. You would like to shine like Sun in social circles. An urge to be a chief of social associations will be with you ever.You will earn these offices by your hard work and dedication. "
+    }
+  },
+  {
+    "path": "yes_no_tarot",
+    "name": "yes_no_tarot",
+    "status_code": 429,
+    "ok": false,
+    "content_type": "application/json; charset=utf-8",
+    "reason": "{\"error\": \"TRIAL_REQUEST_LIMIT_EXCEEDED\", \"msg\": \"Trial request limit exceeded for the day. Please move to a paid plan.\"}",
+    "preview": {
+      "error": "TRIAL_REQUEST_LIMIT_EXCEEDED",
+      "msg": "Trial request limit exceeded for the day. Please move to a paid plan."
+    }
+  },
+  {
+    "path": "tarot_predictions",
+    "name": "tarot_predictions",
+    "status_code": 429,
+    "ok": false,
+    "content_type": "application/json; charset=utf-8",
+    "reason": "{\"error\": \"TRIAL_REQUEST_LIMIT_EXCEEDED\", \"msg\": \"Trial request limit exceeded for the day. Please move to a paid plan.\"}",
+    "preview": {
+      "error": "TRIAL_REQUEST_LIMIT_EXCEEDED",
+      "msg": "Trial request limit exceeded for the day. Please move to a paid plan."
+    }
+  }
+]

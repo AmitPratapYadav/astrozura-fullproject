@@ -8,7 +8,7 @@ import bhagwat from "../assets/bhagwat.png";
 import lamp from "../assets/lamp.png";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-const BACKEND_BASE = API_BASE.replace(/\/index\.php\/api$|\/api$/, "");
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const ritualFallbacks = [poojaRitual, bhagwat, lamp];
 
 const getImageUrl = (path, fallback) => {

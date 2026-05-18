@@ -25,6 +25,7 @@ import Topbar from "./components/Topbar";
 import AdminLogin from "./pages/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AppProvider } from "./context/AppContext";
+import TestingAccessGate from "./components/TestingAccessGate";
 
 function AdminShell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,21 +69,23 @@ function AdminShell() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppProvider>
-        <Routes>
-          <Route path="/login" element={<AdminLogin />} />
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <AdminShell />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </AppProvider>
-    </BrowserRouter>
+    <TestingAccessGate>
+      <BrowserRouter>
+        <AppProvider>
+          <Routes>
+            <Route path="/login" element={<AdminLogin />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <AdminShell />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </AppProvider>
+      </BrowserRouter>
+    </TestingAccessGate>
   );
 }
 

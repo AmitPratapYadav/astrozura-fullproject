@@ -66,6 +66,8 @@ class ApiAuthController extends Controller
 
             return redirect($frontendUrl . '/oauth/callback?token=' . $token . '&is_new=' . $isNew);
         } catch (\Exception $e) {
+            report($e);
+
             return redirect($frontendUrl . '/login?error=google_auth_failed');
         }
     }

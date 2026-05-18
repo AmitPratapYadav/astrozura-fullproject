@@ -22,6 +22,7 @@ export const HOROSCOPE_LANGUAGE_OPTIONS = [{ value: "en", label: LANGUAGE_LABELS
 
 export const KUNDLI_LANGUAGE_OPTIONS = [
   { value: "en", label: LANGUAGE_LABELS.en },
+  { value: "hi", label: LANGUAGE_LABELS.hi },
   { value: "ta", label: LANGUAGE_LABELS.ta },
   { value: "te", label: LANGUAGE_LABELS.te },
   { value: "ml", label: LANGUAGE_LABELS.ml },

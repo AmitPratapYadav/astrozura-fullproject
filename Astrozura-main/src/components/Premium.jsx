@@ -71,11 +71,49 @@ export default function Premium() {
   }, []);
 
   const scrollServices = (direction) => {
-    sliderRef.current?.scrollBy({
-      left: direction * 340,
+    const slider = sliderRef.current;
+    const firstCard = slider?.firstElementChild;
+    const cardStep = firstCard
+      ? firstCard.getBoundingClientRect().width + 20
+      : 340;
+
+    slider?.scrollBy({
+      left: direction * cardStep,
       behavior: "smooth",
     });
   };
+
+  useEffect(() => {
+    const slider = sliderRef.current;
+
+    if (!slider || premiumServices.length <= 1) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      const firstCard = slider.firstElementChild;
+      const cardStep = firstCard
+        ? firstCard.getBoundingClientRect().width + 20
+        : 340;
+      const maxScrollLeft = slider.scrollWidth - slider.clientWidth;
+      const nextScrollLeft = slider.scrollLeft + cardStep;
+
+      if (nextScrollLeft >= maxScrollLeft - 4) {
+        slider.scrollTo({
+          left: 0,
+          behavior: "smooth",
+        });
+        return;
+      }
+
+      slider.scrollBy({
+        left: cardStep,
+        behavior: "smooth",
+      });
+    }, 1500);
+
+    return () => window.clearInterval(intervalId);
+  }, [premiumServices.length]);
 
   useEffect(() => {
     if (!message) {
