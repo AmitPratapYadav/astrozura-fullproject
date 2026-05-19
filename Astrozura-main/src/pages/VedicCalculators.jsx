@@ -65,6 +65,15 @@ export default function VedicCalculators() {
   }, [toolKey]);
 
   useEffect(() => {
+    if (!toast) return undefined;
+
+    window.clearTimeout(window.__astrozuraVedicCalculatorToast);
+    window.__astrozuraVedicCalculatorToast = window.setTimeout(() => setToast(""), 3200);
+
+    return () => window.clearTimeout(window.__astrozuraVedicCalculatorToast);
+  }, [toast]);
+
+  useEffect(() => {
     if (!user) return;
 
     const latitude = user.latitude || user.lat || user.birth_latitude;

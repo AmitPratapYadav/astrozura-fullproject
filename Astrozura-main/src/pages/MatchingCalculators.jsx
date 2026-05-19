@@ -117,6 +117,15 @@ export default function MatchingCalculators() {
     setBoyResults([]);
   }, [toolKey]);
 
+  useEffect(() => {
+    if (!toast) return undefined;
+
+    window.clearTimeout(window.__astrozuraMatchingCalculatorToast);
+    window.__astrozuraMatchingCalculatorToast = window.setTimeout(() => setToast(""), 3200);
+
+    return () => window.clearTimeout(window.__astrozuraMatchingCalculatorToast);
+  }, [toast]);
+
   if (!tool) {
     return <Navigate to="/services" replace />;
   }
