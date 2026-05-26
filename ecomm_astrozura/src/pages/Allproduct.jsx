@@ -33,7 +33,7 @@ export default function ShopLayout() {
     setPrice(500);
     setSelected("Featured");
     setSelectedCatId(null);
-    navigate("/all-products", { replace: true });
+    navigate("/allproduct", { replace: true });
     setMsg("Filters Cleared");
   };
 
@@ -125,7 +125,7 @@ export default function ShopLayout() {
                         onClick={() => {
                           setSelectedCatId(cat.id);
                           setOpen(false);
-                          navigate(`/all-products?category=${cat.id}`, { replace: true });
+                          navigate(`/allproduct?category=${cat.id}`, { replace: true });
                         }}
                         className={`cursor-pointer py-2.5 px-4 rounded-xl transition-all ${
                           selectedCatId === cat.id ? "bg-[#184070] text-white shadow-lg shadow-[#184070]/20" : "hover:bg-gray-50 text-gray-600"
@@ -177,10 +177,10 @@ export default function ShopLayout() {
         <div className="mb-6">
           <p className="text-xs text-gray-600">Home & Shop</p>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold">
-            Spiritual Store
+            {selectedCatId ? categories.find(c => c.id === selectedCatId)?.name : "Spiritual Store"}
           </h1>
           <p className="text-sm mt-2 max-w-xl">
-            Ethically sourced treasures to inspire mindfulness.
+            {selectedCatId ? `Explore our collection of ${categories.find(c => c.id === selectedCatId)?.name}` : "Ethically sourced treasures to inspire mindfulness."}
           </p>
         </div>
 
@@ -204,7 +204,7 @@ export default function ShopLayout() {
                   key={i} 
                   onClick={() => {
                     setSelectedCatId(cat.id);
-                    navigate(`/all-products?category=${cat.id}`, { replace: true });
+                    navigate(`/allproduct?category=${cat.id}`, { replace: true });
                   }}
                   className={`flex justify-between cursor-pointer py-1 px-2 rounded transition ${
                     selectedCatId === cat.id ? "bg-[#184070] text-white" : "hover:text-[#184070]"
