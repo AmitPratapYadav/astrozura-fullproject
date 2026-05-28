@@ -14,6 +14,7 @@ import {
   getVedicCalculatorTool,
   vedicCalculatorTools,
 } from "../data/astrologyTools";
+import { groupedServices } from "../data/serviceCatalog";
 
 const initialForm = {
   date_of_birth: "",
@@ -47,6 +48,7 @@ export default function VedicCalculators() {
   const tool = getVedicCalculatorTool(toolKey);
 
   const [form, setForm] = useState(initialForm);
+  const [calculatorMenuOpen, setCalculatorMenuOpen] = useState(true);
   const [searchResults, setSearchResults] = useState([]);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,6 +58,15 @@ export default function VedicCalculators() {
   const suggestedTools = useMemo(
     () => vedicCalculatorTools.filter((item) => item.key !== toolKey && !item.hideFromCalculators).slice(0, 6),
     [toolKey]
+  );
+
+  const calculatorMenuItems = useMemo(
+    () =>
+      groupedServices.calculators.map((item) => ({
+        ...item,
+        isActive: item.to === tool.route,
+      })),
+    [tool.route]
   );
 
   useEffect(() => {
@@ -214,11 +225,13 @@ export default function VedicCalculators() {
 
       <section className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-16 md:-mt-16 md:px-8">
         <div className="grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold">Calculator Inputs</h2>
-            <p className="mt-2 text-sm text-slate-500">This tool uses the exact parameter contract from the active Astrology API calculator mapping.</p>
+          <div className="space-y-6">
+            <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold">Calculator Inputs</h2>
+              <p className="mt-2 text-sm text-slate-500">This tool uses the exact parameter contract from the active Astrology API calculator mapping.</p>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+
               {tool.requiresDate && (
                 <>
                   <div>
@@ -461,8 +474,44 @@ export default function VedicCalculators() {
               >
                 {loading ? "Calculating..." : `Run ${tool.title}`}
               </button>
-            </form>
-          </aside>
+              </form>
+            </aside>
+
+            <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <button
+                type="button"
+                onClick={() => setCalculatorMenuOpen((current) => !current)}
+                className="flex w-full items-center justify-between bg-slate-200 px-4 py-4 text-left text-sm font-bold uppercase tracking-wide text-slate-900 transition hover:bg-slate-300"
+                aria-expanded={calculatorMenuOpen}
+              >
+                <span>Calculators</span>
+                <span className={`text-base leading-none transition-transform ${calculatorMenuOpen ? "rotate-180" : ""}`}>v</span>
+              </button>
+
+              {calculatorMenuOpen && (
+                <div className="max-h-[360px] overflow-y-auto">
+                  {calculatorMenuItems.map((item) => {
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        aria-current={item.isActive ? "page" : undefined}
+                        className={`block border-b border-slate-200 px-4 py-3 text-sm font-medium transition last:border-b-0 ${
+                          item.isActive
+                            ? "border-r-2 border-r-emerald-500 bg-emerald-50 text-[#1E3557]"
+                            : "bg-white text-slate-700 hover:bg-slate-50 hover:text-[#1E3557]"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+              </div>
+            </aside>
+          </div>
 
           <main className="space-y-6">
             {!result ? (
