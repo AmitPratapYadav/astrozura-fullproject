@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Calculator, ChevronLeft, ChevronRight, HeartHandshake, ScrollText, Sparkles, Star, TrendingUp } from "lucide-react";
+import { Calculator, HeartHandshake, ScrollText, Star } from "lucide-react";
 import {
   TbZodiacAquarius,
   TbZodiacAries,
@@ -37,7 +37,6 @@ const zodiac = [
 export default function Premium() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const sliderRef = useRef(null);
   const [message, setMessage] = useState("");
   const [activeSign, setActiveSign] = useState("aries");
   const [activePeriod, setActivePeriod] = useState("daily");
@@ -60,6 +59,7 @@ export default function Premium() {
 
     return serviceCatalog
       .filter((item) => eligibleCategories.has(item.category))
+      .slice(0, 8)
       .map((item) => ({
         title: item.title,
         summary: item.summary,
@@ -69,51 +69,6 @@ export default function Premium() {
         badge: item.category,
       }));
   }, []);
-
-  const scrollServices = (direction) => {
-    const slider = sliderRef.current;
-    const firstCard = slider?.firstElementChild;
-    const cardStep = firstCard
-      ? firstCard.getBoundingClientRect().width + 20
-      : 340;
-
-    slider?.scrollBy({
-      left: direction * cardStep,
-      behavior: "smooth",
-    });
-  };
-
-  useEffect(() => {
-    const slider = sliderRef.current;
-
-    if (!slider || premiumServices.length <= 1) {
-      return undefined;
-    }
-
-    const intervalId = window.setInterval(() => {
-      const firstCard = slider.firstElementChild;
-      const cardStep = firstCard
-        ? firstCard.getBoundingClientRect().width + 20
-        : 340;
-      const maxScrollLeft = slider.scrollWidth - slider.clientWidth;
-      const nextScrollLeft = slider.scrollLeft + cardStep;
-
-      if (nextScrollLeft >= maxScrollLeft - 4) {
-        slider.scrollTo({
-          left: 0,
-          behavior: "smooth",
-        });
-        return;
-      }
-
-      slider.scrollBy({
-        left: cardStep,
-        behavior: "smooth",
-      });
-    }, 1500);
-
-    return () => window.clearInterval(intervalId);
-  }, [premiumServices.length]);
 
   useEffect(() => {
     if (!message) {
@@ -178,87 +133,7 @@ export default function Premium() {
       )}
 
       <div className="w-full max-w-[1200px] mx-auto">
-        <div className="flex justify-between items-center mb-10 flex-wrap gap-3">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold text-[#1A1A1A]">
-              Premium Services
-            </h2>
-            <p className="text-gray-400 text-xs mt-1">
-              Explore paid-ready reports and calculators from Astro Zura's core service stack.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => scrollServices(-1)}
-              className="hidden h-10 w-10 items-center justify-center rounded-full border border-[#E5D8C3] bg-white text-[#1E3557] shadow-sm transition hover:border-[#D4A73C] hover:text-[#D4A73C] md:inline-flex"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollServices(1)}
-              className="hidden h-10 w-10 items-center justify-center rounded-full border border-[#E5D8C3] bg-white text-[#1E3557] shadow-sm transition hover:border-[#D4A73C] hover:text-[#D4A73C] md:inline-flex"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <button
-              onClick={() => navigate("/services")}
-              className="text-[#c7926a] text-xs font-medium hover:underline"
-            >
-              {t("premium.view_all")}
-            </button>
-          </div>
-        </div>
-
-        <div
-          ref={sliderRef}
-          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {premiumServices.map((item) => (
-            <div
-              key={item.title}
-              className="min-w-[280px] max-w-[320px] snap-start rounded-2xl border border-[#F3E7D3] bg-[#FFF8ED] p-6 text-center shadow-sm transition hover:shadow-lg sm:min-w-[320px]"
-            >
-              <div className="mb-3 inline-flex rounded-full bg-[#F3E7D3] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B88332]">
-                {item.badge}
-              </div>
-
-              <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#1E3557] shadow-md">
-                {item.icon}
-              </div>
-
-              <h3 className="text-lg font-bold text-[#1E3557]">
-                {item.title}
-              </h3>
-
-              <p className="mt-2 min-h-[54px] text-[12px] leading-5 text-gray-500">
-                {item.summary}
-              </p>
-
-              <div className="mt-6 flex items-center justify-between gap-3">
-                <p className="text-sm font-bold text-[#1E3557]">
-                  {item.price}
-                </p>
-
-                <button
-                  onClick={() => {
-                    notify(`${item.title} selected`);
-                    navigate(item.to);
-                  }}
-                  className="rounded-full border border-[#1E3557] px-4 py-1.5 text-[11px] font-medium text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white"
-                >
-                  {t("premium.book_now")}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* DAILY HOROSCOPE SECTION */}
-        {/* DAILY HOROSCOPE SECTION */}
-        <div className="mt-16 md:mt-20">
+        <div>
           <h2 className="text-2xl md:text-3xl font-bold text-center text-[#2B2B2B] mb-2">
             Astrology Forecast
           </h2>
@@ -409,6 +284,67 @@ export default function Premium() {
                 </>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="mt-14 md:mt-20">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-[#1A1A1A] md:text-2xl">
+                Premium Services
+              </h2>
+              <p className="mt-1 text-xs text-gray-400">
+                Explore paid-ready reports and calculators from Astro Zura's core service stack.
+              </p>
+            </div>
+
+            <button
+              onClick={() => navigate("/services")}
+              className="text-xs font-semibold text-[#c7926a] hover:underline"
+            >
+              {t("premium.view_all")}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {premiumServices.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-[#F3E7D3] bg-[#FFF8ED] p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-4"
+              >
+                <div className="mx-auto mb-3 inline-flex max-w-full rounded-full bg-[#F3E7D3] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.14em] text-[#B88332] sm:text-[9px]">
+                  <span className="truncate">{item.badge}</span>
+                </div>
+
+                <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#1E3557] shadow-sm sm:h-12 sm:w-12">
+                  {item.icon}
+                </div>
+
+                <h3 className="min-h-[40px] text-sm font-bold leading-5 text-[#1E3557] sm:text-base">
+                  {item.title}
+                </h3>
+
+                <p className="mt-2 hidden min-h-[48px] text-[11px] leading-4 text-gray-500 sm:block">
+                  {item.summary}
+                </p>
+
+                <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
+                  <p className="text-xs font-bold text-[#1E3557] sm:text-sm">
+                    {item.price}
+                  </p>
+
+                  <button
+                    onClick={() => {
+                      notify(`${item.title} selected`);
+                      navigate(item.to);
+                    }}
+                    className="w-full rounded-full border border-[#1E3557] px-3 py-1.5 text-[10px] font-medium text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white sm:w-auto sm:text-[11px]"
+                  >
+                    {t("premium.book_now")}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

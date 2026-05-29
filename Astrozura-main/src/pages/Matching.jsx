@@ -1,18 +1,147 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { FaExclamationTriangle, FaHeart, FaShieldAlt, FaStar } from "react-icons/fa";
-import { downloadMatchMakingPdf, getMarriageMatching, searchLocation } from "../api/prokeralaApi";
-import { KeyValueTable, ReportPanel, ReportTable, SimpleTextTable } from "../components/report/ReportTables";
-import { ProviderSections } from "../components/report/ReportDataRenderer";
+import { FaExclamationTriangle, FaFilePdf, FaHeart, FaPen, FaShieldAlt, FaStar } from "react-icons/fa";
+import { downloadMatchMakingPdf, getDivisionalCharts, getMarriageMatching, searchLocation } from "../api/prokeralaApi";
+import { ReportDataBlock } from "../components/report/ReportDataRenderer";
 
 const emptyPerson = { name: "", dob: "", time: "", place: "", coordinates: "" };
 
 const verdictStyles = {
-  good: { box: "bg-emerald-50 border-emerald-100", text: "text-emerald-800", label: "Auspicious" },
-  average: { box: "bg-amber-50 border-amber-100", text: "text-amber-800", label: "Mixed" },
-  bad: { box: "bg-red-50 border-red-100", text: "text-red-800", label: "Needs Review" },
+  good: { color: "bg-emerald-600", text: "text-emerald-700", label: "Auspicious" },
+  average: { color: "bg-[#D4A73C]", text: "text-[#7a5205]", label: "Mixed" },
+  bad: { color: "bg-rose-700", text: "text-rose-700", label: "Needs Review" },
 };
+
+const chartTabs = [
+  { key: "rasi", label: "Birth(Lagna) Chart" },
+  { key: "moon", label: "Moon Chart" },
+  { key: "navamsa", label: "Navamsha Chart" },
+];
+
+const ashtakootDescriptions = {
+  varna: "Natural Refinement / Work",
+  vashya: "Innate Giving / Attraction towards each other",
+  tara: "Comfort - Prosperity - Health",
+  yoni: "Intimate Physical",
+  maitri: "Friendship",
+  gan: "Temperament",
+  bhakut: "Constructive Ability / Society Harmony",
+  nadi: "Progeny / Excess",
+};
+
+const safeValue = (value, fallback = "-") => {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "object") return value.name || value.full_name || value.value || fallback;
+  return String(value);
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}-${month}-${year}` : value;
+};
+
+const splitCoordinates = (coordinates) => {
+  const [lat, lon] = String(coordinates || "").split(",").map((item) => item.trim());
+  return { lat: lat || "-", lon: lon || "-" };
+};
+
+const getKoot = (info, key) => safeValue(info?.koot?.[key]);
+
+const getNakshatraName = (info) => safeValue(info?.nakshatra?.name);
+
+const getChart = (charts, key) => {
+  const expectedId = key === "navamsa" ? "D9" : key === "moon" ? "MOON" : "D1";
+  return charts?.find((chart) => chart.chart_type === key || chart.chart_id === expectedId) || null;
+};
+
+function SectionTitle({ children }) {
+  return (
+    <div className="mb-4 border-b-2 border-[#D4A73C] pb-2">
+      <h3 className="text-2xl font-black text-slate-700">{children}</h3>
+    </div>
+  );
+}
+
+function CompactTable({ columns, rows, footerRow }) {
+  return (
+    <div className="overflow-x-auto rounded-sm border border-slate-200 bg-white">
+      <table className="min-w-full border-collapse text-sm">
+        <thead className="bg-slate-100 text-slate-700">
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key} className="border-b border-slate-200 px-4 py-3 text-left font-black">
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.id || index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+              {columns.map((column) => (
+                <td key={column.key} className="border-b border-slate-200 px-4 py-3 align-top text-slate-600">
+                  {column.render ? column.render(row) : safeValue(row[column.key])}
+                </td>
+              ))}
+            </tr>
+          ))}
+          {footerRow ? (
+            <tr className="bg-[#1E3557] font-black text-white">
+              {columns.map((column) => (
+                <td key={column.key} className="px-4 py-3">
+                  {safeValue(footerRow[column.key])}
+                </td>
+              ))}
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ScoreCircle({ label, value, color = "bg-[#1E3557]" }) {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className={`flex h-24 w-24 items-center justify-center rounded-full ${color} text-center text-xl font-black text-white shadow-sm`}>
+        {value}
+      </div>
+      <p className="text-center text-sm font-black text-slate-900">{label}</p>
+    </div>
+  );
+}
+
+function ChartPair({ label, boyName, girlName, boyChart, girlChart, loading }) {
+  return (
+    <div>
+      <div className="mb-6 text-center text-sm font-semibold text-slate-500">{label}</div>
+      <div className="grid gap-8 md:grid-cols-2">
+        {[
+          { name: boyName || "Boy", chart: boyChart },
+          { name: girlName || "Girl", chart: girlChart },
+        ].map((item) => (
+          <div key={item.name} className="text-center">
+            <p className="mb-3 text-lg font-black text-[#1E3557]">{item.name}</p>
+            <div className="mx-auto flex aspect-square w-full max-w-[340px] items-center justify-center overflow-hidden border border-slate-300 bg-white p-3">
+              {item.chart?.chart_svg ? (
+                <div
+                  className="flex h-full w-full items-center justify-center [&_svg]:block [&_svg]:h-auto [&_svg]:max-h-full [&_svg]:max-w-full"
+                  dangerouslySetInnerHTML={{ __html: item.chart.chart_svg }}
+                />
+              ) : (
+                <p className="px-6 text-sm text-slate-500">
+                  {loading ? "Loading chart..." : item.chart?.message || "Chart image is not available in the current response."}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Matching() {
   const [boyDetails, setBoyDetails] = useState(emptyPerson);
@@ -23,6 +152,9 @@ export default function Matching() {
   const [isGirlSearching, setIsGirlSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [chartsLoading, setChartsLoading] = useState(false);
+  const [activeChart, setActiveChart] = useState("rasi");
+  const [matchingCharts, setMatchingCharts] = useState({ boy: [], girl: [] });
   const [result, setResult] = useState(null);
   const [meta, setMeta] = useState(null);
   const [error, setError] = useState("");
@@ -59,13 +191,29 @@ export default function Matching() {
       setLoading(true);
       setResult(null);
       setMeta(null);
+      setMatchingCharts({ boy: [], girl: [] });
       setError("");
       const boyDatetime = `${boyDetails.dob}T${boyDetails.time}:00+05:30`;
       const girlDatetime = `${girlDetails.dob}T${girlDetails.time}:00+05:30`;
-      const response = await getMarriageMatching(girlDetails.coordinates, girlDatetime, boyDetails.coordinates, boyDatetime);
+      const response = await getMarriageMatching(girlDetails.coordinates, girlDatetime, boyDetails.coordinates, boyDatetime, {
+        boy_name: boyDetails.name,
+        girl_name: girlDetails.name,
+        boy_place: boyDetails.place,
+        girl_place: girlDetails.place,
+      });
       if (response?.status === "success" && response?.data) {
         setResult(response.data);
         setMeta(response.meta || null);
+        setChartsLoading(true);
+        Promise.allSettled([
+          getDivisionalCharts(boyDatetime, boyDetails.coordinates, ["rasi", "moon", "navamsa"], "north-indian"),
+          getDivisionalCharts(girlDatetime, girlDetails.coordinates, ["rasi", "moon", "navamsa"], "north-indian"),
+        ]).then(([boyChartResult, girlChartResult]) => {
+          setMatchingCharts({
+            boy: boyChartResult.status === "fulfilled" ? boyChartResult.value?.data?.charts || [] : [],
+            girl: girlChartResult.status === "fulfilled" ? girlChartResult.value?.data?.charts || [] : [],
+          });
+        }).finally(() => setChartsLoading(false));
       } else {
         showError(response?.message || "Failed to fetch matching data.");
       }
@@ -135,42 +283,41 @@ export default function Matching() {
   const maximumPoints = result?.guna_milan?.maximum_points || 36;
   const scorePercent = Math.max(0, Math.min(100, (totalPoints / maximumPoints) * 100));
   const compatibilityMessage = result?.message?.description || "Compatibility details are available in the guna breakdown below.";
+  const boyCoordinates = splitCoordinates(boyDetails.coordinates);
+  const girlCoordinates = splitCoordinates(girlDetails.coordinates);
+  const boyInfo = result?.boy_info || {};
+  const girlInfo = result?.girl_info || {};
+  const activeChartConfig = chartTabs.find((item) => item.key === activeChart) || chartTabs[0];
+  const boyActiveChart = getChart(matchingCharts.boy, activeChart);
+  const girlActiveChart = getChart(matchingCharts.girl, activeChart);
+  const matchPercentage = meta?.provider_payload?.match_percentage?.percentage
+    ?? meta?.provider_payload?.match_percentage?.match_percentage
+    ?? Math.round(scorePercent);
 
-  const renderPersonCard = (title, accent, personResult, personDetails, mangalDetails) => (
-    <ReportPanel
-      title={`${title} Birth Details`}
-      subtitle={personDetails.place || "Birthplace selected above"}
-      actions={<span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${accent} text-sm font-bold text-white`}>{title.charAt(0)}</span>}
-    >
-      <KeyValueTable
-        rows={[
-          ["Name", personDetails.name || title],
-          ["Birth Date", personDetails.dob],
-          ["Birth Time", personDetails.time],
-          ["Birth Place", personDetails.place],
-          ["Nakshatra", personResult?.nakshatra?.name],
-          ["Pada", personResult?.nakshatra?.pada],
-          ["Nakshatra Lord", personResult?.nakshatra?.lord?.name],
-          ["Rashi", personResult?.rasi?.name],
-          ["Rashi Lord", personResult?.rasi?.lord?.name],
-          ["Varna", personResult?.koot?.varna],
-          ["Gana", personResult?.koot?.gana],
-          ["Nadi", personResult?.koot?.nadi],
-        ]}
-      />
-      {mangalDetails && (
-        <div className="mt-4">
-          <KeyValueTable
-            columns={1}
-            rows={[
-              ["Mangal Dosha", mangalDetails.has_dosha ? `${mangalDetails.dosha_type || "Manglik"} Manglik` : "No Mangal Dosha"],
-              ["Description", mangalDetails.description],
-            ]}
-          />
-        </div>
-      )}
-    </ReportPanel>
-  );
+  const birthRows = [
+    { id: "dob", male: formatDate(boyDetails.dob), label: "Date of Birth", female: formatDate(girlDetails.dob) },
+    { id: "time", male: safeValue(boyDetails.time), label: "Birth Time", female: safeValue(girlDetails.time) },
+    { id: "lat", male: boyCoordinates.lat, label: "Latitude", female: girlCoordinates.lat },
+    { id: "lon", male: boyCoordinates.lon, label: "Longitude", female: girlCoordinates.lon },
+    { id: "tz", male: "5.5", label: "Time Zone", female: "5.5" },
+    { id: "sunrise", male: safeValue(boyInfo?.birth?.sunrise), label: "Sunrise", female: safeValue(girlInfo?.birth?.sunrise) },
+    { id: "sunset", male: safeValue(boyInfo?.birth?.sunset), label: "Sunset", female: safeValue(girlInfo?.birth?.sunset) },
+    { id: "ayanamsha", male: safeValue(boyInfo?.birth?.ayanamsha), label: "Ayanamsha", female: safeValue(girlInfo?.birth?.ayanamsha) },
+    { id: "varna", male: getKoot(boyInfo, "varna"), label: "Varna", female: getKoot(girlInfo, "varna") },
+    { id: "vashya", male: getKoot(boyInfo, "vashya"), label: "Vashya", female: getKoot(girlInfo, "vashya") },
+    { id: "yoni", male: getKoot(boyInfo, "yoni"), label: "Yoni", female: getKoot(girlInfo, "yoni") },
+    { id: "gan", male: getKoot(boyInfo, "gana"), label: "Gan", female: getKoot(girlInfo, "gana") },
+  ];
+
+  const ashtakootRows = (result?.guna_milan?.guna || []).map((guna) => ({
+    id: guna.id || guna.name,
+    attribute: guna.name,
+    description: guna.description || ashtakootDescriptions[guna.id] || "-",
+    male: guna.boy_koot,
+    female: guna.girl_koot,
+    outof: guna.maximum_points,
+    received: guna.obtained_points,
+  }));
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
@@ -224,62 +371,219 @@ export default function Matching() {
       </section>
 
       {result && (
-        <section className="bg-[#f6f6f6] py-16 text-gray-800">
-          <div className="mx-auto max-w-6xl space-y-6 px-4">
-            <div className="rounded-sm border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 bg-white px-5 py-5">
-                <h2 className="text-2xl font-bold text-gray-950">Match Making Report</h2>
-                <p className="mt-1 text-sm text-gray-500">{boyDetails.name || "Boy"} and {girlDetails.name || "Girl"}</p>
+        <section className="bg-[#f3f4f6] py-14 text-slate-700">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="mb-8 flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-6 shadow-sm md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-3xl font-black text-slate-700">
+                  {girlDetails.name || "Girl"} with {boyDetails.name || "Boy"}
+                </h2>
+                <p className="mt-2 text-base text-slate-500">
+                  {formatDate(girlDetails.dob)}, {girlDetails.time}, {girlDetails.place || "Girl birth place"}
+                </p>
+                <p className="mt-1 text-base text-slate-500">
+                  {formatDate(boyDetails.dob)}, {boyDetails.time}, {boyDetails.place || "Boy birth place"}
+                </p>
               </div>
-              <div className="p-4">
-                {meta?.warning && <div className="mb-4 border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"><p className="font-semibold">Upstream sandbox restriction detected</p><p className="mt-1">{meta.warning}</p></div>}
-                <ReportTable
-                  columns={[
-                    { key: "score", label: "Total Score" },
-                    { key: "percentage", label: "Percentage" },
-                    { key: "verdict", label: "Verdict" },
-                    { key: "summary", label: "Summary" },
-                  ]}
-                  rows={[{
-                    score: `${totalPoints} / ${maximumPoints}`,
-                    percentage: `${Math.round(scorePercent)}%`,
-                    verdict: verdict.label,
-                    summary: compatibilityMessage,
-                  }]}
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setResult(null);
+                  setMeta(null);
+                  setMatchingCharts({ boy: [], girl: [] });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-[#D4A73C] hover:text-[#1E3557]"
+              >
+                <FaPen /> Create New
+              </button>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              {renderPersonCard("Boy", "bg-blue-500", result?.boy_info, boyDetails, result?.boy_mangal_dosha_details)}
-              {renderPersonCard("Girl", "bg-pink-500", result?.girl_info, girlDetails, result?.girl_mangal_dosha_details)}
+            {meta?.warning && (
+              <div className="mb-6 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="font-semibold">Upstream sandbox restriction detected</p>
+                <p className="mt-1">{meta.warning}</p>
+              </div>
+            )}
+
+            <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
+              <aside className="h-fit overflow-hidden rounded-sm border border-slate-200 bg-white">
+                <button className="flex w-full items-center justify-between bg-slate-100 px-4 py-4 text-left text-sm font-black text-slate-900">
+                  MATCH MAKING <span>⌄</span>
+                </button>
+                {["Basic Details", "Horoscope Chart", "Ashtakoot", "Matching Report"].map((item) => (
+                  <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, "-")}`} className="block border-t border-slate-200 px-4 py-4 text-sm font-medium text-slate-600 hover:bg-[#fff8df] hover:text-[#1E3557]">
+                    {item}
+                  </a>
+                ))}
+              </aside>
+
+              <main className="space-y-8">
+                <section id="basic-details">
+                  <SectionTitle>Birth Details</SectionTitle>
+                  <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+                    <CompactTable
+                      columns={[
+                        { key: "male", label: "Male" },
+                        { key: "label", label: "Birth Details" },
+                        { key: "female", label: "Female" },
+                      ]}
+                      rows={birthRows}
+                    />
+
+                    <div className="border border-slate-200 bg-white">
+                      <h4 className="bg-[#1E3557] px-4 py-4 text-sm font-black uppercase tracking-wide text-white">Match Summary</h4>
+                      <div className="space-y-5 p-4">
+                        <div>
+                          <p className="font-black text-slate-900">Male Nakshatra</p>
+                          <p className="text-slate-500">{getNakshatraName(boyInfo)}</p>
+                        </div>
+                        <div className="border-t border-slate-200 pt-4">
+                          <p className="font-black text-slate-900">Female Nakshatra</p>
+                          <p className="text-slate-500">{getNakshatraName(girlInfo)}</p>
+                        </div>
+                        <div className="border-t border-slate-200 pt-4">
+                          <p className="font-black text-slate-900">Match Making Percentage</p>
+                          <div className="mt-3 h-5 overflow-hidden rounded-full bg-slate-200">
+                            <div className="flex h-full items-center justify-center rounded-full bg-[#1E3557] text-xs font-black text-white" style={{ width: `${Math.max(8, Math.round(Number(matchPercentage) || scorePercent))}%` }}>
+                              {Math.round(Number(matchPercentage) || scorePercent)}%
+                            </div>
+                          </div>
+                        </div>
+                        <div className="border-t border-slate-200 pt-4">
+                          <p className="font-black text-slate-900">Match Points</p>
+                          <div className="mx-auto mt-4 flex h-24 w-24 items-center justify-center rounded-full bg-rose-700 text-2xl font-black text-white">
+                            {totalPoints}/{maximumPoints}
+                          </div>
+                        </div>
+                        <a href="#matching-report" className="block bg-[#D4A73C] px-5 py-4 text-center font-black text-[#1E3557] transition hover:bg-[#c5982d]">
+                          See Detailed Report
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section id="horoscope-chart">
+                  <SectionTitle>Birth & Divisional Charts</SectionTitle>
+                  <div className="mb-8 flex justify-center">
+                    <div className="inline-grid overflow-hidden rounded-sm border border-slate-200 bg-white sm:grid-cols-3">
+                      {chartTabs.map((tab) => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => setActiveChart(tab.key)}
+                          className={`border-b border-slate-200 px-8 py-4 text-sm font-semibold sm:border-b-0 sm:border-r sm:last:border-r-0 ${activeChart === tab.key ? "bg-[#fff8df] text-[#1E3557]" : "text-slate-500 hover:bg-slate-50"}`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <ChartPair
+                    label={activeChartConfig.label}
+                    boyName={boyDetails.name}
+                    girlName={girlDetails.name}
+                    boyChart={boyActiveChart}
+                    girlChart={girlActiveChart}
+                    loading={chartsLoading}
+                  />
+                </section>
+
+                <section id="ashtakoot">
+                  <SectionTitle>Ashtakoot Points</SectionTitle>
+                  <CompactTable
+                    columns={[
+                      { key: "attribute", label: "Attribute" },
+                      { key: "description", label: "Description" },
+                      { key: "male", label: "Male" },
+                      { key: "female", label: "Female" },
+                      { key: "outof", label: "Outof" },
+                      { key: "received", label: "Received" },
+                    ]}
+                    rows={ashtakootRows}
+                    footerRow={{
+                      attribute: "Total",
+                      description: "-",
+                      male: "-",
+                      female: "-",
+                      outof: maximumPoints,
+                      received: totalPoints,
+                    }}
+                  />
+                </section>
+
+                <section id="matching-report">
+                  <SectionTitle>Matching Report</SectionTitle>
+                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+                    <ScoreCircle label="Ashtakoot" value={`${totalPoints}/${maximumPoints}`} color={verdict.color} />
+                    <ScoreCircle label="Male Manglik" value={result?.boy_mangal_dosha_details?.description?.replace("Manglik influence score: ", "") || "0%"} color="bg-[#1E3557]" />
+                    <ScoreCircle label="Female Manglik" value={result?.girl_mangal_dosha_details?.description?.replace("Manglik influence score: ", "") || "0%"} color="bg-[#D4A73C]" />
+                    <ScoreCircle label="Rajju Dosha" value={result?.exceptions?.some((item) => item.toLowerCase().includes("rajju")) ? "YES" : "NO"} color="bg-rose-500" />
+                    <ScoreCircle label="Vedha Dosha" value={result?.exceptions?.some((item) => item.toLowerCase().includes("vedha")) ? "YES" : "NO"} color="bg-emerald-600" />
+                  </div>
+
+                  <div className="mt-10 rounded-sm bg-[#fff8df] p-8">
+                    <h4 className={`text-3xl font-black ${verdict.text}`}>Match Conclusion</h4>
+                    <p className="mt-5 max-w-4xl text-base leading-7 text-slate-700">{compatibilityMessage}</p>
+                  </div>
+                </section>
+
+                <section className="rounded-sm bg-[#fff6bf] p-8 text-center">
+                  <FaFilePdf className="mx-auto mb-4 text-4xl text-[#D4A73C]" />
+                  <h3 className="text-3xl font-black text-[#b87b00]">Get 25 Pages Detailed Kundli Matching Report</h3>
+                  <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-slate-800">
+                    Kundli Horoscope Matching with ashtakoot or dashkoot milan. Detailed interpretation of each ashtakoot milan point, Manglik matching with Vedha and Rajju Dosha.
+                  </p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-4 text-sm font-black text-[#1E3557]">
+                    <span className="underline decoration-[#D4A73C] decoration-2">See Sample PDF in English</span>
+                    <span className="underline decoration-[#D4A73C] decoration-2">सैंपल PDF हिंदी में देखें</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={downloadingPdf}
+                    className="mt-8 rounded-md bg-[#1E3557] px-8 py-4 font-black text-white transition hover:bg-[#162744] disabled:opacity-60"
+                  >
+                    {downloadingPdf ? "Preparing PDF..." : "Get your Personalised Matching Pdf"}
+                  </button>
+                </section>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <a href="/kundli" className="rounded-md bg-[#1E3557] px-6 py-4 text-center font-black text-white transition hover:bg-[#162744]">
+                    See {boyDetails.name || "Boy"} Detailed Kundli
+                  </a>
+                  <a href="/kundli" className="rounded-md bg-[#D4A73C] px-6 py-4 text-center font-black text-[#1E3557] transition hover:bg-[#c5982d]">
+                    See {girlDetails.name || "Girl"} Detailed Kundli
+                  </a>
+                </div>
+
+                <details className="rounded-sm border border-slate-200 bg-white">
+                  <summary className="cursor-pointer bg-slate-100 px-4 py-4 text-sm font-black text-slate-700">
+                    Additional API Details
+                  </summary>
+                  <div className="space-y-4 p-4">
+                    {(result?.provider_sections || []).map((section) => (
+                      <details key={section.id} className="rounded-sm border border-slate-200 bg-white">
+                        <summary className="cursor-pointer border-b border-slate-200 px-4 py-3 font-black text-[#1E3557]">
+                          {section.title}
+                        </summary>
+                        <div className="space-y-4 p-4">
+                          {Object.entries(section.items || {}).map(([key, item]) => (
+                            <details key={key} className="rounded-sm border border-slate-200 bg-white">
+                              <summary className="cursor-pointer bg-[#fff8df] px-4 py-3 text-sm font-bold text-[#7a5205]">{key}</summary>
+                              <div className="p-4">
+                                <ReportDataBlock title={key} data={item?.data ?? item} />
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </details>
+              </main>
             </div>
-
-            {Array.isArray(result?.exceptions) && result.exceptions.length > 0 && (
-              <ReportPanel title="Compatibility Exceptions">
-                <SimpleTextTable title="Exception" items={result.exceptions} />
-              </ReportPanel>
-            )}
-
-            {Array.isArray(result?.guna_milan?.guna) && result.guna_milan.guna.length > 0 && (
-              <ReportPanel title="Detailed Guna Breakdown" subtitle="Ashtakoota score table">
-                <ReportTable
-                  columns={[
-                    { key: "name", label: "Guna" },
-                    { key: "girl_koot", label: "Girl Koot" },
-                    { key: "boy_koot", label: "Boy Koot" },
-                    { key: "points", label: "Points" },
-                    { key: "description", label: "Description" },
-                  ]}
-                  rows={result.guna_milan.guna.map((guna) => ({
-                    ...guna,
-                    points: `${guna.obtained_points ?? 0} / ${guna.maximum_points ?? 0}`,
-                  }))}
-                />
-              </ReportPanel>
-            )}
-
-            <ProviderSections sections={result?.provider_sections || []} />
           </div>
         </section>
       )}

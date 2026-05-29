@@ -675,34 +675,29 @@ class AstrologyController extends Controller
             'coordinates' => 'required|string',
             'ayanamsa' => 'nullable',
             'la' => 'nullable|string',
+            'mode' => 'nullable|string|in:daily,chaughadiya,hora',
         ]);
 
         try {
             $language = $this->resolveRequestedLanguage($request, ['en', 'hi', 'ma', 'bn', 'ta', 'te', 'ml', 'kn'], 'en');
             $birthPayload = $this->buildBirthPayload($request->input('datetime'), $request->input('coordinates'), $request->input('ayanamsa'));
+            $mode = $request->input('mode', 'daily');
 
-            $providerItems = [
-                'basic_panchang_sunrise' => $this->safeAstrologyRequest('basic_panchang/sunrise', $birthPayload, $language),
-                'basic_panchang' => $this->safeAstrologyRequest('basic_panchang', $birthPayload, $language),
-                'advanced_panchang_sunrise' => $this->safeAstrologyRequest('advanced_panchang/sunrise', $birthPayload, $language),
-                'advanced_panchang' => $this->safeAstrologyRequest('advanced_panchang', $birthPayload, $language),
-                'planet_panchang_sunrise' => $this->safeAstrologyRequest('planet_panchang/sunris', $birthPayload, $language),
-                'planet_panchang' => $this->safeAstrologyRequest('planet_panchang', $birthPayload, $language),
-                'chaughadiya_muhurta' => $this->safeAstrologyRequest('chaughadiya_muhurta', $birthPayload, $language),
-                'hora_muhurta' => $this->safeAstrologyRequest('hora_muhurta', $birthPayload, $language),
-                'hora_muhurta_dinman' => $this->safeAstrologyRequest('hora_muhurta_dinman', $birthPayload, $language),
-                'panchang_chart' => $this->safeAstrologyRequest('panchang_chart', $birthPayload, $language),
-                'panchang_chart_sunrise' => $this->safeAstrologyRequest('panchang_chart/sunrise', $birthPayload, $language),
-                'tamil_month_panchang' => $this->safeAstrologyRequest('tamil_month_panchang', $birthPayload, $language),
-                'tamil_panchang' => $this->safeAstrologyRequest('tamil_panchang', $birthPayload, $language),
-            ];
+            $providerItems = match ($mode) {
+                'chaughadiya' => [
+                    'chaughadiya_muhurta' => $this->safeAstrologyRequest('chaughadiya_muhurta', $birthPayload, $language),
+                ],
+                'hora' => [
+                    'hora_muhurta' => $this->safeAstrologyRequest('hora_muhurta', $birthPayload, $language),
+                ],
+                default => [
+                    'basic_panchang' => $this->safeAstrologyRequest('basic_panchang', $birthPayload, $language),
+                    'advanced_panchang' => $this->safeAstrologyRequest('advanced_panchang', $birthPayload, $language),
+                ],
+            };
 
-            $advanced = $providerItems['advanced_panchang']['data']
-                ?? $providerItems['advanced_panchang_sunrise']['data']
-                ?? [];
-            $basic = $providerItems['basic_panchang']['data']
-                ?? $providerItems['basic_panchang_sunrise']['data']
-                ?? [];
+            $advanced = $providerItems['advanced_panchang']['data'] ?? [];
+            $basic = $providerItems['basic_panchang']['data'] ?? [];
             $hora = $providerItems['hora_muhurta']['data'] ?? [];
             $chaughadiya = $providerItems['chaughadiya_muhurta']['data'] ?? [];
 
@@ -759,47 +754,17 @@ class AstrologyController extends Controller
                     'provider_sections' => [
                         [
                             'id' => 'panchang-core',
-                            'title' => 'Basic and Advanced Panchang',
-                            'summary' => 'Basic, sunrise-based and advanced Panchang responses.',
-                            'items' => [
-                                'basic_panchang_sunrise' => $providerItems['basic_panchang_sunrise'],
-                                'basic_panchang' => $providerItems['basic_panchang'],
-                                'advanced_panchang_sunrise' => $providerItems['advanced_panchang_sunrise'],
-                                'advanced_panchang' => $providerItems['advanced_panchang'],
-                            ],
-                        ],
-                        [
-                            'id' => 'panchang-planets-chart',
-                            'title' => 'Planet Panchang and Charts',
-                            'summary' => 'Planet Panchang and Panchang chart modules.',
-                            'items' => [
-                                'planet_panchang_sunrise' => $providerItems['planet_panchang_sunrise'],
-                                'planet_panchang' => $providerItems['planet_panchang'],
-                                'panchang_chart' => $providerItems['panchang_chart'],
-                                'panchang_chart_sunrise' => $providerItems['panchang_chart_sunrise'],
-                            ],
-                        ],
-                        [
-                            'id' => 'panchang-muhurta',
-                            'title' => 'Muhurta and Day/Night Timing',
-                            'summary' => 'Chaughadiya, Hora and Dinman modules, including day/night period data where returned.',
-                            'items' => [
-                                'chaughadiya_muhurta' => $providerItems['chaughadiya_muhurta'],
-                                'hora_muhurta' => $providerItems['hora_muhurta'],
-                                'hora_muhurta_dinman' => $providerItems['hora_muhurta_dinman'],
-                            ],
-                        ],
-                        [
-                            'id' => 'panchang-tamil',
-                            'title' => 'Tamil Panchang',
-                            'summary' => 'Tamil month and daily Panchang responses.',
-                            'items' => [
-                                'tamil_month_panchang' => $providerItems['tamil_month_panchang'],
-                                'tamil_panchang' => $providerItems['tamil_panchang'],
-                            ],
+                            'title' => match ($mode) {
+                                'chaughadiya' => 'Chaughadiya Muhurta',
+                                'hora' => 'Hora Muhurta',
+                                default => 'Daily Panchang',
+                            },
+                            'summary' => 'Only the selected Panchang module was requested.',
+                            'items' => $providerItems,
                         ],
                     ],
                     'provider_payload' => collect($providerItems)->map(fn ($item) => $item['data'])->all(),
+                    'mode' => $mode,
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -1953,6 +1918,7 @@ class AstrologyController extends Controller
     {
         return match (strtolower($chartType)) {
             'rasi', 'lagna', 'd1' => 'D1',
+            'moon', 'chandra' => 'MOON',
             'hora', 'd2' => 'D2',
             'drekkana', 'd3' => 'D3',
             'chaturthamsa', 'd4' => 'D4',
@@ -2249,6 +2215,8 @@ class AstrologyController extends Controller
             ],
             'koot' => [
                 'varna' => $astro['Varna'] ?? null,
+                'vashya' => $astro['Vashya'] ?? null,
+                'yoni' => $astro['Yoni'] ?? null,
                 'gana' => $astro['Gan'] ?? null,
                 'nadi' => $astro['Nadi'] ?? null,
             ],

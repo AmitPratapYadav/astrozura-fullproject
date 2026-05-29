@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -479,36 +480,43 @@ export default function VedicCalculators() {
 
             <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <button
-                type="button"
-                onClick={() => setCalculatorMenuOpen((current) => !current)}
-                className="flex w-full items-center justify-between bg-slate-200 px-4 py-4 text-left text-sm font-bold uppercase tracking-wide text-slate-900 transition hover:bg-slate-300"
-                aria-expanded={calculatorMenuOpen}
-              >
-                <span>Calculators</span>
-                <span className={`text-base leading-none transition-transform ${calculatorMenuOpen ? "rotate-180" : ""}`}>v</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setCalculatorMenuOpen((current) => !current)}
+                  className="flex w-full items-center justify-between bg-slate-200 px-4 py-4 text-left text-sm font-bold uppercase tracking-wide text-slate-900 transition hover:bg-[#fff4cf] focus:outline-none focus:ring-2 focus:ring-[#D4A73C] focus:ring-offset-2"
+                  aria-controls="calculator-menu-list"
+                  aria-expanded={calculatorMenuOpen}
+                  title={calculatorMenuOpen ? "Collapse calculators" : "Open calculators"}
+                >
+                  <span>Calculators</span>
+                  <ChevronDown
+                    size={18}
+                    strokeWidth={2.4}
+                    className={`transition-transform duration-200 ${calculatorMenuOpen ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                  />
+                </button>
 
-              {calculatorMenuOpen && (
-                <div className="max-h-[360px] overflow-y-auto">
-                  {calculatorMenuItems.map((item) => {
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        aria-current={item.isActive ? "page" : undefined}
-                        className={`block border-b border-slate-200 px-4 py-3 text-sm font-medium transition last:border-b-0 ${
-                          item.isActive
-                            ? "border-r-2 border-r-emerald-500 bg-emerald-50 text-[#1E3557]"
-                            : "bg-white text-slate-700 hover:bg-slate-50 hover:text-[#1E3557]"
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+                {calculatorMenuOpen && (
+                  <div id="calculator-menu-list" className="max-h-[360px] overflow-y-auto">
+                    {calculatorMenuItems.map((item) => {
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          aria-current={item.isActive ? "page" : undefined}
+                          className={`block border-b border-slate-200 px-4 py-3 text-sm transition last:border-b-0 ${
+                            item.isActive
+                              ? "border-r-4 border-r-[#D4A73C] bg-[#fff4cf] font-bold text-[#1E3557] shadow-[inset_4px_0_0_#D4A73C]"
+                              : "bg-white font-medium text-slate-700 hover:bg-[#fff9e8] hover:text-[#1E3557]"
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </aside>
           </div>
