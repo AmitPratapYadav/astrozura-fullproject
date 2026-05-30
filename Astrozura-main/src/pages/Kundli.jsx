@@ -53,6 +53,8 @@ const d1ToD16ChartOptions = chartTypeOptions.filter((item) =>
   ["rasi", "hora", "drekkana", "chaturthamsa", "panchamsa", "shashtamsa", "saptamsa", "ashtamsa", "navamsa", "dasamsa", "rudramsa", "dwadasamsa", "trayodashamsa", "chaturdashamsa", "panchdashamsa", "shodasamsa"].includes(item.value)
 );
 
+const primaryChartTypes = ["rasi", "navamsa", "dasamsa", "hora"];
+
 const predictionTypes = [
   { value: "career", label: "Career & Business", icon: "💼" },
   { value: "love-and-relationship", label: "Love & Relationship", icon: "❤️" },
@@ -110,6 +112,24 @@ const formatReportKey = (key = "") =>
 const isPrimitive = (value) =>
   value === null || ["string", "number", "boolean"].includes(typeof value);
 
+const chartIdForType = (chartType = "") => {
+  const index = d1ToD16ChartOptions.findIndex((item) => item.value === chartType);
+  return index >= 0 ? `D${index + 1}` : String(chartType || "").toUpperCase();
+};
+
+const formatDegree = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "string" && /[°'"]/.test(value)) return value;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return String(value);
+  const normalized = ((numeric % 30) + 30) % 30;
+  const degrees = Math.floor(normalized);
+  const minuteFloat = (normalized - degrees) * 60;
+  const minutes = Math.floor(minuteFloat);
+  const seconds = Math.round((minuteFloat - minutes) * 60);
+  return `${String(degrees).padStart(2, "0")}°${String(minutes).padStart(2, "0")}′${String(seconds).padStart(2, "0")}″`;
+};
+
 const renderDetailValue = (value, depth = 0) => {
   if (value === null || value === undefined || value === "") {
     return <span className="text-gray-400">-</span>;
@@ -165,10 +185,6 @@ const DetailedReportSection = ({ section, defaultOpen = false, loading = false, 
   const successCount = entries.filter(([, item]) => item?.status === "success").length;
   const pendingCount = entries.filter(([, item]) => item?.status === "pending").length;
   const errorCount = entries.length - successCount - pendingCount;
-
-  useEffect(() => {
-    if (defaultOpen) onOpen?.();
-  }, []);
 
   return (
     <details open={defaultOpen} onToggle={(event) => event.currentTarget.open && onOpen?.()} className="group rounded-3xl border border-gray-100 bg-white shadow-sm">
@@ -228,6 +244,8 @@ export default function Kundli() {
   const [apiMeta, setApiMeta] = useState(null);
   const [detailedSections, setDetailedSections] = useState([]);
   const [loadingDetailedSections, setLoadingDetailedSections] = useState({});
+  const [selectedChartType, setSelectedChartType] = useState("rasi");
+  const [loadingSelectedChart, setLoadingSelectedChart] = useState(false);
 
   // Premium Features States
   const [activeTab, setActiveTab] = useState("free"); // free, premium
@@ -301,10 +319,11 @@ export default function Kundli() {
       setChartData(null);
       setDetailedSections([]);
       setLoadingDetailedSections({});
+      setSelectedChartType("rasi");
       showToast("Generating your kundli...");
       const datetime = `${details.dob}T${details.time}:00+05:30`;
       const response = await generateKundli(datetime, details.coordinates, 1, {
-        chart_types: d1ToD16ChartOptions.map((item) => item.value),
+        chart_types: primaryChartTypes,
         chart_style: details.chartStyle,
         la: details.language,
       });
@@ -336,6 +355,43 @@ export default function Kundli() {
       showToast(error?.response?.data?.message || "Failed to connect to API.");
     } finally {
       setLoadingKundli(false);
+    }
+  };
+
+  const handleChartSelection = async (chartType) => {
+    setSelectedChartType(chartType);
+    if (!kundliData || !details.coordinates) return;
+
+    const chartId = chartIdForType(chartType);
+    const alreadyLoaded = Array.isArray(chartData)
+      ? chartData.some((chart) => chart.chart_type === chartType || chart.chart_id === chartId)
+      : false;
+    if (alreadyLoaded) return;
+
+    try {
+      setLoadingSelectedChart(true);
+      const datetime = `${details.dob}T${details.time}:00+05:30`;
+      const response = await getDivisionalCharts(datetime, details.coordinates, chartType, details.chartStyle, { la: details.language });
+      if (response?.status === "success") {
+        const nextCharts = response.data?.charts || (response.data?.chart ? [{
+          status: "success",
+          chart_type: chartType,
+          chart_id: response.data.chart_meta?.chart_type || chartId,
+          label: d1ToD16ChartOptions.find((item) => item.value === chartType)?.label || chartId,
+          chart_svg: response.data.chart,
+        }] : []);
+
+        setChartData((current) => {
+          const existing = Array.isArray(current) ? current : [];
+          const seen = new Set(existing.map((chart) => chart.chart_id || chart.chart_type));
+          const fresh = nextCharts.filter((chart) => !seen.has(chart.chart_id || chart.chart_type));
+          return [...existing, ...fresh];
+        });
+      }
+    } catch (error) {
+      showToast(error?.response?.data?.message || "Failed to load selected chart.");
+    } finally {
+      setLoadingSelectedChart(false);
     }
   };
 
@@ -432,6 +488,7 @@ export default function Kundli() {
     if (activeTab === "premium" && kundliData) {
       loadPremiumFeature(premiumTab);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, premiumTab, activePredictionType]);
 
   const birth = kundliData?.nakshatra_details;
@@ -456,13 +513,17 @@ export default function Kundli() {
         sign_lord: planet.signLord || planet.sign_lord,
         nakshatra: planet.nakshatra || planet.nakshatra_name,
         nakshatra_lord: planet.nakshatraLord || planet.nakshatra_lord,
-        degree: planet.normDegree || planet.fullDegree || planet.degree,
+        degree: formatDegree(planet.normDegree ?? planet.degree ?? planet.fullDegree),
         house: planet.house,
         retro: planet.isRetro || planet.retro || planet.is_retro,
         combust: planet.is_planet_set || planet.combust,
         status: planet.planet_awastha || planet.awastha,
       }))
     : [];
+  const selectedChartId = chartIdForType(selectedChartType);
+  const selectedChart = Array.isArray(chartData)
+    ? chartData.find((chart) => chart.chart_type === selectedChartType || chart.chart_id === selectedChartId) || chartData[0]
+    : null;
   const astroRows = Object.entries(providerPayload.astro_details || {}).map(([key, value]) => ({
     field: formatReportLabel(key),
     value: displayCell(value),
@@ -519,7 +580,7 @@ export default function Kundli() {
       <section className="max-w-5xl mx-auto px-4 md:px-8 py-12 -mt-10 sm:-mt-16 z-10 relative">
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 md:p-12">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3557]">Birth Chart Details</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3557]">Kundali Report Details</h2>
             <p className="text-gray-500 mt-2 text-sm">The advanced view includes detailed yogas, dosha notes, and dasha timing.</p>
             <p className="mt-3 text-xs font-medium text-gray-500">Result language: {getLanguageLabel(details.language)}</p>
           </div>
@@ -549,7 +610,7 @@ export default function Kundli() {
               {details.coordinates && <p className="mt-2 text-xs text-gray-500">Coordinates: {details.coordinates}</p>}
             </div>
             <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-              Charts included: D1 through D16.
+              Initial charts included: D1, D2, D9 and D10. Use the result dropdown to load any D1-D16 chart only when needed.
             </div>
             <select value={details.chartStyle} onChange={(e) => updateDetails("chartStyle", e.target.value)} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl">
               <option value="north-indian">North Indian</option>
@@ -614,57 +675,67 @@ export default function Kundli() {
                         />
                       </ReportPanel>
 
-                      <ReportPanel title="Charts Summary">
-                        <ReportTable
-                          columns={[
-                            { key: "sn", label: "S.N." },
-                            { key: "chart", label: "Chart" },
-                            { key: "style", label: "Style" },
-                            { key: "status", label: "Status" },
-                            { key: "note", label: "Note" },
-                          ]}
-                          rows={chartRows}
-                          compact
-                        />
-                      </ReportPanel>
-
-                      <div className="grid gap-5 lg:grid-cols-2">
-                        {Array.isArray(chartData) && chartData.length > 0 ? chartData.map((chart, index) => (
-                          <ReportPanel key={chart.chart_id || chart.label || index} title={chart.label || chart.chart_id || `Chart ${index + 1}`}>
-                            <div className="flex min-h-[300px] items-center justify-center overflow-x-auto border border-gray-200 bg-[#fff8df] p-3">
-                              {chart.chart_svg ? <div dangerouslySetInnerHTML={{ __html: chart.chart_svg }} className="max-w-full" style={{ minWidth: "280px", minHeight: "280px" }} /> : <p className="text-center text-sm text-gray-500">{chart.message || "Chart image is not available for this response."}</p>}
-                            </div>
-                            <div className="mt-3">
-                              <KeyValueTable
-                                columns={1}
-                                rows={[
-                                  ["Chart", chart.label || chart.chart_id],
-                                  ["Style", apiMeta?.chartMeta?.chart_style || details.chartStyle],
-                                  ["Status", chart.status === "error" ? "Unavailable" : "Available"],
-                                ]}
+                      <ReportPanel
+                        title="Kundali Chart"
+                        subtitle="Only key charts are loaded first. Select another D-chart to load it on demand."
+                        actions={
+                          <select
+                            value={selectedChartType}
+                            onChange={(event) => void handleChartSelection(event.target.value)}
+                            className="rounded-xl border border-[#e7c76c] bg-white px-4 py-2 text-sm font-bold text-[#1E3557] outline-none focus:border-[#D4A73C]"
+                          >
+                            {d1ToD16ChartOptions.map((item) => (
+                              <option key={item.value} value={item.value}>{item.label}</option>
+                            ))}
+                          </select>
+                        }
+                      >
+                        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                          <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-sm border border-gray-200 bg-[#fff3dd] p-4">
+                            {loadingSelectedChart ? (
+                              <p className="text-sm font-semibold text-[#1E3557]">Loading selected chart...</p>
+                            ) : selectedChart?.chart_svg ? (
+                              <div
+                                dangerouslySetInnerHTML={{ __html: selectedChart.chart_svg }}
+                                className="kundli-chart-svg w-full max-w-[420px]"
                               />
-                            </div>
-                          </ReportPanel>
-                        )) : (
-                          <ReportPanel title="Charts">
-                            <p className="text-sm text-gray-500">Chart images are not available for this response.</p>
-                          </ReportPanel>
-                        )}
-                      </div>
+                            ) : (
+                              <p className="text-center text-sm text-gray-500">{selectedChart?.message || "Chart image is not available for this response."}</p>
+                            )}
+                          </div>
+                          <div className="space-y-4">
+                            <KeyValueTable
+                              columns={1}
+                              rows={[
+                                ["Selected Chart", d1ToD16ChartOptions.find((item) => item.value === selectedChartType)?.label || selectedChartId],
+                                ["Style", apiMeta?.chartMeta?.chart_style || details.chartStyle],
+                                ["Loaded Charts", Array.isArray(chartData) ? chartData.length : 0],
+                              ]}
+                            />
+                            <ReportTable
+                              columns={[
+                                { key: "sn", label: "S.N." },
+                                { key: "chart", label: "Loaded Chart" },
+                                { key: "status", label: "Status" },
+                              ]}
+                              rows={chartRows.map(({ sn, chart, status }) => ({ sn, chart, status }))}
+                              compact
+                            />
+                          </div>
+                        </div>
+                      </ReportPanel>
 
                       <ReportPanel title="Planets">
                         <ReportTable
                           columns={[
-                            { key: "planet", label: "Planet" },
+                            { key: "planet", label: "Planets" },
+                            { key: "retro", label: "R" },
                             { key: "sign", label: "Sign" },
                             { key: "sign_lord", label: "Sign Lord" },
+                            { key: "degree", label: "Degree" },
                             { key: "nakshatra", label: "Nakshatra" },
                             { key: "nakshatra_lord", label: "Nakshatra Lord" },
-                            { key: "degree", label: "Degree" },
                             { key: "house", label: "House" },
-                            { key: "retro", label: "Retro" },
-                            { key: "combust", label: "Combust" },
-                            { key: "status", label: "Avastha" },
                           ]}
                           rows={planetRows}
                           compact

@@ -13,25 +13,25 @@ const staticServices = [
     accent: "from-[#8C3B3B] to-[#C86B3C]",
   },
   {
-    slug: "detailed-kundali",
-    title: "Detailed Kundali",
+    slug: "kundali-report",
+    title: "Kundali Report",
     category: "Reports",
     summary: "Expanded kundali reading with divisional chart context, yogas, and predictive layers.",
     description:
       "Use the full kundali module to review graha placements, divisional charts, doshas, yogas, and timing-based observations in one place.",
-    ctaLabel: "Open Detailed Kundali",
+    ctaLabel: "Open Kundali Report",
     ctaTo: "/kundli",
     accent: "from-[#204A72] to-[#3D78A7]",
   },
   {
-    slug: "numerology",
-    title: "Numerology",
+    slug: "detailed-numerology",
+    title: "Detailed Numerology",
     category: "Calculators",
     summary: "Numerology insights for destiny number, life path, strengths, and alignment patterns.",
     description:
       "Generate numerology-based interpretations using your birth details and name inputs, then connect with an astrologer for guided explanation.",
-    ctaLabel: "Open Numerology",
-    ctaTo: "/numerology",
+    ctaLabel: "Open Detailed Numerology",
+    ctaTo: "/detailed-numerology",
     accent: "from-[#3A2A78] to-[#6E55C7]",
   },
   {
@@ -99,15 +99,12 @@ export const serviceCatalog = [
 
 export const groupedServices = {
   horoscope: [
-    { label: "Today's Horoscope", to: "/rashifal?period=today" },
-    { label: "Tomorrow's Horoscope", to: "/rashifal?period=tomorrow" },
-    { label: "Yesterday's Horoscope", to: "/rashifal?period=yesterday" },
+    { label: "Rashifal", to: "/rashifal" },
   ],
   reports: [
     { label: "Lal Kitab Reports", to: "/services/lal-kitab-report" },
-    { label: "Kundli Matching", to: "/matching" },
-    { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
-    { label: "Detailed Kundali", to: "/services/detailed-kundali" },
+    { label: "Matchmaking Report", to: "/matching" },
+    { label: "Kundali Report", to: "/services/kundali-report" },
   ],
   calculators: [
     ...vedicCalculatorTools
@@ -116,7 +113,7 @@ export const groupedServices = {
         label: tool.title,
         to: tool.route,
       })),
-    { label: "Numerology", to: "/numerology" },
+    { label: "Detailed Numerology", to: "/detailed-numerology" },
     { label: "Tarot Reading", to: "/services/tarot-reading" },
     { label: "Palm Reading", to: "/services/palm-reading" },
   ],

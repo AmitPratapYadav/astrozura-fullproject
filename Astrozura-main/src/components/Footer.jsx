@@ -15,9 +15,9 @@ export default function Footer() {
   const servicesLinks = [
     { label: "View All Services", to: "/services" },
     { label: "Pooja Anusthan", to: "/rituals" },
-    { label: "Horoscope", to: "/rashifal?period=today" },
+    { label: "Horoscope", to: "/rashifal" },
     { label: "Matchmaking", to: "/matching" },
-    { label: "Birth Chart", to: "/kundli" },
+    { label: "Kundali Report", to: "/services/kundali-report" },
     { label: "Astrologers", to: "/astrologers" },
   ];
 

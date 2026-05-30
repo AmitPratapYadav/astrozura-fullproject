@@ -999,38 +999,28 @@ class AstrologyController extends Controller
                 'dasha-periods', 'vimshottari-dasha' => [[
                     'id' => 'vimshottari-dasha',
                     'title' => 'Vimshottari Dasha',
-                    'summary' => 'All core Vimshottari dasha modules plus optional nested dasha endpoints.',
+                    'summary' => 'Current Vimshottari dasha hierarchy and major dasha table.',
                     'items' => [
                         'current_vdasha_all' => $this->safeAstrologyRequest('current_vdasha_all', $payload, $language),
                         'major_vdasha' => $this->safeAstrologyRequest('major_vdasha', $payload, $language),
-                        'current_vdasha' => $this->safeAstrologyRequest('current_vdasha', $payload, $language),
-                        'current_vdasha_date' => $this->safeAstrologyRequest('current_vdasha_date', $payload, $language),
-                        'sub_vdasha' => $optionalRequest('Mahadasha', 'sub_vdasha/' . $segment($request->input('mahadasha')), filled($request->input('mahadasha'))),
-                        'sub_sub_vdasha' => $optionalRequest('Mahadasha and Antardasha', 'sub_sub_vdasha/' . $segment($request->input('mahadasha')) . '/' . $segment($request->input('antardasha')), filled($request->input('mahadasha')) && filled($request->input('antardasha'))),
-                        'sub_sub_sub_vdasha' => $optionalRequest('Mahadasha, Antardasha and Pratyantardasha', 'sub_sub_sub_vdasha/' . $segment($request->input('mahadasha')) . '/' . $segment($request->input('antardasha')) . '/' . $segment($request->input('pratyantardasha')), filled($request->input('mahadasha')) && filled($request->input('antardasha')) && filled($request->input('pratyantardasha'))),
-                        'sub_sub_sub_sub_vdasha' => $optionalRequest('Mahadasha, Antardasha, Pratyantardasha and Sookshma Dasha', 'sub_sub_sub_sub_vdasha/' . $segment($request->input('mahadasha')) . '/' . $segment($request->input('antardasha')) . '/' . $segment($request->input('pratyantardasha')) . '/' . $segment($request->input('sookshma_dasha')), filled($request->input('mahadasha')) && filled($request->input('antardasha')) && filled($request->input('pratyantardasha')) && filled($request->input('sookshma_dasha'))),
                     ],
                 ]],
                 'char-dasha' => [[
                     'id' => 'char-dasha',
                     'title' => 'Char Dasha',
-                    'summary' => 'Major/current Char Dasha plus optional sub-period modules.',
+                    'summary' => 'Current Char Dasha hierarchy and major dasha table.',
                     'items' => [
                         'major_chardasha' => $this->safeAstrologyRequest('major_chardasha', $payload, $language),
                         'current_chardasha' => $this->safeAstrologyRequest('current_chardasha', $payload, $language),
-                        'sub_chardasha' => $optionalRequest('Mahadasha', 'sub_chardasha/' . $segment($request->input('mahadasha')), filled($request->input('mahadasha'))),
-                        'sub_sub_chardasha' => $this->safeAstrologyRequest('sub_sub_chardasha', $payload, $language),
                     ],
                 ]],
                 'yogini-dasha' => [[
                     'id' => 'yogini-dasha',
                     'title' => 'Yogini Dasha',
-                    'summary' => 'Major, current and sub Yogini Dasha modules.',
+                    'summary' => 'Current and major Yogini Dasha modules.',
                     'items' => [
                         'major_yogini_dasha' => $this->safeAstrologyRequest('major_yogini_dasha', $payload, $language),
-                        'sub_yogini_dasha' => $this->safeAstrologyRequest('sub_yogini_dasha', $payload, $language),
                         'current_yogini_dasha' => $this->safeAstrologyRequest('current_yogini_dasha', $payload, $language),
-                        'sub_yogini_dasha_by_cycle' => $optionalRequest('Dasha cycle and Dasha name', 'sub_yogini_dasha/' . $segment($request->input('dasha_cycle')) . '/' . $segment($request->input('dasha_name')), filled($request->input('dasha_cycle')) && filled($request->input('dasha_name'))),
                     ],
                 ]],
                 'varshaphal' => [[

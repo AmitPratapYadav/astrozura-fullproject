@@ -24,17 +24,17 @@ export default function Navbar() {
   const navItems = useMemo(
     () => [
       { type: "link", label: t("navMenu.poojaAnusthan"), to: "/rituals" },
-      { type: "link", label: t("navMenu.astroZuraPanchang"), to: "/panchang" },
       {
         type: "dropdown",
-        label: t("navMenu.horoscope"),
-        key: "horoscope",
+        label: t("navMenu.astroZuraPanchang"),
+        key: "panchang",
         items: [
-          { label: t("navMenu.horoscopeItems.today"), to: "/rashifal?period=today" },
-          { label: t("navMenu.horoscopeItems.tomorrow"), to: "/rashifal?period=tomorrow" },
-          { label: t("navMenu.horoscopeItems.yesterday"), to: "/rashifal?period=yesterday" },
+          { label: "Daily Panchang", to: "/panchang?view=daily" },
+          { label: "Chaughadiya Muhurt", to: "/panchang?view=chaughadiya" },
+          { label: "Hora Muhurta", to: "/panchang?view=hora" },
         ],
       },
+      { type: "link", label: t("navMenu.horoscope"), to: "/rashifal" },
       {
         type: "dropdown",
         label: t("navMenu.reports"),
@@ -42,8 +42,7 @@ export default function Navbar() {
         items: [
           { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
           { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
-          { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
-          { label: t("navMenu.reportItems.detailedKundali"), to: "/services/detailed-kundali" },
+          { label: t("navMenu.reportItems.detailedKundali"), to: "/services/kundali-report" },
         ],
       },
       {
@@ -52,7 +51,7 @@ export default function Navbar() {
         key: "calculators",
         items: [
           ...groupedServices.calculators.map((item) => {
-            if (item.to === "/numerology") {
+            if (item.to === "/detailed-numerology") {
               return { ...item, label: t("navMenu.calculatorItems.numerology") };
             }
 
@@ -160,19 +159,6 @@ export default function Navbar() {
               )}
             </li>
           ))}
-
-          <li className="flex-shrink-0">
-            <NavLink
-              to="/subscription"
-              className={({ isActive }) =>
-                `whitespace-nowrap rounded-xl px-2.5 py-2 font-semibold transition ${
-                  isActive ? "bg-[#D4A73C] text-white" : "bg-[#F6E6BB] text-[#1E3557] hover:bg-[#EFD694]"
-                }`
-              }
-            >
-              {t("navMenu.premiumPlans")}
-            </NavLink>
-          </li>
         </ul>
 
         <div className="flex shrink-0 items-center gap-1.5 lg:gap-2">
@@ -315,10 +301,9 @@ export default function Navbar() {
             {[
               { path: "/", name: t("nav.home") },
               { path: "/rituals", name: t("navMenu.poojaAnusthan") },
-              { path: "/panchang", name: t("navMenu.astroZuraPanchang") },
+              { path: "/rashifal", name: t("navMenu.horoscope") },
               { path: "/live", name: "Live" },
               { path: "/astrologers", name: t("nav.astrologers") },
-              { path: "/subscription", name: t("navMenu.premiumPlans") },
             ].map((item) => (
               <li key={item.path}>
                 {item.isExternal ? (
@@ -349,11 +334,11 @@ export default function Navbar() {
 
             {[
               {
-                title: t("navMenu.horoscope"),
+                title: t("navMenu.astroZuraPanchang"),
                 items: [
-                  { label: t("navMenu.horoscopeItems.today"), to: "/rashifal?period=today" },
-                  { label: t("navMenu.horoscopeItems.tomorrow"), to: "/rashifal?period=tomorrow" },
-                  { label: t("navMenu.horoscopeItems.yesterday"), to: "/rashifal?period=yesterday" },
+                  { label: "Daily Panchang", to: "/panchang?view=daily" },
+                  { label: "Chaughadiya Muhurt", to: "/panchang?view=chaughadiya" },
+                  { label: "Hora Muhurta", to: "/panchang?view=hora" },
                 ],
               },
               {
@@ -361,15 +346,14 @@ export default function Navbar() {
                 items: [
                   { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
                   { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
-                  { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
-                  { label: t("navMenu.reportItems.detailedKundali"), to: "/services/detailed-kundali" },
+                  { label: t("navMenu.reportItems.detailedKundali"), to: "/services/kundali-report" },
                 ],
               },
               {
                 title: t("navMenu.calculators"),
                 items: [
                   ...groupedServices.calculators.map((item) => {
-                    if (item.to === "/numerology") {
+                    if (item.to === "/detailed-numerology") {
                       return { ...item, label: t("navMenu.calculatorItems.numerology") };
                     }
 

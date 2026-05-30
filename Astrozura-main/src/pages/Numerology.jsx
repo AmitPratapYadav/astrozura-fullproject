@@ -3,7 +3,8 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import InlineInfoPopover from "../components/InlineInfoPopover";
 import { ProviderSections, ReportDataBlock } from "../components/report/ReportDataRenderer";
-import { KeyValueTable, ReportPanel } from "../components/report/ReportTables";
+import { ReportPanel } from "../components/report/ReportTables";
+import { NumerologyReportLayout } from "../components/report/SpecializedVedicReports";
 import { getNumerologyReport } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 
@@ -94,7 +95,7 @@ export default function Numerology() {
 
       if (response?.status === "success") {
         setResult(response);
-        setToast("Numerology report generated successfully.");
+        setToast("Detailed numerology report generated successfully.");
         return;
       }
 
@@ -121,9 +122,9 @@ export default function Numerology() {
         <div className="relative mx-auto max-w-7xl px-4 md:px-8">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full border border-[#D4A73C]/30 bg-[#D4A73C]/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A73C]">
-              Numerology
+              Detailed Numerology
             </span>
-            <h1 className="mt-6 text-4xl font-black md:text-5xl">Numerology Report</h1>
+            <h1 className="mt-6 text-4xl font-black md:text-5xl">Detailed Numerology Report</h1>
             <p className="mt-5 text-sm leading-7 text-slate-200 md:text-base">
               Generate every subscribed numerology module from Astrology API in one compact report.
             </p>
@@ -135,7 +136,7 @@ export default function Numerology() {
         <div className="grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
           <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
             <div>
-              <h2 className="text-2xl font-bold">Numerology Inputs</h2>
+              <h2 className="text-2xl font-bold">Detailed Numerology Inputs</h2>
               <p className="mt-2 text-sm text-slate-500">
                 These fields match the Astrology API numerology parameter contract: day, month, year, and name.
               </p>
@@ -205,7 +206,7 @@ export default function Numerology() {
                 disabled={loading}
                 className="w-full rounded-2xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557] transition hover:bg-[#e0b84f] disabled:opacity-60"
               >
-                {loading ? "Calculating..." : "Generate Numerology"}
+                {loading ? "Calculating..." : "Generate Detailed Numerology"}
               </button>
             </form>
           </aside>
@@ -219,25 +220,20 @@ export default function Numerology() {
                 </p>
               </div>
             ) : (
-              <>
-                <ReportPanel title="Report Summary" subtitle="Requested numerology profile.">
-                  <KeyValueTable
-                    rows={[
-                      ["Name", result.data?.full_name || fullName],
-                      ["Birth Date", result.data?.birth_date || form.date_of_birth],
-                      ["Language", form.language],
-                    ]}
-                  />
-                </ReportPanel>
-
-                {providerSections.length > 0 ? (
-                  <ProviderSections sections={providerSections} />
-                ) : (
-                  <ReportPanel title="Detailed Result">
-                    <ReportDataBlock title="Numerology" data={result.data} />
-                  </ReportPanel>
-                )}
-              </>
+              <NumerologyReportLayout
+                result={result}
+                fullName={fullName}
+                birthDate={form.date_of_birth}
+                fallback={
+                  providerSections.length > 0 ? (
+                    <ProviderSections sections={providerSections} />
+                  ) : (
+                    <ReportPanel title="Detailed Result">
+                      <ReportDataBlock title="Detailed Numerology" data={result.data} />
+                    </ReportPanel>
+                  )
+                }
+              />
             )}
           </main>
         </div>

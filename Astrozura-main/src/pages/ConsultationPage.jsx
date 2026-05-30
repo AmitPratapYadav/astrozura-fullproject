@@ -347,7 +347,7 @@ export default function ConsultationPage() {
                       </div>
                     </div>
                     <p className="mt-4 text-xs leading-5 text-gray-500">
-                      These details are shared with the astrologer and can be used during kundali, birth-chart, matchmaking, tarot, or palmistry guidance.
+                      These details are shared with the astrologer and can be used during kundali report, matchmaking, tarot, or palmistry guidance.
                     </p>
                   </div>
                 </section>

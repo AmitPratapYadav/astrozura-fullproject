@@ -20,9 +20,9 @@ const sections = [
         accent: "from-[#A24563] to-[#D87C93]",
       },
       {
-        title: "Birth Chart",
-        summary: "Generate and explore your birth chart, divisional charts, and chart-based insights.",
-        to: "/kundli",
+        title: "Kundali Report",
+        summary: "Generate and explore your kundali, divisional charts, and chart-based insights.",
+        to: "/services/kundali-report",
         accent: "from-[#254F7A] to-[#5A8EC9]",
       },
     ],

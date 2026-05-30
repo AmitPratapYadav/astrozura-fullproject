@@ -421,15 +421,7 @@ export default function AstrologerDashboard() {
             rel="noreferrer"
             className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
           >
-            Kundli Tool
-          </a>
-          <a
-            href="/birth-chart"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
-          >
-            Birth Chart
+            Kundali Report
           </a>
           <a
             href="/matching"

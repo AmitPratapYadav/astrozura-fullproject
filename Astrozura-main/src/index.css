@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .kundli-chart-svg svg {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    display: block;
+  }
+}
+
 @layer utilities {
   .animate-fadeIn {
     animation: fadeIn 0.4s ease-out forwards;

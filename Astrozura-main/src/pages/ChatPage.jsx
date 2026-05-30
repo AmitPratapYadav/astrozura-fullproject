@@ -1773,15 +1773,7 @@ export default function ChatPage() {
                       rel="noreferrer"
                       className="rounded-2xl border border-gray-200 px-4 py-3 text-center text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
                     >
-                      Kundli Tool
-                    </a>
-                    <a
-                      href="/birth-chart"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-2xl border border-gray-200 px-4 py-3 text-center text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
-                    >
-                      Birth Chart
+                      Kundali Report
                     </a>
                     <a
                       href="/matching"

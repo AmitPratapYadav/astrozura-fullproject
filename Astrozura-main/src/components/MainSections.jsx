@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import poojaRitual from "../assets/pooja ritual.png";
+import bhagwat from "../assets/bhagwat.png";
+import lamp from "../assets/lamp.png";
 import astro1 from "../assets/astro1.png";
 import astro2 from "../assets/astro2.png";
 import astro3 from "../assets/astro3.png";
@@ -17,6 +20,7 @@ export default function MainSections() {
   const [featured, setFeatured] = useState(null);
   const [loading, setLoading] = useState(true);
   const [liveSession, setLiveSession] = useState(null);
+  const [rituals, setRituals] = useState([]);
   const {
     isSupported: pushSupported,
     isSubscribed: pushSubscribed,
@@ -54,6 +58,25 @@ export default function MainSections() {
     };
 
     void fetchAstrologers();
+  }, []);
+
+  useEffect(() => {
+    const fetchRituals = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+        const params = new URLSearchParams({ per_page: "4", page: "1" });
+        const response = await fetch(`${apiUrl}/rituals?${params.toString()}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setRituals(data.rituals?.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to load rituals for homepage", error);
+      }
+    };
+
+    void fetchRituals();
   }, []);
 
   useEffect(() => {
@@ -117,6 +140,8 @@ export default function MainSections() {
     const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
     return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
   };
+
+  const ritualFallbacks = [poojaRitual, bhagwat, lamp];
 
   const formatRatingText = (details) => {
     const ratingValue =
@@ -252,6 +277,74 @@ export default function MainSections() {
             </div>
           </div>
         </div>
+
+        {rituals.length > 0 && (
+          <div>
+            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#D4A73C]">Sacred Rituals</p>
+                <h2 className="mt-2 text-3xl font-black tracking-tight text-[#1E3557]">Pooja Anusthan</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+                  Book priest-guided pooja and anusthan services for remedies, family wellbeing, and auspicious occasions.
+                </p>
+              </div>
+
+              <Link
+                to="/rituals"
+                className="inline-flex items-center justify-center rounded-xl border border-[#D4A73C]/25 px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-[#D4A73C] transition hover:bg-[#D4A73C]/10 hover:text-[#b8860b]"
+              >
+                View All
+              </Link>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {rituals.slice(0, 4).map((ritual, index) => (
+                <div key={ritual.id} className="overflow-hidden rounded-3xl border border-[#efe4d2] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                  <Link to={`/rituals/${ritual.slug}`} className="block overflow-hidden">
+                    <img
+                      src={getImageUrl(ritual.image, ritualFallbacks[index % ritualFallbacks.length])}
+                      alt={ritual.name}
+                      className="h-40 w-full object-cover transition duration-300 hover:scale-[1.03]"
+                    />
+                  </Link>
+                  <div className="p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#D4A73C]">{ritual.category}</p>
+                      {ritual.is_popular && (
+                        <span className="rounded-full bg-[#fff3da] px-2.5 py-1 text-[10px] font-bold uppercase text-[#c38a11]">
+                          Popular
+                        </span>
+                      )}
+                    </div>
+                    <Link to={`/rituals/${ritual.slug}`} className="mt-3 block text-xl font-black leading-tight text-[#1E3557] transition hover:text-[#D4A73C]">
+                      {ritual.name}
+                    </Link>
+                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-500">{ritual.short_description}</p>
+                    <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                      <span>{ritual.duration_label}</span>
+                      <span className="font-bold text-[#1E3557]">Rs {Number(ritual.price || 0).toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <Link
+                        to={`/rituals/${ritual.slug}`}
+                        className="rounded-xl border border-[#1E3557] px-3 py-2.5 text-center text-xs font-bold text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white"
+                      >
+                        View Details
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/rituals/${ritual.slug}/book`)}
+                        className="rounded-xl bg-[#1E3557] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[#162a45]"
+                      >
+                        Book Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="overflow-hidden rounded-[2rem] border border-[#EEE7D6] bg-white shadow-sm">
           <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">

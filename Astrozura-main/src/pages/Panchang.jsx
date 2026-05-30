@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getPanchang, searchLocation } from "../api/prokeralaApi";
@@ -192,8 +193,12 @@ function ViewButtons({ activeView, onChange }) {
 
 export default function Panchang() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const today = useMemo(() => getTodayInIndia(), []);
-  const [activeView, setActiveView] = useState("daily");
+  const [activeView, setActiveView] = useState(() => {
+    const requestedView = searchParams.get("view");
+    return VIEW_CONFIG[requestedView] ? requestedView : "daily";
+  });
   const [selectedDate, setSelectedDate] = useState(today);
   const [language, setLanguage] = useState("en");
   const [place, setPlace] = useState(user?.place_of_birth || "New Delhi, Delhi, India");
@@ -245,6 +250,15 @@ export default function Panchang() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const requestedView = searchParams.get("view");
+    const nextView = VIEW_CONFIG[requestedView] ? requestedView : "daily";
+    if (nextView === activeView) return;
+    setActiveView(nextView);
+    void fetchPanchang(selectedDate, coordinates, nextView, language);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const handleSearchLocation = async (value) => {
     setPlace(value);
     setCoordinates("");
@@ -290,6 +304,7 @@ export default function Panchang() {
 
   const handleViewChange = async (view) => {
     setActiveView(view);
+    setSearchParams(view === "daily" ? {} : { view });
     await fetchPanchang(selectedDate, coordinates, view, language);
   };
 

@@ -6,6 +6,19 @@ import Footer from "../components/Footer";
 import InlineInfoPopover from "../components/InlineInfoPopover";
 import { ProviderSections, ReportDataBlock } from "../components/report/ReportDataRenderer";
 import { KeyValueTable, ReportPanel } from "../components/report/ReportTables";
+import {
+  AshtakavargaReport,
+  CharDashaReport,
+  GemstoneSuggestionReport,
+  KaalSarpDoshaReport,
+  PitraDoshaReport,
+  ProviderErrorNotice,
+  PujaSuggestionReport,
+  RudrakshaSuggestionReport,
+  SadeSatiReport,
+  VimshottariDashaReport,
+  YoginiDashaReport,
+} from "../components/report/SpecializedVedicReports";
 import { getVedicCalculator, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -174,9 +187,8 @@ export default function VedicCalculators() {
         la: form.language,
         year: tool.requiresYear ? Number(form.year) : undefined,
         planet: tool.requiresPlanet ? Number(form.planet) : undefined,
-        chart_style: tool.requiresChartStyle || tool.hasCompanionChart || tool.key === "planet-position" ? form.chart_style : undefined,
+        chart_style: tool.requiresChartStyle || tool.hasCompanionChart ? form.chart_style : undefined,
         detailed_report: tool.supportsAdvanced ? form.detailed_report : undefined,
-        planets: tool.key === "planet-position" && form.planets.trim() ? form.planets.trim() : undefined,
         mahadasha: form.mahadasha.trim() || undefined,
         antardasha: form.antardasha.trim() || undefined,
         pratyantardasha: form.pratyantardasha.trim() || undefined,
@@ -202,6 +214,19 @@ export default function VedicCalculators() {
 
   const providerSections = result?.data?.provider_sections || result?.provider_sections || [];
   const providerPayload = result?.data?.provider_payload || {};
+  const hasSpecializedReport = [
+    "pitra-dosha",
+    "sade-sati",
+    "kaal-sarp-dosha",
+    "basic-gem-suggestion",
+    "rudraksha-suggestion",
+    "yogini-dasha",
+    "puja-suggestion",
+    "vimshottari-dasha",
+    "char-dasha",
+    "sarvashtakavarga",
+  ].includes(tool.key);
+  const selectedPlanetLabel = PLANET_OPTIONS.find((option) => Number(option.value) === Number(form.planet))?.label || "Sun";
 
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-[#1E3557]">
@@ -372,20 +397,6 @@ export default function VedicCalculators() {
                       </option>
                     ))}
                   </select>
-                </div>
-              )}
-
-              {tool.key === "planet-position" && (
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-600">Specific Planets</label>
-                  <input
-                    type="text"
-                    name="planets"
-                    value={form.planets}
-                    onChange={handleChange}
-                    placeholder="Optional comma separated list"
-                    className="w-full rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
-                  />
                 </div>
               )}
 
@@ -562,7 +573,29 @@ export default function VedicCalculators() {
                   </div>
                 </div>
 
-                {providerSections.length > 0 ? (
+                <ProviderErrorNotice providerPayload={providerPayload} />
+
+                {tool.key === "pitra-dosha" ? (
+                  <PitraDoshaReport result={result} />
+                ) : tool.key === "sade-sati" ? (
+                  <SadeSatiReport result={result} />
+                ) : tool.key === "kaal-sarp-dosha" ? (
+                  <KaalSarpDoshaReport result={result} />
+                ) : tool.key === "basic-gem-suggestion" ? (
+                  <GemstoneSuggestionReport result={result} />
+                ) : tool.key === "rudraksha-suggestion" ? (
+                  <RudrakshaSuggestionReport result={result} />
+                ) : tool.key === "yogini-dasha" ? (
+                  <YoginiDashaReport result={result} />
+                ) : tool.key === "puja-suggestion" ? (
+                  <PujaSuggestionReport result={result} />
+                ) : tool.key === "vimshottari-dasha" ? (
+                  <VimshottariDashaReport result={result} />
+                ) : tool.key === "char-dasha" ? (
+                  <CharDashaReport result={result} />
+                ) : tool.key === "sarvashtakavarga" ? (
+                  <AshtakavargaReport result={result} planetLabel={selectedPlanetLabel} />
+                ) : providerSections.length > 0 ? (
                   <ProviderSections sections={providerSections} />
                 ) : (
                   <ReportPanel title="Detailed Result" subtitle="Complete response returned by the backend.">
@@ -570,7 +603,7 @@ export default function VedicCalculators() {
                   </ReportPanel>
                 )}
 
-                {Object.keys(providerPayload || {}).length > 0 && providerSections.length === 0 && (
+                {Object.keys(providerPayload || {}).length > 0 && providerSections.length === 0 && !hasSpecializedReport && (
                   <ReportPanel title="Provider Payload">
                     <ReportDataBlock title="Provider Payload" data={providerPayload} />
                   </ReportPanel>

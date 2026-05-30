@@ -328,7 +328,7 @@ export default function Matching() {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#D4A73C 1px, transparent 1px)", backgroundSize: "30px 30px" }}></div>
         <div className="relative max-w-7xl mx-auto px-4 md:px-8 text-center">
           <span className="inline-block text-xs bg-[#D4A73C]/20 text-[#D4A73C] border border-[#D4A73C]/30 px-4 py-1.5 rounded-full font-bold tracking-widest uppercase mb-6 shadow-sm">Horoscope Milan</span>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">Premium <span className="text-[#D4A73C]">Kundli Matching</span></h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">Premium <span className="text-[#D4A73C]">Matchmaking Report</span></h1>
           <p className="text-gray-300 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">Advanced compatibility now includes per-guna scoring, mangal details, and exception notes.</p>
         </div>
       </section>
@@ -531,7 +531,7 @@ export default function Matching() {
 
                 <section className="rounded-sm bg-[#fff6bf] p-8 text-center">
                   <FaFilePdf className="mx-auto mb-4 text-4xl text-[#D4A73C]" />
-                  <h3 className="text-3xl font-black text-[#b87b00]">Get 25 Pages Detailed Kundli Matching Report</h3>
+                  <h3 className="text-3xl font-black text-[#b87b00]">Get 25 Pages Detailed Matchmaking Report</h3>
                   <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-slate-800">
                     Kundli Horoscope Matching with ashtakoot or dashkoot milan. Detailed interpretation of each ashtakoot milan point, Manglik matching with Vedha and Rajju Dosha.
                   </p>
@@ -592,7 +592,7 @@ export default function Matching() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-[#D4A73C] font-bold tracking-widest uppercase text-sm mb-2 block">The Importance</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-[#1E3557]">Why Kundli Matching?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1E3557]">Why Matchmaking Report?</h2>
             <p className="text-gray-500 mt-4 leading-relaxed">Janam kundli milan evaluates compatibility using birth details and the age-old Ashtakoota method.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

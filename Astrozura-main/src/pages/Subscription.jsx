@@ -34,7 +34,7 @@ export default function CosmicSection() {
       .catch(() => {
         // If API fails, use fallback plans
         setPlans([
-          { id: 1, name: "Scholar",  price: 19,  is_popular: false, features: ["Daily Horoscopes", "Basic Birth Chart", "Weekly Transit Alerts", "Email Support"] },
+          { id: 1, name: "Scholar",  price: 19,  is_popular: false, features: ["Daily Horoscopes", "Basic Kundali Report", "Weekly Transit Alerts", "Email Support"] },
           { id: 2, name: "Mystic",   price: 49,  is_popular: true,  features: ["Everything in Scholar", "Detailed Reports", "Monthly Predictions", "Priority Email Support", "Exclusive Content Access"] },
           { id: 3, name: "Sage",     price: 149, is_popular: false, features: ["Everything in Mystic", "1-on-1 Consultation", "Astrologer Guidance", "Annual Forecast Reports", "VIP Early Access"] },
         ]);

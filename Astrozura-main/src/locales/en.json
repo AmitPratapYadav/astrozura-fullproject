@@ -2,7 +2,7 @@
   "nav": {
     "home": "Home",
     "panchang": "Astro Zura Panchang",
-    "kundli": "Birth Chart",
+    "kundli": "Kundali Report",
     "rashifal": "Horoscope",
     "matching": "Compatibility",
     "astrologers": "Our Astrologers",
@@ -56,12 +56,12 @@
     "title": "Meet Our Visionary Founder",
     "name": "Acharya Mayur Nath",
     "speciality": "Vedic & Lal Kitab Expert",
-    "bio": "With over 15 years of experience in celestial sciences, Acharya Mayur Nath has guided thousands of souls towards their true purpose. Combining ancient Vedic wisdom with modern analytical techniques, he specializes in Lal Kitab remedies, Numerology, and Palmistry.",
+    "bio": "With over 15 years of experience in celestial sciences, Acharya Mayur Nath has guided thousands of souls towards their true purpose. Combining ancient Vedic wisdom with modern analytical techniques, he specializes in Lal Kitab remedies, detailed numerology, and palmistry.",
     "services_title": "Our specialized services:",
     "services": {
       "vedic": "Vedic Astrology",
       "lalkitab": "Lal Kitab Remedies",
-      "numerology": "Numerology",
+      "numerology": "Detailed Numerology",
       "palmistry": "Palmistry"
     },
     "cta": "Book a Consultation"
@@ -89,7 +89,7 @@
     "founder_quote": "With over 15 years of experience, Acharya Mayur Nath guides thousands towards their true purpose combining ancient Vedic wisdom with modern analytical techniques.",
     "vedic_astrology": "Vedic Astrology",
     "lal_kitab_rem": "Lal Kitab Remedies",
-    "numerology": "Numerology",
+    "numerology": "Detailed Numerology",
     "palmistry": "Palmistry"
   },
   "premium": {
@@ -113,7 +113,7 @@
       "vedic_astrology": "Vedic Astrology",
       "muhurat": "Muhurat (Auspices)",
       "lal_kitab": "Lal Kitab Remedies",
-      "palmistry": "Palm & Numerology"
+      "palmistry": "Palm & Detailed Numerology"
     }
   },
   "footer": {

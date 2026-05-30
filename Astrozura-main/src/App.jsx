@@ -85,6 +85,7 @@ function App() {
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/matching" element={<Matching />} />
           <Route path="/kundli" element={<Kundli />} />
+          <Route path="/detailed-numerology" element={<Numerology />} />
           <Route path="/numerology" element={<Numerology />} />
           <Route path="/rashifal" element={<Rashifal />} />
           <Route path="/panchang" element={<Panchang />} />
