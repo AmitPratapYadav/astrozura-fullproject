@@ -437,6 +437,63 @@ const currentDashaItems = (current, labels = []) => {
   });
 };
 
+const parseProviderDashaDate = (value) => {
+  const match = String(value || "")
+    .trim()
+    .match(/^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{1,2})$/);
+
+  if (!match) return null;
+
+  const [, day, month, year, hour, minute] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+};
+
+const findDashaPeriod = (node, planetName, referenceDate = new Date()) => {
+  const periods = Array.isArray(node?.dasha_period) ? node.dasha_period : [];
+  const normalizedName = String(planetName || "").toLowerCase();
+  const namedPeriod = periods.find((period) => String(period?.planet || "").toLowerCase() === normalizedName);
+
+  if (namedPeriod) return namedPeriod;
+
+  return (
+    periods.find((period) => {
+      const start = parseProviderDashaDate(period?.start);
+      const end = parseProviderDashaDate(period?.end);
+      return start && end && referenceDate >= start && referenceDate <= end;
+    }) || {}
+  );
+};
+
+const vimshottariDashaItems = (current) => {
+  if (!isObject(current)) return [];
+
+  const majorNode = current.major || {};
+  const minorNode = current.minor || {};
+  const subMinorNode = current.sub_minor || {};
+  const subSubMinorNode = current.sub_sub_minor || {};
+  const pranNode = current.sub_sub_sub_minor || {};
+  const hierarchy = pranNode.planet || subSubMinorNode.planet || subMinorNode.planet || minorNode.planet || {};
+  const referenceDate = new Date();
+
+  const definitions = [
+    { label: "Major Dasha", node: majorNode, name: hierarchy.major },
+    { label: "Antar Dasha", node: minorNode, name: hierarchy.minor },
+    { label: "Prtyantar Dasha", node: subMinorNode, name: hierarchy.sub_minor },
+    { label: "Sookshm Dasha", node: subSubMinorNode, name: hierarchy.sub_sub_minor },
+    { label: "Pran Dasha", node: pranNode },
+  ];
+
+  return definitions.map(({ label, node, name }) => {
+    const period = findDashaPeriod(node, name, referenceDate);
+    return {
+      label,
+      name: renderCleanValue(name || period?.planet || "-"),
+      start: getStartDate(period),
+      end: getEndDate(period),
+    };
+  });
+};
+
 const normalizePujaSuggestions = (data) =>
   findNestedArray(data, ["suggestion", "puja"])
     .filter((item) => isObject(item))
@@ -509,7 +566,8 @@ const normalizeAshtakRows = (value) => {
 
   if (!isObject(parsed)) return [];
 
-  const signRows = Object.entries(parsed).filter(([key, item]) => signs.includes(key.toLowerCase()) && (isObject(item) || Array.isArray(item)));
+  const points = parsed.ashtak_points || findNestedObject(parsed, ["ashtak_points", "points"]) || parsed;
+  const signRows = Object.entries(points).filter(([key, item]) => signs.includes(key.toLowerCase()) && (isObject(item) || Array.isArray(item)));
   return signRows.map(([sign, item], index) => {
     const values = Array.isArray(item) ? item : [];
     return {
@@ -834,13 +892,7 @@ export function VimshottariDashaReport({ result }) {
   const current = getSuccessData(providerPayload, "current_vdasha_all") || getSuccessData(providerPayload, "current_vdasha") || {};
   const major = getSuccessData(providerPayload, "major_vdasha") || {};
   const majorRows = normalizeDashaRows(major);
-  const flowItems = currentDashaItems(current, [
-    { label: "Major Dasha", matchers: ["major", "maha"] },
-    { label: "Antar Dasha", matchers: ["antar", "sub"] },
-    { label: "Prtyantar Dasha", matchers: ["pratyantar", "prtyantar", "subsub"] },
-    { label: "Sookshm Dasha", matchers: ["sookshm", "sookshma"] },
-    { label: "Pran Dasha", matchers: ["pran"] },
-  ]);
+  const flowItems = vimshottariDashaItems(current);
 
   return (
     <div className="space-y-6">
