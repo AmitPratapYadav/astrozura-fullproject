@@ -18,11 +18,10 @@ export default function AboutAstrozura() {
           <img src={icon4} className="w-12 h-12" />
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-[#f3d38d]">
-          About Astrozura
+          About Us – Astrozura
         </h1>
         <p className="text-sm max-w-xl mx-auto text-gray-200 mb-6">
-          Guiding your celestial journey through ancient wisdom and modern
-          insights to help you understand your destiny.
+          Welcome to Astrozura, your trusted online destination for authentic spiritual, religious, and astrology-related products. We are dedicated to bringing positivity, peace, and spiritual well-being into your life through carefully selected and high-quality products.
         </p>
         <div className="flex justify-center gap-4 flex-wrap">
           <button
@@ -48,21 +47,19 @@ export default function AboutAstrozura() {
       <div className="grid md:grid-cols-2 gap-10 px-6 sm:px-10 md:px-20 py-10 sm:py-16 items-center bg-[#f8f7fb]">
         <div>
           <p className="text-xs text-[#1E3557] font-semibold mb-2">
-            OUR GENESIS
+            OUR OBJECTIVE
           </p>
 
           <h2 className="text-2xl md:text-3xl font-bold mb-4 text-[#1E3557]">
-            Illuminating Paths Through Cosmic Wisdom
+            Fulfilling Your Spiritual Requirements
           </h2>
 
           <p className="text-[#1E3557] text-sm mb-4">
-            Astrozura was created to bridge ancient astrology with modern life.
-            Every individual carries a unique cosmic blueprint.
+            Astrozura offers you high-quality products that cater to your religious and spiritual needs.
           </p>
 
           <p className="text-[#1E3557] text-sm mb-6">
-            We combine intuition with data-driven insights to help align your
-            life with the universes rhythm.
+            Our objective is to provide you with authentic products that bring happiness into your life and fulfill your spiritual requirements.
           </p>
 
           <div className="flex flex-wrap gap-6 sm:gap-10">
@@ -97,31 +94,31 @@ export default function AboutAstrozura() {
         </p>
 
         <h2 className="text-2xl md:text-3xl font-bold mb-10 text-[#1E3557]">
-          The Core Principles That Guide Our Astrology Guidance
+          At Astrozura, we believe spirituality is a way of life that creates balance, confidence, and inner peace.
         </h2>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-[#e9e6f8] p-6 rounded-xl">
             <div className="w-10 h-10 mx-auto mb-3 bg-[#c7926a] flex items-center justify-center rounded-full text-white text-xl">🎯</div>
-            <h3 className="font-semibold mb-2">Accurate Predictions</h3>
+            <h3 className="font-semibold mb-2">Our Mission</h3>
             <p className="text-sm text-[#1E3557]">
-              Delivering precise and meaningful astrological insights.
+              To provide genuine and trusted products that support your spiritual journey with authenticity and care.
             </p>
           </div>
 
           <div className="bg-[#e9e6f8] p-6 rounded-xl">
-            <div className="w-10 h-10 mx-auto mb-3 bg-[#c7926a] flex items-center justify-center rounded-full text-white text-xl">🤝</div>
-            <h3 className="font-semibold mb-2">Personalized Guidance</h3>
+            <div className="w-10 h-10 mx-auto mb-3 bg-[#c7926a] flex items-center justify-center rounded-full text-white text-xl">🛍️</div>
+            <h3 className="font-semibold mb-2">Wide Range of Products</h3>
             <p className="text-sm text-[#1E3557]">
-              Tailored readings based on your unique birth chart.
+              Offering Bracelets, Rudraksha, Gemstones, Healing Crystals, Yantras, Puja Items, Malas, and more.
             </p>
           </div>
 
           <div className="bg-[#e9e6f8] p-6 rounded-xl">
             <div className="w-10 h-10 mx-auto mb-3 bg-[#c7926a] flex items-center justify-center rounded-full text-white text-xl">✨</div>
-            <h3 className="font-semibold mb-2">Spiritual Growth</h3>
+            <h3 className="font-semibold mb-2">Quality & Purity</h3>
             <p className="text-sm text-[#1E3557]">
-              Helping you grow spiritually and find inner clarity.
+              Every product is selected with attention to quality, purity, and customer satisfaction for a reliable experience.
             </p>
           </div>
         </div>
@@ -132,12 +129,11 @@ export default function AboutAstrozura() {
   
   {/* HEADING */}
   <h2 className="text-2xl md:text-3xl font-bold mb-4 text-[#c7926a]">
-    Why Thousands Trust Astrozura
+    Why Choose Astrozura?
   </h2>
 
   <p className="text-sm text-white max-w-xl mb-10">
-    In a world of automated horoscopes, we stand out by combining human intuition 
-    with rigorous celestial analysis. Our platform is a sanctuary for those seeking truth.
+    Our goal is to create a trusted platform where customers can easily explore spiritual products while enjoying a smooth and secure online shopping experience.
   </p>
 
   <div className="grid md:grid-cols-2 gap-10 items-start">
@@ -147,23 +143,23 @@ export default function AboutAstrozura() {
         <div className="w-6 h-6 mt-1 flex items-center justify-center bg-[#c7926a] rounded-full text-xs text-white">✓</div>
         <div>
           <p className="text-sm font-semibold">
-            Verified Expert Astrologers
+            Authentic & Premium Quality
           </p>
           <p className="text-xs text-white">
-            Every consultant undergoes a rigorous vetting process.
+            Carefully selected spiritual products ensuring authenticity.
           </p>
         </div>
       </div>
 
       {/* PRIVACY */}
       <div className="flex items-start gap-3 bg-[#1E3557] p-4 rounded-xl border border-[#1E3557]">
-        <div className="w-6 h-6 mt-1 flex items-center justify-center bg-[#c7926a] rounded-full text-xs text-white">🔒</div>
+        <div className="w-6 h-6 mt-1 flex items-center justify-center bg-[#c7926a] rounded-full text-xs text-white">💎</div>
         <div>
           <p className="text-sm font-semibold">
-            Privacy & Confidentiality
+            Trusted Collections
           </p>
           <p className="text-xs text-white">
-            Your spiritual journey is personal and safe with us.
+            Genuine gemstones and Rudraksha collections for your spiritual needs.
           </p>
         </div>
       </div>
@@ -171,40 +167,40 @@ export default function AboutAstrozura() {
     {/* RIGHT SIDE */}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <div className="flex gap-3 items-start">
-        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">📜</div>
+        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">🔒</div>
         <div>
-          <p className="text-sm font-semibold">Deep Heritage</p>
+          <p className="text-sm font-semibold">Secure Shopping</p>
           <p className="text-xs text-white">
-            Rooted in Vedic and Western traditions.
+            Secure and user-friendly online shopping experience.
           </p>
         </div>
       </div>
 
       <div className="flex gap-3 items-start">
-        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">☀</div>
+        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">🏷️</div>
         <div>
-          <p className="text-sm font-semibold">Daily Insights</p>
+          <p className="text-sm font-semibold">Affordable Pricing</p>
           <p className="text-xs text-white">
-            New cosmic guidance delivered every morning.
+            Best prices for authentic and high-quality products.
           </p>
         </div>
       </div>
       <div className="flex gap-3 items-start">
-        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">🧭</div>
+        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">🤝</div>
         <div>
-          <p className="text-sm font-semibold">Career Pathing</p>
+          <p className="text-sm font-semibold">Reliable Service</p>
           <p className="text-xs text-white">
-            Align your professional life with your stars.
+            Trustworthy delivery and excellent product care.
           </p>
         </div>
       </div>
 
       <div className="flex gap-3 items-start">
-        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">👥</div>
+        <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">🎧</div>
         <div>
-          <p className="text-sm font-semibold">Community</p>
+          <p className="text-sm font-semibold">Dedicated Support</p>
           <p className="text-xs text-white">
-            Join fellow travelers on their path.
+            Dedicated customer support team at your service.
           </p>
         </div>
       </div>
@@ -212,9 +208,9 @@ export default function AboutAstrozura() {
   </div>
 </div>
       <div className="bg-[#f8f7fb] py-12 sm:py-16 px-6 sm:px-10 md:px-20 text-center">
-        <p className="text-xs text-[#1E3557] mb-2">MEET THE SAGES</p>
+        <p className="text-xs text-[#1E3557] mb-2">OUR EXPERTS</p>
         <h2 className="text-2xl md:text-3xl font-bold mb-12 text-[#1E3557]">
-          The Master Minds Behind Your Celestial Insights
+          The Team Dedicated to Your Spiritual Journey
         </h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
           {[ 
@@ -240,10 +236,10 @@ export default function AboutAstrozura() {
         <div className="bg-gradient-to-r from-[#1E3557] to-[#1E3557] text-white rounded-2xl py-12 text-center">
           <img src={icon4} className="w-8 mx-auto mb-4" />
           <h2 className="text-2xl md:text-3xl font-bold mb-3">
-            Start Your Journey with Astrozura Today
+            Thank you for choosing Astrozura
           </h2>
           <p className="text-sm mb-6">
-            Unlock your destiny with confidence and clarity.
+            We are honored to be a part of your spiritual journey.
           </p>
           <div className="flex justify-center gap-4">
             <button onClick={() => setActive("consult")}

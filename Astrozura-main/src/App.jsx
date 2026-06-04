@@ -20,6 +20,9 @@ import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import LalKitabReport from "./pages/LalKitabReport";
 import TarotReading from "./pages/TarotReading";
+import DetailedDosha from "./pages/DetailedDosha";
+import DetailedKundali from "./pages/DetailedKundali";
+import DetailedMatchmaking from "./pages/DetailedMatchmaking";
 import VedicCalculators from "./pages/VedicCalculators";
 import MatchingCalculators from "./pages/MatchingCalculators";
 import AboutUs from "./pages/AboutUs";
@@ -79,6 +82,9 @@ function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/services/lal-kitab-report" element={<LalKitabReport />} />
           <Route path="/services/tarot-reading" element={<TarotReading />} />
+          <Route path="/services/detailed-dosha" element={<DetailedDosha />} />
+          <Route path="/services/detailed-kundali" element={<DetailedKundali />} />
+          <Route path="/services/detailed-matchmaking" element={<DetailedMatchmaking />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/vedic-calculators" element={<VedicCalculators />} />
           <Route path="/matching-calculators" element={<MatchingCalculators />} />

@@ -178,7 +178,7 @@ export default function Navbar() {
           
           {/* Drawer Content */}
           <div className={`absolute right-0 top-0 h-full w-[280px] bg-white shadow-2xl transition-transform duration-300 transform ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>
-            <div className="p-6 flex flex-col h-full">
+            <div className="p-6 flex flex-col h-full overflow-y-auto">
               <div className="flex justify-between items-center mb-10">
                 <NavLink to="/" onClick={() => setMenuOpen(false)}>
                   <img src={vedic} alt="logo" className="h-10 object-contain" />

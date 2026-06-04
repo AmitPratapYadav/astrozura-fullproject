@@ -9,13 +9,12 @@ export default function Contact() {
 
       {/* Heading */}
       <div className="text-center mb-12">
-        <p className="text-sm text-[#1E3557]">Connect with the Cosmos</p>
+        <p className="text-sm text-[#1E3557]">Contact Us – Astrozura</p>
         <h1 className="text-3xl md:text-5xl font-semibold text-[#2c2c54] mt-2">
-          Contact Us
+          Get in Touch
         </h1>
         <p className="text-gray-500 mt-3 max-w-xl mx-auto text-sm md:text-base">
-          We're here to guide you through your journey. Whether you seek clarity
-          on your chart or have questions about our readings, our guides are ready.
+          We are always here to help you with your spiritual and shopping needs. If you have any questions regarding our products, orders, delivery, or services, feel free to contact us anytime.
         </p>
       </div>
       {/* Main Section */}
@@ -55,7 +54,7 @@ export default function Contact() {
           {/* Message */}
           <div className="mt-4">
             <label className="text-sm text-gray-600">
-              Your Spiritual Journey Inquiry
+              Need Assistance? (Queries, Feedback, Suggestions)
             </label>
             <textarea
               rows="4"
@@ -72,7 +71,7 @@ export default function Contact() {
             <img src={arrowIcon} alt="arrow" className="w-4" />
           </button>
           <p className="text-xs text-gray-400 mt-3 text-center">
-            * Our cosmic guides typically respond within 24-48 hours
+            * Our support team will respond as soon as possible.
           </p>
         </div>
         {/* RIGHT SIDE INFO */}
@@ -80,7 +79,7 @@ export default function Contact() {
           {/* Heading */}
           <div className="text-center">
             <h2 className="text-xl font-semibold text-[#1E3557]">
-              Astral Headquarters
+              Astrozura
             </h2>
             <div className="w-16 h-[2px] bg-[#1E3557] mx-auto mt-2"></div>
           </div>
@@ -89,10 +88,10 @@ export default function Contact() {
           <div className="flex gap-3 items-start">
             <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">📍</div>
             <div>
-              <p className="font-medium">Sanctuary Location</p>
+              <p className="font-medium">Address</p>
               <p className="text-gray-500 text-sm">
-                1222 Starlight Avenue, Suite 400 <br />
-                Celestial District, Los Angeles, CA 90012
+                India <br />
+                <span className="text-xs">(Dummy address, will modify later)</span>
               </p>
             </div>
           </div>
@@ -101,11 +100,11 @@ export default function Contact() {
           <div className="flex gap-3 items-start">
             <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">📞</div>
             <div>
-              <p className="font-medium">Direct Connection</p>
+              <p className="font-medium">Phone</p>
               <p className="text-gray-500 text-sm">
-                +1 (888) ASTRA-EA <br />
+                +91 98765 43210 <br />
                 <span className="text-xs">
-                  Monday - Friday, 9:00 AM - Sunset
+                  Mon – Sat: 9:00 AM – 7:00 PM (Sun: Closed)
                 </span>
               </p>
             </div>
@@ -115,11 +114,11 @@ export default function Contact() {
           <div className="flex gap-3 items-start">
             <div className="w-5 h-5 mt-1 flex items-center justify-center text-[#c7926a] font-bold text-lg">✉️</div>
             <div>
-              <p className="font-medium">Digital Correspondence</p>
+              <p className="font-medium">Email</p>
               <p className="text-gray-500 text-sm">
-                guidance@astrozura.com <br />
+                support@astrozura.com <br />
                 <span className="text-xs">
-                  Send us your birth details for quicker help.
+                  Feel free to contact us anytime.
                 </span>
               </p>
             </div>
@@ -127,13 +126,17 @@ export default function Contact() {
 
           {/* Social */}
           <div className="text-center">
-            <p className="font-medium mb-3">Follow Our Orbit</p>
+            <p className="font-medium mb-3">Follow Us</p>
+            <p className="text-xs text-gray-500 mb-4">
+              Stay connected with Astrozura for the latest collections, spiritual products, offers, and updates.
+            </p>
             <div className="flex justify-center gap-4">
-              {['📸', '🐦', '📘', '▶️'].map(
+              {['📸', '📘', '💬'].map(
                 (icon, i) => (
                   <div
                     key={i}
                     className="w-9 h-9 flex items-center justify-center bg-white rounded-full shadow cursor-pointer hover:scale-110 transition"
+                    title={["Instagram", "Facebook", "WhatsApp"][i]}
                   >
                     {icon}
                   </div>
@@ -144,9 +147,8 @@ export default function Contact() {
 
           {/* Quote */}
           <div className="bg-[#f3f0ff] p-5 rounded-xl text-sm text-gray-600 italic text-center shadow-sm">
-            “The stars do not pull us; they incline us. Let us help you understand
-            the whispers of the heavens.”
-            <p className="mt-3 text-xs">— High Priestess Lyra</p>
+            “You can also use the contact form available on our website to send your queries, feedback, or suggestions.”
+            <p className="mt-3 text-xs">— Astrozura Support</p>
           </div>
 
         </div>
