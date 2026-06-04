@@ -41,8 +41,12 @@ export default function Navbar() {
         key: "reports",
         items: [
           { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
+          { label: "Detailed Kundali Analysis", to: "/services/detailed-kundali" },
+          { label: "Detailed Dosha Analysis", to: "/services/detailed-dosha" },
+          { label: "Detailed Matchmaking Report", to: "/services/detailed-matchmaking" },
           { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
           { label: t("navMenu.reportItems.detailedKundali"), to: "/services/kundali-report" },
+          { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
         ],
       },
       {
@@ -296,7 +300,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div className="absolute left-0 right-0 top-full mt-0.5 border-t border-gray-100/50 bg-white/95 p-6 shadow-2xl backdrop-blur-md md:hidden">
+        <div className="absolute left-0 right-0 top-full mt-0.5 max-h-[85vh] overflow-y-auto border-t border-gray-100/50 bg-white/95 p-6 shadow-2xl backdrop-blur-md md:hidden">
           <ul className="flex flex-col gap-4 text-gray-700">
             {[
               { path: "/", name: t("nav.home") },

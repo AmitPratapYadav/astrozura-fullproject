@@ -16,12 +16,45 @@ const staticServices = [
     slug: "kundali-report",
     title: "Kundali Report",
     category: "Reports",
-    summary: "Expanded kundali reading with divisional chart context, yogas, and predictive layers.",
+    summary: "Comprehensive digital natal report featuring charts D1-D16, core yogas, life predictions, and Vimshottari dasha timelines.",
     description:
       "Use the full kundali module to review graha placements, divisional charts, doshas, yogas, and timing-based observations in one place.",
     ctaLabel: "Open Kundali Report",
     ctaTo: "/kundli",
     accent: "from-[#204A72] to-[#3D78A7]",
+  },
+  {
+    slug: "detailed-kundali",
+    title: "Detailed Kundali Analysis",
+    category: "Reports",
+    summary: "A Premium digital dossier modeled after the 145+ page manual report. Includes extensive planet-house readings, divisional charts, dasha details, and remedies.",
+    description:
+      "A Premium digital dossier modeled after the 145+ page manual report. Includes extensive planet-house readings, divisional charts, dasha details, and remedies.",
+    ctaLabel: "Open Premium Kundali",
+    ctaTo: "/services/detailed-kundali",
+    accent: "from-[#1E3C72] to-[#2A5298]",
+  },
+  {
+    slug: "detailed-dosha",
+    title: "Detailed Dosha Analysis",
+    category: "Reports",
+    summary: "In-depth checks for Manglik, Kaalsarpa, Pitra doshas, and Sade Sati periods.",
+    description:
+      "Explore major astrological doshas, exceptions, cancellations, and personalized Vedic remedies to bring balance and peace.",
+    ctaLabel: "Open Dosha Report",
+    ctaTo: "/services/detailed-dosha",
+    accent: "from-[#B05B35] to-[#D4A373]",
+  },
+  {
+    slug: "detailed-matchmaking",
+    title: "Detailed Matchmaking Report",
+    category: "Reports",
+    summary: "Deep marital compatibility report going beyond 36-point Guna Milan to analyze personality, emotional bond, chemistry, and Manglik cancels.",
+    description:
+      "Vedic relationship analysis looking into 10+ crucial factors: romantic chemistry, mental wavelength, health prospects, future dasha alignment, and couple remedies.",
+    ctaLabel: "Open Matchmaking Report",
+    ctaTo: "/services/detailed-matchmaking",
+    accent: "from-[#8E2DE2] to-[#4A00E0]",
   },
   {
     slug: "detailed-numerology",
@@ -103,8 +136,12 @@ export const groupedServices = {
   ],
   reports: [
     { label: "Lal Kitab Reports", to: "/services/lal-kitab-report" },
-    { label: "Matchmaking Report", to: "/matching" },
     { label: "Kundali Report", to: "/services/kundali-report" },
+    { label: "Matchmaking Report", to: "/matching" },
+    { label: "Detailed Kundali Analysis", to: "/services/detailed-kundali" },
+    { label: "Detailed Dosha Analysis", to: "/services/detailed-dosha" },
+    { label: "Detailed Matchmaking Report", to: "/services/detailed-matchmaking" },
+    { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
   ],
   calculators: [
     ...vedicCalculatorTools
