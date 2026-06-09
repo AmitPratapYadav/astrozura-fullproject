@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\RitualBooking;
 use App\Models\RitualService;
+use App\Models\AdminNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -72,6 +73,14 @@ class RitualBookingController extends Controller
             'amount' => $ritual->price ?? 0,
             'status' => 'pending',
             'payment_status' => 'bypassed',
+        ]);
+
+        AdminNotification::create([
+            'type' => 'ritual_booking',
+            'title' => 'New ritual booking',
+            'message' => "{$booking->devotee_name} requested {$ritual->name}.",
+            'route' => '/rituals',
+            'data' => ['ritual_booking_id' => $booking->id],
         ]);
 
         return response()->json([

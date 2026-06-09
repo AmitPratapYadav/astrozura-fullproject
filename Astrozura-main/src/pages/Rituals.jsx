@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import poojaRitual from "../assets/pooja ritual.png";
@@ -22,15 +22,21 @@ const getImageUrl = (path, fallback) => {
 
 export default function Rituals() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [rituals, setRituals] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [experts, setExperts] = useState([]);
+
+  useEffect(() => {
+    setSelectedCategory(searchParams.get("category") || "");
+    setPage(1);
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchExperts = async () => {
@@ -155,7 +161,9 @@ export default function Rituals() {
                 <select
                   value={selectedCategory}
                   onChange={(event) => {
-                    setSelectedCategory(event.target.value);
+                    const category = event.target.value;
+                    setSelectedCategory(category);
+                    setSearchParams(category ? { category } : {});
                     setPage(1);
                   }}
                   className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"

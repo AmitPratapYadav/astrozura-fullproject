@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Footer from "../components/Footer";
 import axios from "axios";
 import { useCart } from "../context/CartContext";
@@ -13,14 +13,21 @@ import heart from "../assets/heart.png";
 import plus from "../assets/plus.png";
 import minus from "../assets/minus.png";
 
+const splitDetails = (value) =>
+  String(value || "")
+    .split(/\s*\|\s*|\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 export default function ProductPage() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [activeBtn, setActiveBtn] = useState("");
   const [activeTab, setActiveTab] = useState("description");
+  const [selectedVariantId, setSelectedVariantId] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addToCart } = useCart();
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
@@ -29,9 +36,15 @@ export default function ProductPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const { data } = await axios.get(`${baseUrl}/admin/ecomm/products/${id}`);
+        const { data } = await axios.get(`${baseUrl}/ecomm/products/${id}`);
         if (data.status === "success") {
           setProduct(data.data);
+          const requestedVariant = searchParams.get("variant");
+          const variants = data.data.active_variants || [];
+          const initialVariant = variants.find((variant) => String(variant.id) === requestedVariant)
+            || variants.find((variant) => Number(variant.stock_quantity) > 0)
+            || variants[0];
+          setSelectedVariantId(initialVariant ? String(initialVariant.id) : "");
         }
       } catch (error) {
         console.error("Error fetching product details", error);
@@ -40,7 +53,7 @@ export default function ProductPage() {
       }
     };
     fetchProduct();
-  }, [id, baseUrl]);
+  }, [id, baseUrl, searchParams]);
 
   if (loading) {
     return (
@@ -58,7 +71,26 @@ export default function ProductPage() {
     );
   }
 
-  const productImage = product.image ? `${backendUrl}/${product.image}` : "https://placehold.co/400x400?text=No+Image";
+  const productImage = product.image
+    ? product.image.startsWith("http://") || product.image.startsWith("https://")
+      ? product.image
+      : `${backendUrl}${product.image.startsWith("/") ? "" : "/"}${product.image}`
+    : "https://placehold.co/400x400?text=No+Image";
+  const selectedVariant = product.active_variants?.find((variant) => String(variant.id) === selectedVariantId);
+  const selectedImage = selectedVariant?.image
+    ? selectedVariant.image.startsWith("http")
+      ? selectedVariant.image
+      : `${backendUrl}${selectedVariant.image.startsWith("/") ? "" : "/"}${selectedVariant.image}`
+    : productImage;
+  const selectedPrice = selectedVariant?.price ?? product.price;
+  const isOutOfStock = selectedVariant ? Number(selectedVariant.stock_quantity) < 1 : false;
+
+  const detailTabs = [
+    { id: "description", label: "Description" },
+    { id: "benefits", label: "Benefits" },
+    { id: "specifications", label: "Specifications" },
+    { id: "warnings", label: "Care & Safety" },
+  ];
 
   return (
     <>
@@ -82,7 +114,7 @@ export default function ProductPage() {
               <div className="space-y-4">
                 <div className="aspect-[4/5] md:aspect-square bg-[#f8f8fa] rounded-2xl sm:rounded-[2rem] overflow-hidden relative group border border-gray-50">
                   <img
-                    src={productImage}
+                    src={selectedImage}
                     className="w-full h-full object-contain p-8 md:p-12 group-hover:scale-110 transition-transform duration-700"
                     alt={product.name}
                   />
@@ -99,7 +131,7 @@ export default function ProductPage() {
                   <div className="absolute bottom-6 left-6">
                     <div className="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg flex items-center gap-2">
                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                       <span className="text-[10px] font-bold text-gray-800 uppercase tracking-widest">In Stock</span>
+                       <span className="text-[10px] font-bold text-gray-800 uppercase tracking-widest">{isOutOfStock ? "Out of Stock" : "In Stock"}</span>
                     </div>
                   </div>
                 </div>
@@ -127,9 +159,16 @@ export default function ProductPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-2xl sm:text-3xl md:text-4xl font-black text-[#184070]">₹{product.price}</span>
-                    <span className="text-xs sm:text-sm text-gray-400 font-medium line-through decoration-red-400/30">₹{(product.price * 1.2).toFixed(0)}</span>
+                  <div className="flex flex-wrap items-baseline gap-2 mb-6">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-black text-[#184070]">Rs {selectedPrice}</span>
+                    {selectedVariant?.compare_at_price && (
+                      <span className="text-xs sm:text-sm text-gray-400 font-medium line-through decoration-red-400/30">Rs {selectedVariant.compare_at_price}</span>
+                    )}
+                    {product.unit && (
+                      <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                        {product.unit}
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-gray-500 text-sm leading-relaxed mb-8 border-l-4 border-[#d8b14a] pl-5 italic">
@@ -139,6 +178,28 @@ export default function ProductPage() {
 
                 {/* CONTROLS */}
                 <div className="space-y-8 mt-auto">
+                  {product.active_variants?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#1e1b4b]/40 mb-3">Choose Option</p>
+                      <div className="flex flex-wrap gap-2">
+                        {product.active_variants.map((variant) => (
+                          <button
+                            key={variant.id}
+                            type="button"
+                            onClick={() => setSelectedVariantId(String(variant.id))}
+                            disabled={Number(variant.stock_quantity) < 1}
+                            className={`rounded-xl border px-4 py-2 text-xs font-bold transition ${
+                              String(variant.id) === selectedVariantId
+                                ? "border-[#184070] bg-[#184070] text-white"
+                                : "border-gray-200 bg-white text-gray-700"
+                            } disabled:cursor-not-allowed disabled:opacity-40`}
+                          >
+                            {variant.title}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-6">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#1e1b4b]/40 mb-3">Select Quantity</p>
@@ -160,18 +221,20 @@ export default function ProductPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button 
+                      disabled={isOutOfStock}
                       onClick={() => {
-                        setActiveBtn("cart");
                         addToCart({
                           id: product.id,
+                          variant_id: selectedVariant?.id || null,
+                          variant_title: selectedVariant?.title || null,
                           name: product.name,
-                          price: product.price,
-                          image: productImage,
+                          price: selectedPrice,
+                          image: selectedImage,
                           category: product.category?.name || "Spiritual Tool",
                           qty: quantity
                         });
                       }}
-                      className="group flex-1 h-14 bg-white border-2 border-[#184070] text-[#184070] font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-[#184070] hover:text-white transition-all duration-300">
+                      className="group flex-1 h-14 bg-white border-2 border-[#184070] text-[#184070] font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 hover:bg-[#184070] hover:text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-40">
                       Add to Cart
                       <div className="w-6 h-6 rounded-lg bg-[#184070]/10 group-hover:bg-white/20 flex items-center justify-center">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"/></svg>
@@ -179,13 +242,15 @@ export default function ProductPage() {
                     </button>
 
                     <button 
+                      disabled={isOutOfStock}
                       onClick={() => {
-                        setActiveBtn("buy");
                         addToCart({
                           id: product.id,
+                          variant_id: selectedVariant?.id || null,
+                          variant_title: selectedVariant?.title || null,
                           name: product.name,
-                          price: product.price,
-                          image: productImage,
+                          price: selectedPrice,
+                          image: selectedImage,
                           category: product.category?.name || "Spiritual Tool",
                           qty: quantity
                         });
@@ -226,16 +291,16 @@ export default function ProductPage() {
         {/* TABS & DETAILS SECTION */}
         <div className="max-w-6xl mx-auto px-4 mb-20">
           <div className="flex gap-4 sm:gap-8 border-b border-gray-100 mb-8 sm:mb-10 overflow-x-auto no-scrollbar">
-            {["description", "benefits", "specifications"].map((tab) => (
+            {detailTabs.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={`pb-4 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${
-                  activeTab === tab ? "text-[#184070]" : "text-gray-300 hover:text-gray-400"
+                  activeTab === tab.id ? "text-[#184070]" : "text-gray-300 hover:text-gray-400"
                 }`}
               >
-                {tab}
-                {activeTab === tab && (
+                {tab.label}
+                {activeTab === tab.id && (
                   <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8b14a] rounded-full"></div>
                 )}
               </button>
@@ -246,20 +311,47 @@ export default function ProductPage() {
             {/* LEFT CONTENT */}
             <div className="lg:col-span-7">
               <div className="prose prose-sm max-w-none text-gray-500 leading-loose">
-                {activeTab === "description" ? (
+                {activeTab === "description" && (
                   <div className="animate-fadeIn">
                     <h3 className="text-xl font-black text-[#1e1b4b] mb-6">Product Description</h3>
                     <p className="whitespace-pre-wrap">{product.description || "Divine energy and artistic excellence combined in this masterpiece."}</p>
                   </div>
-                ) : activeTab === "benefits" ? (
+                )}
+                {activeTab === "benefits" && (
                   <div className="animate-fadeIn">
-                    <h3 className="text-xl font-black text-[#1e1b4b] mb-6">Spiritual Benefits</h3>
+                    <h3 className="text-xl font-black text-[#1e1b4b] mb-6">Who Should Use It & Benefits</h3>
                     <p className="whitespace-pre-wrap">{product.benefits || "Invite clarity, peace, and positive vibrations into your surroundings."}</p>
                   </div>
-                ) : (
+                )}
+                {activeTab === "specifications" && (
                   <div className="animate-fadeIn">
-                    <h3 className="text-xl font-black text-[#1e1b4b] mb-6">Technical Details</h3>
-                    <p className="whitespace-pre-wrap">Exquisitely crafted using sacred materials and traditional methods passed through generations.</p>
+                    <h3 className="text-xl font-black text-[#1e1b4b] mb-6">Product Specifications</h3>
+                    {splitDetails(product.specifications).length ? (
+                      <dl className="border border-gray-100 rounded-md overflow-hidden">
+                        {splitDetails(product.specifications).map((item, index) => {
+                          const separator = item.indexOf(":");
+                          const label = separator > 0 ? item.slice(0, separator) : `Detail ${index + 1}`;
+                          const value = separator > 0 ? item.slice(separator + 1) : item;
+
+                          return (
+                            <div key={`${label}-${index}`} className="grid grid-cols-[minmax(110px,0.35fr)_1fr] gap-4 px-4 py-3 even:bg-gray-50">
+                              <dt className="font-bold text-[#1e1b4b]">{label.trim()}</dt>
+                              <dd>{value.trim()}</dd>
+                            </div>
+                          );
+                        })}
+                      </dl>
+                    ) : (
+                      <p>No additional specifications have been provided.</p>
+                    )}
+                  </div>
+                )}
+                {activeTab === "warnings" && (
+                  <div className="animate-fadeIn">
+                    <h3 className="text-xl font-black text-[#1e1b4b] mb-6">Warnings & Precautions</h3>
+                    <div className="border-l-4 border-amber-400 bg-amber-50 px-5 py-4 text-amber-950 rounded-r-md whitespace-pre-wrap">
+                      {product.warnings_precautions || "Follow the care instructions supplied with the product and keep it away from young children."}
+                    </div>
                   </div>
                 )}
               </div>
@@ -280,6 +372,7 @@ export default function ProductPage() {
                     { label: "Seed Type", value: product.seed_type },
                     { label: "Thread", value: product.thread_type },
                     { label: "Origin", value: product.origin },
+                    { label: "Unit", value: product.unit },
                     { label: "Category", value: product.category?.name },
                   ].map((spec, i) => spec.value && (
                     <div key={i} className="flex justify-between items-center py-3 border-b border-white/10 last:border-0 hover:bg-white/5 px-2 rounded-xl transition-colors">

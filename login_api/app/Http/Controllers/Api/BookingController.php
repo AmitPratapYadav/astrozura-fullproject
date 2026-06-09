@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\AdminNotification;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -128,6 +129,14 @@ class BookingController extends Controller
 
         $booking->update([
             'booking_reference' => 'BK-' . str_pad((string) $booking->id, 6, '0', STR_PAD_LEFT),
+        ]);
+
+        AdminNotification::create([
+            'type' => 'consultation_booking',
+            'title' => 'New consultation booking',
+            'message' => "{$user->name} booked a {$booking->consultation_type} session with {$astrologer->name}.",
+            'route' => '/bookings',
+            'data' => ['booking_id' => $booking->id],
         ]);
 
         return response()->json([

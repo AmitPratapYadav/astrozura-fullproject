@@ -15,8 +15,10 @@ ShoppingCart,
 Tags,
 BadgeCheck,
 Crown,
-BookOpen
+BookOpen,
+PackageCheck
 } from "lucide-react";
+import logo from "../assets/astrozura-logo.png";
 
 function Sidebar({ isOpen, onClose }) {
 
@@ -38,6 +40,7 @@ const menu = [
 const ecommMenu = [
 { name:"Categories", icon:Tags, path:"/categories"},
 { name:"Products", icon:ShoppingCart, path:"/products"},
+{ name:"Orders", icon:PackageCheck, path:"/orders"},
 { name:"Rituals", icon:BookOpen, path:"/rituals"},
 ]
 
@@ -66,11 +69,12 @@ ${isOpen ? "translate-x-0" : "-translate-x-full"}
 md:translate-x-0`}
 >
 
-<div className="relative flex items-center justify-center p-4 border-b border-gray-800">
-
-<h1 className="text-lg font-bold text-yellow-500">
-Astro Admin
-</h1>
+<div className="relative flex items-center gap-3 p-4 border-b border-gray-800">
+<img src={logo} alt="AstroZura" className="h-11 w-11 rounded-full object-contain" />
+<div>
+  <h1 className="text-base font-bold text-yellow-500">AstroZura</h1>
+  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Admin Panel</p>
+</div>
 
 <button
 className="absolute right-4 md:hidden"

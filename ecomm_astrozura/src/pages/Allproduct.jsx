@@ -336,6 +336,10 @@ export default function ShopLayout() {
                             <p className="font-bold text-[#184070] text-base sm:text-lg">₹{product.price}</p>
                             <button
                               onClick={() => {
+                                if (product.active_variants?.length) {
+                                  navigate(`/product/${product.id}`);
+                                  return;
+                                }
                                 addToCart({
                                   id: product.id,
                                   name: product.name,

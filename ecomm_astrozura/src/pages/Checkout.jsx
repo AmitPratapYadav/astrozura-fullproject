@@ -181,8 +181,8 @@ export default function CheckoutPage() {
         phone: formData.phone,
         items: cartItems.map((item) => ({
           id: item.id,
+          variant_id: item.variant_id || null,
           qty: item.qty,
-          price: item.price,
         })),
         notes: "Order placed from premium checkout.",
       });

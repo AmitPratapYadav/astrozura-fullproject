@@ -17,6 +17,7 @@ import EditCategory from "./pages/EditCategory";
 import Products from "./pages/Products";
 import AddProduct from "./pages/AddProduct";
 import EditProduct from "./pages/EditProduct";
+import Orders from "./pages/Orders";
 import Rituals from "./pages/Rituals";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import UserSubscriptions from "./pages/UserSubscriptions";
@@ -49,6 +50,7 @@ function AdminShell() {
             <Route path="/products" element={<Products />} />
             <Route path="/add-product" element={<AddProduct />} />
             <Route path="/edit-product/:id" element={<EditProduct />} />
+            <Route path="/orders" element={<Orders />} />
             <Route path="/rituals" element={<Rituals />} />
             <Route path="/users" element={<Users />} />
             <Route path="/consultations" element={<Consultations />} />

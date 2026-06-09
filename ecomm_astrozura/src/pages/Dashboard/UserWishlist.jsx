@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useCart } from "../../context/CartContext";
 
@@ -6,6 +7,7 @@ export default function UserWishlist() {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchWishlist();
@@ -77,6 +79,11 @@ export default function UserWishlist() {
                   <p className="font-bold text-[#c9a227]">₹{item.price}</p>
                   <button 
                     onClick={() => {
+                        if (item.active_variants?.length) {
+                          navigate(`/product/${item.id}`);
+                          return;
+                        }
+
                         addToCart({
                             id: item.id,
                             name: item.name,
@@ -87,7 +94,7 @@ export default function UserWishlist() {
                     }}
                     className="text-xs font-bold text-[#1d1d2b] hover:underline"
                   >
-                    Add to Cart +
+                    {item.active_variants?.length ? "Choose Options" : "Add to Cart +"}
                   </button>
                 </div>
               </div>

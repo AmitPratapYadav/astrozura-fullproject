@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Upload, ArrowLeft } from "lucide-react";
 import { apiRequest, assetUrl } from "../lib/api";
+import VariantEditor from "../components/VariantEditor";
 
 export default function EditProduct() {
   const { id } = useParams();
@@ -14,8 +15,11 @@ export default function EditProduct() {
     name: "",
     category_id: "",
     price: "",
+    unit: "",
     description: "",
     benefits: "",
+    specifications: "",
+    warnings_precautions: "",
     bead_count: "",
     bead_size: "",
     seed_type: "",
@@ -26,6 +30,8 @@ export default function EditProduct() {
   });
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [optionNames, setOptionNames] = useState([]);
+  const [variants, setVariants] = useState([]);
 
   useEffect(() => {
     fetchCategories();
@@ -52,8 +58,11 @@ export default function EditProduct() {
           name: product.name,
           category_id: product.category_id,
           price: product.price,
+          unit: product.unit || "",
           description: product.description || "",
           benefits: product.benefits || "",
+          specifications: product.specifications || "",
+          warnings_precautions: product.warnings_precautions || "",
           bead_count: product.bead_count || "",
           bead_size: product.bead_size || "",
           seed_type: product.seed_type || "",
@@ -65,6 +74,8 @@ export default function EditProduct() {
         if (product.image) {
           setPreview(assetUrl(product.image));
         }
+        setOptionNames(product.option_names || []);
+        setVariants(product.variants || []);
       } else {
         alert(result.message || "Product not found");
         navigate("/products");
@@ -109,8 +120,11 @@ export default function EditProduct() {
       data.append("name", formData.name);
       data.append("category_id", formData.category_id);
       data.append("price", formData.price);
+      data.append("unit", formData.unit);
       data.append("description", formData.description);
       data.append("benefits", formData.benefits);
+      data.append("specifications", formData.specifications);
+      data.append("warnings_precautions", formData.warnings_precautions);
       data.append("bead_count", formData.bead_count);
       data.append("bead_size", formData.bead_size);
       data.append("seed_type", formData.seed_type);
@@ -118,6 +132,8 @@ export default function EditProduct() {
       data.append("origin", formData.origin);
       data.append("is_trending", formData.is_trending ? 1 : 0);
       data.append("status", formData.status ? 1 : 0);
+      data.append("option_names", JSON.stringify(optionNames));
+      data.append("variants", JSON.stringify(variants));
       
       if (imageFile) {
         data.append("image", imageFile);
@@ -196,7 +212,7 @@ export default function EditProduct() {
           {/* Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price ($) *
+              Price (INR) *
             </label>
             <input
               type="number"
@@ -207,6 +223,19 @@ export default function EditProduct() {
               className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"
               placeholder="0.00"
               required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Selling Unit
+            </label>
+            <input
+              type="text"
+              name="unit"
+              value={formData.unit}
+              onChange={handleInputChange}
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              placeholder="e.g. per piece or per kg"
             />
           </div>
         </div>
@@ -221,7 +250,7 @@ export default function EditProduct() {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              rows="3"
+              rows="5"
               className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"
               placeholder="Write a brief description..."
             ></textarea>
@@ -229,22 +258,48 @@ export default function EditProduct() {
           {/* Benefits */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Benefits (Optional)
+              Who Should Use / Benefits
             </label>
             <textarea
               name="benefits"
               value={formData.benefits}
               onChange={handleInputChange}
-              rows="3"
+              rows="5"
               className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"
               placeholder="Product benefits..."
+            ></textarea>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Specifications
+            </label>
+            <textarea
+              name="specifications"
+              value={formData.specifications}
+              onChange={handleInputChange}
+              rows="5"
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              placeholder="Material, size, chakra, origin, and other details..."
+            ></textarea>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Warnings & Precautions
+            </label>
+            <textarea
+              name="warnings_precautions"
+              value={formData.warnings_precautions}
+              onChange={handleInputChange}
+              rows="5"
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              placeholder="Care instructions and safety information..."
             ></textarea>
           </div>
         </div>
 
         <div className="border-t pt-4">
-          <h3 className="text-lg font-bold mb-4">Specifications (Optional)</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <h3 className="text-lg font-bold mb-4">Rudraksha Details (Optional)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bead Count</label>
               <input
@@ -362,6 +417,15 @@ export default function EditProduct() {
             </label>
           </div>
         </div>
+
+        <VariantEditor
+          optionNames={optionNames}
+          variants={variants}
+          onChange={(names, nextVariants) => {
+            setOptionNames(names);
+            setVariants(nextVariants);
+          }}
+        />
 
         {/* Action Buttons */}
         <div className="flex gap-4 pt-6 border-t">

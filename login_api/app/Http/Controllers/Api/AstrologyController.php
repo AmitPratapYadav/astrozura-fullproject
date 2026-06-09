@@ -359,9 +359,9 @@ class AstrologyController extends Controller
                 'footer_link' => $appUrl,
                 'logo_url' => $appUrl . '/favicon.ico',
                 'company_name' => 'Astro Zura',
-                'company_info' => 'Astro Zura personalized Vedic chart preview generated for local testing.',
+                'company_info' => 'Astro Zura personalized Vedic astrology report.',
                 'domain_url' => $appUrl,
-                'company_email' => 'support@astrozura.cloud',
+                'company_email' => 'support@astrozura.com',
                 'company_landline' => '+91-0000000000',
                 'company_mobile' => '+91-0000000000',
             ];
@@ -566,7 +566,7 @@ class AstrologyController extends Controller
 
         try {
             $language = $this->resolveRequestedLanguage($request, ['en', 'hi'], 'en');
-            $appUrl = rtrim((string) config('app.url', 'https://astrozura.cloud'), '/');
+            $appUrl = rtrim((string) config('app.url', 'https://astrozura.com'), '/');
             $boy = $this->buildPdfPersonPayload('m', (string) $request->input('boy_name'), (string) $request->input('boy_dob'), (string) $request->input('boy_coordinates'), (string) $request->input('boy_place', ''));
             $girl = $this->buildPdfPersonPayload('f', (string) $request->input('girl_name'), (string) $request->input('girl_dob'), (string) $request->input('girl_coordinates'), (string) $request->input('girl_place', ''));
 
@@ -579,9 +579,9 @@ class AstrologyController extends Controller
                 'footer_link' => $appUrl,
                 'logo_url' => $appUrl . '/favicon.ico',
                 'company_name' => 'Astro Zura',
-                'company_info' => 'Astro Zura personalized Vedic compatibility report generated for testing.',
+                'company_info' => 'Astro Zura personalized Vedic compatibility report.',
                 'domain_url' => $appUrl,
-                'company_email' => 'support@astrozura.cloud',
+                'company_email' => 'support@astrozura.com',
                 'company_landline' => '+91-0000000000',
                 'company_mobile' => '+91-0000000000',
             ]);
@@ -2342,7 +2342,7 @@ class AstrologyController extends Controller
     {
         $response = Http::timeout(15)
             ->withHeaders([
-                'User-Agent' => 'AstroZura/1.0 (support@astrozura.cloud)',
+                'User-Agent' => 'AstroZura/1.0 (support@astrozura.com)',
                 'Accept-Language' => $language,
             ])
             ->get('https://nominatim.openstreetmap.org/search', [

@@ -1,369 +1,116 @@
-import { useState } from "react"
-import Navbar from "../components/Navbar"
-import Footer from "../components/Footer"
-import { Link } from "react-router-dom"
-
-import rudraksha from "../assets/rudraksha mala.png"
-import yantra from "../assets/shri yantra copper plate.png"
-import pooja from "../assets/pooja ritual.png"
-import gita from "../assets/bhagwat.png"
-import chakra from "../assets/7 chakra.png";
-import lamp from "../assets/lamp.png"
-import tibetan from "../assets/tibetan.png"
-import natural from "../assets/natural.png"
-
-import { FaShoppingCart, FaStar } from "react-icons/fa"
-import { MdCategory } from "react-icons/md"
-
-export default function Products(){
-
-const [activePage,setActivePage] = useState(1)
-const [sortOption, setSortOption] = useState("")
-
-const addToCart = (name) =>{
-alert(name + " added to cart")
-}
-
-const products = [
-
-{
-id:1,
-name:"Panchmukhi Rudraksha Mala",
-price:45.00,
-image:rudraksha,
-rating:124,
-badge:"BEST SELLER"
-},
-
-{
-id:2,
-name:"Shri Yantra Copper Plate (6x6)",
-price:29.50,
-image:yantra,
-rating:89
-},
-
-{
-id:3,
-name:"Essential Daily Pooja Ritual Kit",
-price:89.00,
-image:pooja,
-rating:56
-},
-
-{
-id:4,
-name:"The Bhagavad Gita - Deluxe Edition",
-price:18.70,
-oldPrice:22.00,
-image:gita,
-rating:210,
-discount:"-15%"
-},
-
-{
-id:5,
-name:"Natural Amethyst Healing Cluster",
-price:32.00,
-image:natural,
-rating:42
-},
-
-{
-id:6,
-name:"Authentic Himalayan Salt Lamp",
-price:55.00,
-image:lamp,
-rating:315
-},
-
-{
-id:7,
-name:"7 Chakra Healing Stone Bracelet",
-price:15.99,
-image:chakra,
-rating:12
-},
-
-{
-id:8,
-name:"Tibetan Singing Bowl Meditation Set",
-price:78.50,
-image:tibetan,
-rating:94
-}
-
-]
-const sortedProducts = [...products].sort((a, b) => {
-if (sortOption === "lowToHigh") return a.price - b.price
-if (sortOption === "highToLow") return b.price - a.price
-return 0
-})
-
-return(
-
-<div className="bg-[#F5F5F7] min-h-screen">
-
-<Navbar/>
-
-<div className="max-w-7xl mx-auto px-6 py-10">
-
-<h1 className="text-4xl font-bold mb-3">
-Spiritual Store
-</h1>
-
-<p className="text-gray-500 mb-10 max-w-xl">
-Elevate your vibration with our artisan-sourced cosmic essentials. Each piece is hand -picked and clransed under moonlight.
-</p>
-
-<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-
-{/* LEFT SIDEBAR */}
-
-<div className="space-y-6">
-
-<div className="bg-white rounded-2xl p-6 shadow-sm">
-
-<h2 className="font-semibold mb-4 text-lg flex items-center gap-2">
-<MdCategory/> Categories
-</h2>
-
-<ul className="space-y-3 text-gray-700">
-
-<li className="flex justify-between hover:text-[#c7926a] cursor-pointer">
-<span>📿 Rudraksha</span>
-<span className="text-sm text-gray-400">24</span>
-</li>
-
-<li className="flex justify-between hover:text-[#c7926a] cursor-pointer">
-<span>🕉️ Yantras</span>
-<span className="text-sm text-gray-400">18</span>
-</li>
-
-<li className="flex justify-between hover:text-[#c7926a] cursor-pointer">
-<span>🌼 Pooja Kits</span>
-<span className="text-sm text-gray-400">12</span>
-</li>
-
-<li className="flex justify-between hover:text-[#c7926a] cursor-pointer">
-<span>📚 Spiritual Books</span>
-<span className="text-sm text-gray-400">45</span>
-</li>
-<li className="flex justify-between hover:text-[#c7926a]  cursor-pointer">
-    <span>🎁 Bundles</span>
-    <span className="text-sm text-gray-400">10</span>
-</li>
-
-</ul>
-
-</div>
-
-
-<div className="bg-white rounded-2xl p-6 shadow-sm">
-
-<h2 className="font-semibold mb-4 text-lg">
-Price Range
-</h2>
-<div className="bg-white rounded-2xl p-6 shadow-sm">
-
-<div className="space-y-3 text-sm text-gray-700">
-
-<label className="flex items-center gap-2 cursor-pointer">
-<input 
-type="radio" 
-name="sort" 
-onChange={() => setSortOption("lowToHigh")}
-/>
-<span>Low to High</span>
-</label>
-
-<label className="flex items-center gap-2 cursor-pointer">
-<input 
-type="radio" 
-name="sort" 
-onChange={() => setSortOption("highToLow")}
-/>
-<span>High to Low</span>
-</label>
-
-</div>
-
-</div>
-<input
-type="range"
-min="10"
-max="500"
-className="w-full accent-[#d8ba4a]"
-/>
-
-<div className="flex justify-between text-sm text-gray-500 mt-2">
-<span>₹10</span>
-<span>₹500</span>
-</div>
-
-</div>
-
-
-<div className="bg-white rounded-2xl p-6 shadow-sm">
-
-<h2 className="font-semibold mb-4 text-lg">
-Rating
-</h2>
-
-<div className="space-y-3 text-sm text-gray-700">
-
-<label className="flex items-center gap-2 cursor-pointer">
-<input type="checkbox"/>
-<span className="text-[#d8ba4a]">⭐⭐⭐⭐⭐</span>
-<span>& up</span>
-</label>
-
-<label className="flex items-center gap-2 cursor-pointer">
-<input type="checkbox"/>
-<span className="text-[#d8ba4a]">⭐⭐⭐⭐</span>
-<span>& up</span>
-</label>
-
-<label className="flex items-center gap-2 cursor-pointer">
-<input type="checkbox"/>
-<span className="text-[#d8ba4a]">⭐⭐⭐</span>
-<span>& up</span>
-</label>
-
-</div>
-
-</div>
-
-</div>
-
-
-{/* PRODUCTS */}
-
-<div className="lg:col-span-3">
-
-<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-
-{sortedProducts.map((item,index)=>(
-
-<div
-key={index}
-className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg transition flex flex-col"
->
-
-<div className="relative">
-
-
-<div className="w-full h-40 bg-[#FAFAFA] rounded-xl flex items-center justify-center overflow-hidden">
-
-<Link to={`/product/${item.id}`}>
-<img
-src={item.image}
-alt={item.name}
-className="w-full h-full object-contain"
-/>
-</Link>
-
-</div>
-
-{item.badge && (
-
-<span className="absolute top-2 left-2 bg-black text-white text-xs px-2 py-1 rounded-full">
-{item.badge}
-</span>
-
-)}
-
-{item.discount && (
-
-<span className="absolute top-2 right-2 bg-pink-500 text-white text-xs px-2 py-1 rounded-full">
-{item.discount}
-</span>
-
-)}
-
-</div>
-
-<div className="flex items-center text-[#d8ba4a] mt-3 text-sm">
-
-<FaStar/>
-<FaStar/>
-<FaStar/>
-<FaStar/>
-<FaStar className="text-gray-300"/>
-
-<span className="ml-2 text-gray-400 text-xs">
-({item.rating})
-</span>
-
-</div>
-
-<Link to={`/product/${item.id}`}>
-<h3 className="mt-2 text-sm font-semibold text-gray-800 hover:text-[#d8ba4a]">
-{item.name}
-</h3>
-</Link>
-
-<p className="text-[#c7926a] font-bold mt-1">
-
-₹{item.price}
-
-{item.oldPrice && (
-
-<span className="text-gray-400 line-through ml-2 text-sm">
-₹{item.oldPrice}
-</span>
-
-)}
-
-</p>
-
-<button
-onClick={()=>addToCart(item.name)}
-className="mt-4 flex items-center justify-center gap-2 bg-[#d8ba4a] hover:bg-[#d8ba4a] text-black py-2 rounded-xl text-sm font-medium"
->
-
-<FaShoppingCart/>
-
-Add to Cart
-
-</button>
-
-</div>
-
-))}
-
-</div>
-
-<div className="flex justify-center items-center gap-3 mt-10">
-
-{[1,2,3,4].map((num)=>(
-
-<button
-key={num}
-onClick={()=>setActivePage(num)}
-className={`w-8 h-8 rounded-full border 
-${activePage === num 
-? "bg-[#d8ba4a] text-white border-[#d8ba4a]" 
-: "bg-white text-black hover:bg-[#d8ba4a] hover:text-white"}`}
->
-
-{num}
-
-</button>
-
-))}
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<Footer/>
-
-</div>
-
-)
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { PackageSearch, SlidersHorizontal } from "lucide-react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+
+const imageUrl = (path) => {
+  if (!path) return "https://placehold.co/600x600?text=AstroZura";
+  if (path.startsWith("http")) return path;
+  return `${BACKEND_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+};
+
+export default function Products() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [sort, setSort] = useState("latest");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCatalog = async () => {
+      try {
+        const [categoryResponse, productResponse] = await Promise.all([
+          fetch(`${API_BASE}/ecomm/categories`),
+          fetch(`${API_BASE}/ecomm/products`),
+        ]);
+        const [categoryData, productData] = await Promise.all([
+          categoryResponse.json(),
+          productResponse.json(),
+        ]);
+        setCategories(categoryData.data || []);
+        setProducts(productData.data || []);
+      } catch (error) {
+        console.error("Failed to load product catalog", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadCatalog();
+  }, []);
+
+  const visibleProducts = useMemo(() => {
+    const filtered = categoryId
+      ? products.filter((product) => String(product.category_id) === String(categoryId))
+      : products;
+
+    return [...filtered].sort((a, b) => {
+      if (sort === "price-low") return Number(a.price) - Number(b.price);
+      if (sort === "price-high") return Number(b.price) - Number(a.price);
+      return Number(b.id) - Number(a.id);
+    });
+  }, [categoryId, products, sort]);
+
+  return (
+    <div className="min-h-screen bg-[#f7f8fa] text-[#1E3557]">
+      <Navbar />
+      <main className="mx-auto max-w-7xl px-4 py-10 md:px-8">
+        <div className="flex flex-col gap-5 border-b border-gray-200 pb-7 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A73C]">Astral Shop</p>
+            <h1 className="mt-2 text-4xl font-black">Spiritual Products</h1>
+            <p className="mt-2 max-w-2xl text-sm text-gray-500">Products and categories are managed directly by AstroZura administrators.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3">
+              <PackageSearch size={17} className="text-gray-400" />
+              <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="bg-transparent py-3 text-sm outline-none">
+                <option value="">All categories</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3">
+              <SlidersHorizontal size={17} className="text-gray-400" />
+              <select value={sort} onChange={(event) => setSort(event.target.value)} className="bg-transparent py-3 text-sm outline-none">
+                <option value="latest">Latest</option>
+                <option value="price-low">Price: low to high</option>
+                <option value="price-high">Price: high to low</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-24 text-center text-gray-500">Loading products...</div>
+        ) : (
+          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {visibleProducts.map((product) => (
+              <Link key={product.id} to={`/product/${product.id}`} className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <div className="aspect-square overflow-hidden bg-gray-50">
+                  <img src={imageUrl(product.image)} alt={product.name} className="h-full w-full object-contain p-5 transition duration-300 group-hover:scale-105" />
+                </div>
+                <div className="p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#D4A73C]">{product.category?.name}</p>
+                  <h2 className="mt-2 line-clamp-2 min-h-10 text-sm font-bold md:text-base">{product.name}</h2>
+                  <div className="mt-4 flex items-end justify-between gap-2">
+                    <p className="font-black">Rs {Number(product.price).toLocaleString("en-IN")}</p>
+                    {product.active_variants?.length > 0 && <span className="text-[10px] text-gray-500">{product.active_variants.length} options</span>}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {!loading && !visibleProducts.length && (
+          <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-white py-20 text-center text-gray-500">No active products are available in this category.</div>
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
 }

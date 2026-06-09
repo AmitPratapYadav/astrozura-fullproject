@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../lib/api";
+import VariantEditor from "../components/VariantEditor";
 
 export default function AddProduct() {
   const [categories, setCategories] = useState([]);
@@ -9,8 +10,11 @@ export default function AddProduct() {
     name: "",
     categoryId: "",
     price: "",
+    unit: "",
     description: "",
     benefits: "",
+    specifications: "",
+    warningsPrecautions: "",
     beadCount: "",
     beadSize: "",
     seedType: "",
@@ -20,6 +24,8 @@ export default function AddProduct() {
     status: true
   });
   const [image, setImage] = useState(null);
+  const [optionNames, setOptionNames] = useState([]);
+  const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -46,8 +52,11 @@ export default function AddProduct() {
     payload.append("name", formData.name);
     payload.append("category_id", formData.categoryId);
     payload.append("price", formData.price);
+    payload.append("unit", formData.unit);
     payload.append("description", formData.description);
     payload.append("benefits", formData.benefits);
+    payload.append("specifications", formData.specifications);
+    payload.append("warnings_precautions", formData.warningsPrecautions);
     payload.append("bead_count", formData.beadCount);
     payload.append("bead_size", formData.beadSize);
     payload.append("seed_type", formData.seedType);
@@ -55,6 +64,8 @@ export default function AddProduct() {
     payload.append("origin", formData.origin);
     payload.append("is_trending", formData.isTrending ? 1 : 0);
     payload.append("status", formData.status ? 1 : 0);
+    payload.append("option_names", JSON.stringify(optionNames));
+    payload.append("variants", JSON.stringify(variants));
     if (image) {
       payload.append("image", image);
     }
@@ -85,7 +96,7 @@ export default function AddProduct() {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
             <input
@@ -113,9 +124,9 @@ export default function AddProduct() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Price (INR)</label>
             <input
               type="number"
               step="0.01"
@@ -127,21 +138,32 @@ export default function AddProduct() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Selling Unit</label>
             <input
-              type="file"
-              accept="image/*"
+              type="text"
               className="w-full border px-4 py-2 rounded-lg"
-              onChange={(e) => setImage(e.target.files[0])}
+              placeholder="e.g. per piece or per kg"
+              value={formData.unit}
+              onChange={(e) => setFormData({...formData, unit: e.target.value})}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            className="w-full border px-4 py-2 rounded-lg"
+            onChange={(e) => setImage(e.target.files[0])}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
             <textarea
-              rows="3"
+              rows="5"
               className="w-full border px-4 py-2 rounded-lg"
               placeholder="Product details..."
               value={formData.description}
@@ -149,20 +171,40 @@ export default function AddProduct() {
             ></textarea>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Benefits (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Who Should Use / Benefits</label>
             <textarea
-              rows="3"
+              rows="5"
               className="w-full border px-4 py-2 rounded-lg"
-              placeholder="Product benefits..."
+              placeholder="Benefits and intended users..."
               value={formData.benefits}
               onChange={(e) => setFormData({...formData, benefits: e.target.value})}
+            ></textarea>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product Specifications</label>
+            <textarea
+              rows="5"
+              className="w-full border px-4 py-2 rounded-lg"
+              placeholder="Material, size, chakra, origin, and other details..."
+              value={formData.specifications}
+              onChange={(e) => setFormData({...formData, specifications: e.target.value})}
+            ></textarea>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Warnings & Precautions</label>
+            <textarea
+              rows="5"
+              className="w-full border px-4 py-2 rounded-lg"
+              placeholder="Care instructions and safety information..."
+              value={formData.warningsPrecautions}
+              onChange={(e) => setFormData({...formData, warningsPrecautions: e.target.value})}
             ></textarea>
           </div>
         </div>
 
         <div className="border-t pt-4">
-          <h3 className="text-lg font-bold mb-4">Specifications (Optional)</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <h3 className="text-lg font-bold mb-4">Rudraksha Details (Optional)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bead Count</label>
               <input
@@ -238,6 +280,15 @@ export default function AddProduct() {
             <label htmlFor="status" className="font-medium cursor-pointer text-gray-700">Active Status</label>
           </div>
         </div>
+
+        <VariantEditor
+          optionNames={optionNames}
+          variants={variants}
+          onChange={(names, nextVariants) => {
+            setOptionNames(names);
+            setVariants(nextVariants);
+          }}
+        />
 
         <button 
           type="submit" 

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\AdminNotification;
 use App\Models\Wishlist;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -90,7 +92,9 @@ class UserDashboardController extends Controller
      */
     public function getWishlist(Request $request)
     {
-        $wishlist = Wishlist::with('product')
+        $wishlist = Wishlist::with(['product' => function ($query) {
+            $query->with('activeVariants');
+        }])
             ->where('user_id', $request->user()->id)
             ->get()
             ->pluck('product');
@@ -137,7 +141,7 @@ class UserDashboardController extends Controller
             $inWishlist = true;
         }
 
-        return response.json([
+        return response()->json([
             'status' => 'success',
             'message' => $message,
             'in_wishlist' => $inWishlist
@@ -156,8 +160,8 @@ class UserDashboardController extends Controller
             'phone' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|exists:product_variants,id',
             'items.*.qty' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -171,10 +175,45 @@ class UserDashboardController extends Controller
         
         // Use database transaction
         return \DB::transaction(function () use ($request, $user) {
+            $resolvedItems = collect($request->items)->map(function (array $item) {
+                $product = Product::query()
+                    ->whereKey($item['id'])
+                    ->where('status', true)
+                    ->whereHas('category', fn ($query) => $query->where('status', true))
+                    ->firstOrFail();
+
+                $variant = null;
+                if (!empty($item['variant_id'])) {
+                    $variant = ProductVariant::query()
+                        ->whereKey($item['variant_id'])
+                        ->where('product_id', $product->id)
+                        ->where('status', true)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if ($variant->stock_quantity < (int) $item['qty']) {
+                        abort(422, "Insufficient stock for {$product->name} - {$variant->title}.");
+                    }
+                } elseif ($product->activeVariants()->exists()) {
+                    abort(422, "Please select an option for {$product->name}.");
+                }
+
+                return [
+                    'product' => $product,
+                    'variant' => $variant,
+                    'quantity' => (int) $item['qty'],
+                    'price' => (float) ($variant?->price ?? $product->price),
+                ];
+            });
+
+            $subtotal = $resolvedItems->sum(fn ($item) => $item['price'] * $item['quantity']);
+            $shipping = $subtotal > 500 ? 0 : 40;
+            $total = round($subtotal + $shipping + ($subtotal * 0.12), 2);
+
             $order = Order::create([
                 'user_id' => $user->id,
                 'order_number' => 'ORD-' . strtoupper(Str::random(8)),
-                'total_amount' => $request->total_amount,
+                'total_amount' => $total,
                 'status' => 'pending',
                 'payment_status' => $request->payment_method === 'cod' ? 'unpaid' : 'paid',
                 'payment_method' => $request->payment_method,
@@ -183,18 +222,33 @@ class UserDashboardController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            foreach ($request->items as $item) {
+            foreach ($resolvedItems as $item) {
                 $order->items()->create([
-                    'product_id' => $item['id'],
-                    'quantity' => $item['qty'],
+                    'product_id' => $item['product']->id,
+                    'product_variant_id' => $item['variant']?->id,
+                    'variant_title' => $item['variant']?->title,
+                    'sku' => $item['variant']?->sku,
+                    'quantity' => $item['quantity'],
                     'price' => $item['price'],
                 ]);
+
+                if ($item['variant']) {
+                    $item['variant']->decrement('stock_quantity', $item['quantity']);
+                }
             }
+
+            AdminNotification::create([
+                'type' => 'product_order',
+                'title' => 'New product order',
+                'message' => "{$order->order_number} was placed by {$user->name} for Rs " . number_format($total, 2),
+                'route' => '/orders',
+                'data' => ['order_id' => $order->id],
+            ]);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Order placed successfully',
-                'order' => $order->load('items')
+                'order' => $order->load(['items.product', 'items.variant'])
             ]);
         });
     }

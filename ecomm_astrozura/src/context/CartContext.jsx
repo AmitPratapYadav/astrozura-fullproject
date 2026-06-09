@@ -10,7 +10,12 @@ export const CartProvider = ({ children }) => {
       const savedCart = localStorage.getItem("astrozura_cart");
       if (savedCart) {
         const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.map((item) => ({
+            ...item,
+            cartKey: item.cartKey || `${item.id}:${item.variant_id || "base"}`,
+          }));
+        }
       }
     } catch (e) {
       console.error("Failed to parse cart", e);
@@ -25,34 +30,36 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = (product) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id);
+      const cartKey = product.cartKey || `${product.id}:${product.variant_id || "base"}`;
+      const normalizedProduct = { ...product, cartKey };
+      const existingItem = prevItems.find((item) => item.cartKey === cartKey);
       if (existingItem) {
         return prevItems.map((item) =>
-          item.id === product.id
+          item.cartKey === cartKey
             ? { ...item, qty: item.qty + (product.qty || 1) }
             : item
         );
       }
-      return [...prevItems, { ...product, qty: product.qty || 1 }];
+      return [...prevItems, { ...normalizedProduct, qty: product.qty || 1 }];
     });
   };
 
-  const removeFromCart = (id) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  const removeFromCart = (cartKey) => {
+    setCartItems((prevItems) => prevItems.filter((item) => item.cartKey !== cartKey));
   };
 
-  const increaseQty = (id) => {
+  const increaseQty = (cartKey) => {
     setCartItems((prevItems) =>
       prevItems.map((item) =>
-        item.id === id ? { ...item, qty: item.qty + 1 } : item
+        item.cartKey === cartKey ? { ...item, qty: item.qty + 1 } : item
       )
     );
   };
 
-  const decreaseQty = (id) => {
+  const decreaseQty = (cartKey) => {
     setCartItems((prevItems) =>
       prevItems.map((item) =>
-        item.id === id && item.qty > 1
+        item.cartKey === cartKey && item.qty > 1
           ? { ...item, qty: item.qty - 1 }
           : item
       )

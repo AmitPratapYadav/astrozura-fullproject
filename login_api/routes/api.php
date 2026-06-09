@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\AstrologerReviewController;
 use App\Http\Controllers\Api\LiveSessionController;
 use App\Http\Controllers\Api\PushNotificationController;
+use App\Http\Controllers\Api\AdminNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -75,6 +76,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-bookings', [BookingController::class, 'myBookings']);
     Route::get('/my-subscriptions', [SubscriptionController::class, 'mySubscriptions']);
     Route::post('/bookings/{booking}/review', [AstrologerReviewController::class, 'store']);
+
+    Route::get('/admin/notifications', [AdminNotificationController::class, 'index']);
+    Route::post('/admin/notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
+    Route::post('/admin/notifications/{adminNotification}/read', [AdminNotificationController::class, 'markRead']);
+    Route::get('/admin/ecomm/orders', [AdminEcommController::class, 'getOrders']);
+    Route::post('/admin/ecomm/orders/{order}/status', [AdminEcommController::class, 'updateOrderStatus']);
+    Route::get('/admin/ecomm/categories', [AdminEcommController::class, 'getCategories']);
+    Route::post('/admin/ecomm/categories/create', [AdminEcommController::class, 'storeCategory']);
+    Route::get('/admin/ecomm/categories/{id}', [AdminEcommController::class, 'getCategory']);
+    Route::post('/admin/ecomm/categories/update/{id}', [AdminEcommController::class, 'updateCategory']);
+    Route::delete('/admin/ecomm/categories/{id}', [AdminEcommController::class, 'deleteCategory']);
+    Route::get('/admin/ecomm/products', [AdminEcommController::class, 'getProducts']);
+    Route::post('/admin/ecomm/products/create', [AdminEcommController::class, 'storeProduct']);
+    Route::post('/admin/ecomm/products/import', [AdminEcommController::class, 'importProducts']);
+    Route::get('/admin/ecomm/products/{id}', [AdminEcommController::class, 'getProduct']);
+    Route::post('/admin/ecomm/products/update/{id}', [AdminEcommController::class, 'updateProduct']);
+    Route::delete('/admin/ecomm/products/{id}', [AdminEcommController::class, 'deleteProduct']);
 });
 
 Route::get('/bookings/availability', [BookingController::class, 'getAvailability']);
@@ -121,19 +139,8 @@ Route::get('/rituals/{slug}', [RitualController::class, 'show']);
 Route::get('/ecomm/categories', [EcommController::class, 'getCategories']);
 Route::get('/ecomm/products/trending', [EcommController::class, 'getTrendingProducts']);
 Route::get('/ecomm/products', [EcommController::class, 'getAllProducts']);
+Route::get('/ecomm/products/{id}', [EcommController::class, 'getProduct']);
 
-// Admin E-Commerce Endpoints
-Route::get('/admin/ecomm/categories', [AdminEcommController::class, 'getCategories']);
-Route::post('/admin/ecomm/categories/create', [AdminEcommController::class, 'storeCategory']);
-Route::get('/admin/ecomm/categories/{id}', [AdminEcommController::class, 'getCategory']);
-Route::post('/admin/ecomm/categories/update/{id}', [AdminEcommController::class, 'updateCategory']);
-Route::delete('/admin/ecomm/categories/{id}', [AdminEcommController::class, 'deleteCategory']);
-
-Route::get('/admin/ecomm/products', [AdminEcommController::class, 'getProducts']);
-Route::post('/admin/ecomm/products/create', [AdminEcommController::class, 'storeProduct']);
-Route::get('/admin/ecomm/products/{id}', [AdminEcommController::class, 'getProduct']);
-Route::post('/admin/ecomm/products/update/{id}', [AdminEcommController::class, 'updateProduct']);
-Route::delete('/admin/ecomm/products/{id}', [AdminEcommController::class, 'deleteProduct']);
 Route::get('/admin/rituals', [RitualController::class, 'adminIndex']);
 Route::post('/admin/rituals', [RitualController::class, 'store']);
 Route::post('/admin/rituals/{id}', [RitualController::class, 'update']);

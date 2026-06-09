@@ -28,8 +28,9 @@ class EcommController extends Controller
     public function getTrendingProducts()
     {
         $products = Product::where('status', 1)
+                           ->whereHas('category', fn ($query) => $query->where('status', 1))
                            ->where('is_trending', 1)
-                           ->with('category')
+                           ->with(['category', 'activeVariants'])
                            ->get();
         
         return response()->json([
@@ -44,13 +45,37 @@ class EcommController extends Controller
     public function getAllProducts()
     {
         $products = Product::where('status', 1)
-                           ->with('category')
+                           ->whereHas('category', fn ($query) => $query->where('status', 1))
+                           ->with(['category', 'activeVariants'])
                            ->latest()
                            ->get();
         
         return response()->json([
             'status' => 'success',
             'data' => $products
+        ]);
+    }
+
+    /**
+     * Get one active product for the public shop.
+     */
+    public function getProduct($id)
+    {
+        $product = Product::where('status', 1)
+            ->whereHas('category', fn ($query) => $query->where('status', 1))
+            ->with(['category', 'activeVariants'])
+            ->find($id);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Product not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $product,
         ]);
     }
 }

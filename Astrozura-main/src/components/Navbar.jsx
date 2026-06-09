@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { ChevronDown, Globe2, Menu, X } from "lucide-react";
 import vedic from "../assets/vedic-astrology.png";
 import { useAuth } from "../context/AuthContext";
 import { groupedServices } from "../data/serviceCatalog";
@@ -13,6 +14,8 @@ export default function Navbar() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [navDropdownOpen, setNavDropdownOpen] = useState("");
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [mobileGroupOpen, setMobileGroupOpen] = useState("");
+  const [ritualCategories, setRitualCategories] = useState([]);
 
   const userDropdownRef = useRef(null);
   const navDropdownRef = useRef(null);
@@ -20,10 +23,36 @@ export default function Navbar() {
 
   const avatarLetter = user?.name ? user.name.charAt(0).toUpperCase() : "U";
   const currentLang = i18n.language.split("-")[0];
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+
+  useEffect(() => {
+    const loadRitualCategories = async () => {
+      try {
+        const response = await fetch(`${apiBase}/rituals?per_page=1`);
+        const data = await response.json();
+        if (data.success) setRitualCategories(data.categories || []);
+      } catch (error) {
+        console.error("Failed to load ritual navigation categories", error);
+      }
+    };
+
+    void loadRitualCategories();
+  }, [apiBase]);
 
   const navItems = useMemo(
     () => [
-      { type: "link", label: t("navMenu.poojaAnusthan"), to: "/rituals" },
+      {
+        type: "dropdown",
+        label: t("navMenu.poojaAnusthan"),
+        key: "rituals",
+        items: [
+          { label: "View All Anusthan", to: "/rituals" },
+          ...ritualCategories.map((category) => ({
+            label: category,
+            to: `/rituals?category=${encodeURIComponent(category)}`,
+          })),
+        ],
+      },
       {
         type: "dropdown",
         label: t("navMenu.astroZuraPanchang"),
@@ -73,7 +102,7 @@ export default function Navbar() {
       },
       { type: "link", label: t("nav.astrologers"), to: "/astrologers" },
     ],
-    [t]
+    [ritualCategories, t]
   );
 
   useEffect(() => {
@@ -142,7 +171,7 @@ export default function Navbar() {
                     }`}
                   >
                     <span className="whitespace-nowrap">{item.label}</span>
-                    <span className={`text-[8px] transition lg:text-[10px] ${navDropdownOpen === item.key ? "rotate-180" : ""}`}>▼</span>
+                    <ChevronDown size={14} className={`transition ${navDropdownOpen === item.key ? "rotate-180" : ""}`} />
                   </button>
 
                   {navDropdownOpen === item.key && (
@@ -179,7 +208,7 @@ export default function Navbar() {
               onClick={() => setLangDropdownOpen((current) => !current)}
               className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-bold uppercase text-gray-600 transition hover:bg-gray-100"
             >
-              <span className="text-[11px] leading-none">🌐</span>
+              <Globe2 size={13} />
               {currentLang === "hi" ? "HI" : "EN"}
             </button>
 
@@ -291,20 +320,38 @@ export default function Navbar() {
 
           <button
             type="button"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             onClick={() => setMenuOpen((current) => !current)}
             className="rounded-lg bg-gray-50 p-2 text-gray-500 transition-all active:scale-95 md:hidden"
           >
-            <span className="text-xl">{menuOpen ? "✕" : "☰"}</span>
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
       {menuOpen && (
-        <div className="absolute left-0 right-0 top-full mt-0.5 max-h-[85vh] overflow-y-auto border-t border-gray-100/50 bg-white/95 p-6 shadow-2xl backdrop-blur-md md:hidden">
+        <>
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-black/35 md:hidden"
+        />
+        <div className="fixed bottom-0 right-0 top-0 z-50 w-[min(88vw,360px)] overflow-y-auto border-l border-gray-100 bg-white p-5 shadow-2xl md:hidden">
+          <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-4">
+            <img src={vedic} alt="Astro Zura" className="h-10 object-contain" />
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-lg bg-gray-100 p-2 text-gray-600"
+            >
+              <X size={20} />
+            </button>
+          </div>
           <ul className="flex flex-col gap-4 text-gray-700">
             {[
               { path: "/", name: t("nav.home") },
-              { path: "/rituals", name: t("navMenu.poojaAnusthan") },
               { path: "/rashifal", name: t("navMenu.horoscope") },
               { path: "/live", name: "Live" },
               { path: "/astrologers", name: t("nav.astrologers") },
@@ -336,47 +383,18 @@ export default function Navbar() {
               </li>
             ))}
 
-            {[
-              {
-                title: t("navMenu.astroZuraPanchang"),
-                items: [
-                  { label: "Daily Panchang", to: "/panchang?view=daily" },
-                  { label: "Chaughadiya Muhurt", to: "/panchang?view=chaughadiya" },
-                  { label: "Hora Muhurta", to: "/panchang?view=hora" },
-                ],
-              },
-              {
-                title: t("navMenu.reports"),
-                items: [
-                  { label: t("navMenu.reportItems.lalKitab"), to: "/services/lal-kitab-report" },
-                  { label: t("navMenu.reportItems.kundliMatching"), to: "/matching" },
-                  { label: t("navMenu.reportItems.detailedKundali"), to: "/services/kundali-report" },
-                ],
-              },
-              {
-                title: t("navMenu.calculators"),
-                items: [
-                  ...groupedServices.calculators.map((item) => {
-                    if (item.to === "/detailed-numerology") {
-                      return { ...item, label: t("navMenu.calculatorItems.numerology") };
-                    }
-
-                    if (item.to === "/services/tarot-reading") {
-                      return { ...item, label: t("navMenu.calculatorItems.tarotReading") };
-                    }
-
-                    if (item.to === "/services/palm-reading") {
-                      return { ...item, label: t("navMenu.calculatorItems.palmReading") };
-                    }
-
-                    return item;
-                  }),
-                ],
-              },
-            ].map((group) => (
-              <li key={group.title} className="rounded-2xl border border-gray-100 bg-[#FBF7F0] p-4">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D4A73C]">{group.title}</p>
-                <div className="mt-3 grid gap-2">
+            {navItems.filter((item) => item.type === "dropdown").map((group) => (
+              <li key={group.key} className="overflow-hidden rounded-xl border border-gray-100 bg-[#FBF7F0]">
+                <button
+                  type="button"
+                  onClick={() => setMobileGroupOpen((current) => current === group.key ? "" : group.key)}
+                  className="flex w-full items-center justify-between px-4 py-4 text-left text-sm font-bold text-[#1E3557]"
+                >
+                  {group.label}
+                  <ChevronDown size={18} className={`transition ${mobileGroupOpen === group.key ? "rotate-180" : ""}`} />
+                </button>
+                {mobileGroupOpen === group.key && (
+                <div className="grid gap-2 border-t border-gray-100 p-3">
                   {group.items.map((subItem) => (
                     <Link
                       key={subItem.label}
@@ -388,6 +406,7 @@ export default function Navbar() {
                     </Link>
                   ))}
                 </div>
+                )}
               </li>
             ))}
 
@@ -444,6 +463,7 @@ export default function Navbar() {
             )}
           </ul>
         </div>
+        </>
       )}
     </nav>
   );

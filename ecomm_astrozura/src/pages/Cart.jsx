@@ -53,7 +53,7 @@ export default function Cart() {
                 <div className="space-y-4">
                   {cartItems.map((item) => (
                     <div
-                      key={item.id}
+                      key={item.cartKey}
                       className="group relative bg-white/60 backdrop-blur-xl p-4 sm:p-6 rounded-[2rem] flex flex-col sm:flex-row items-center justify-between border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 overflow-hidden"
                     >
                       {/* Background Decoration */}
@@ -76,6 +76,7 @@ export default function Cart() {
                           <h2 className="font-bold text-[#1E293B] text-lg sm:text-xl truncate mb-1">
                             {item.name}
                           </h2>
+                          {item.variant_title && <p className="text-xs font-semibold text-gray-500">{item.variant_title}</p>}
                           <div className="flex items-center gap-4 mt-2">
                             <p className="text-lg font-black text-[#0F172A]">₹{item.price}</p>
                             <span className="text-xs text-gray-400 font-medium px-2 py-0.5 border border-gray-100 rounded-md">Original Item</span>
@@ -87,7 +88,7 @@ export default function Cart() {
                         {/* QTY CONTROLLER */}
                         <div className="flex items-center gap-4 bg-[#F8FAFC] p-2 rounded-2xl border border-gray-100 shadow-sm">
                           <button
-                            onClick={() => decreaseQty(item.id)}
+                            onClick={() => decreaseQty(item.cartKey)}
                             className="w-8 h-8 flex items-center justify-center bg-white rounded-xl shadow-sm hover:text-red-500 transition-colors active:scale-90"
                           >
                             <img src={minus} className="w-3" />
@@ -96,7 +97,7 @@ export default function Cart() {
                             {item.qty}
                           </span>
                           <button
-                            onClick={() => increaseQty(item.id)}
+                            onClick={() => increaseQty(item.cartKey)}
                             className="w-8 h-8 flex items-center justify-center bg-white rounded-xl shadow-sm hover:text-[#C5A021] transition-colors active:scale-90"
                           >
                             <img src={plus} className="w-3" />
@@ -109,7 +110,7 @@ export default function Cart() {
                             ₹{(item.price * item.qty).toFixed(0)}
                           </p>
                           <button
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCart(item.cartKey)}
                             className="mt-2 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300"
                             title="Remove item"
                           >

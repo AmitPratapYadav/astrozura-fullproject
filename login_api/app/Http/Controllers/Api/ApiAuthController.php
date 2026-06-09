@@ -769,8 +769,9 @@ class ApiAuthController extends Controller
             'http://localhost:5173',
             'http://127.0.0.1:5174',
             'http://localhost:5174',
-            'https://astrozura.cloud',
-            'https://shop.astrozura.cloud',
+            'https://astrozura.com',
+            'https://admin.astrozura.com',
+            'https://shop.astrozura.com',
             ...$configuredUrls,
         ])));
     }

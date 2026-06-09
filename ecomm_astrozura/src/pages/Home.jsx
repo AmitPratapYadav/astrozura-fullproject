@@ -60,6 +60,10 @@ export default function Home() {
   };
 
   const handleAddToCart = (item) => {
+    if (item.active_variants?.length) {
+      navigate(`/product/${item.id}`);
+      return;
+    }
     addToCart({
       id: item.id,
       name: item.name,
@@ -220,6 +224,10 @@ export default function Home() {
           <button
             onClick={() => {
               setClickedBtn({ ...clickedBtn, [item.id]: "buy" });
+              if (item.active_variants?.length) {
+                navigate(`/product/${item.id}`);
+                return;
+              }
               addToCart({
                 id: item.id,
                 name: item.name,
