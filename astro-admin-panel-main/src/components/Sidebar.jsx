@@ -4,19 +4,17 @@ LayoutDashboard,
 Star,
 Users,
 Calendar,
-MessageCircle,
 CreditCard,
 FileText,
-Settings,
 User,
 UserPlus,
 X,
 ShoppingCart,
 Tags,
 BadgeCheck,
-Crown,
 BookOpen,
-PackageCheck
+PackageCheck,
+BellRing
 } from "lucide-react";
 import logo from "../assets/astrozura-logo.png";
 
@@ -29,11 +27,9 @@ const menu = [
 { name:"Add Astrologer", icon:UserPlus, path:"/add-astrologer"},
 { name:"Users", icon:Users, path:"/users"},
 { name:"Bookings", icon:Calendar, path:"/bookings"},
-{ name:"Consultations", icon:MessageCircle, path:"/consultations"},
 { name:"Payments", icon:CreditCard, path:"/payments"},
 { name:"Reports", icon:FileText, path:"/reports"},
-{ name:"Reviews", icon:Star, path:"/reviews"},
-{ name:"Settings", icon:Settings, path:"/settings"}
+{ name:"Reviews", icon:Star, path:"/reviews"}
 
 ]
 
@@ -42,11 +38,17 @@ const ecommMenu = [
 { name:"Products", icon:ShoppingCart, path:"/products"},
 { name:"Orders", icon:PackageCheck, path:"/orders"},
 { name:"Rituals", icon:BookOpen, path:"/rituals"},
+{ name:"Ritual Bookings", icon:Calendar, path:"/ritual-bookings"},
+{ name:"Offers", icon:BellRing, path:"/offers"},
 ]
 
 const subscriptionMenu = [
-{ name:"Plans Manager", icon:Crown, path:"/subscription-plans"},
-{ name:"Subscribers", icon:BadgeCheck, path:"/user-subscriptions"},
+{ name:"Newsletter Subscribers", icon:BadgeCheck, path:"/user-subscriptions"},
+]
+
+const contentMenu = [
+{ name:"Blog Categories", icon:Tags, path:"/blog-categories"},
+{ name:"Blogs", icon:FileText, path:"/blogs"},
 ]
 
 return(
@@ -69,12 +71,8 @@ ${isOpen ? "translate-x-0" : "-translate-x-full"}
 md:translate-x-0`}
 >
 
-<div className="relative flex items-center gap-3 p-4 border-b border-gray-800">
-<img src={logo} alt="AstroZura" className="h-11 w-11 rounded-full object-contain" />
-<div>
-  <h1 className="text-base font-bold text-yellow-500">AstroZura</h1>
-  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Admin Panel</p>
-</div>
+<div className="relative flex min-h-24 items-center justify-center border-b border-gray-800 p-4">
+<img src={logo} alt="AstroZura Admin Panel" className="h-16 w-auto max-w-[190px] object-contain" />
 
 <button
 className="absolute right-4 md:hidden"
@@ -147,6 +145,30 @@ ${isActive
         return(
           <NavLink
             key={`sub-${index}`}
+            to={item.path}
+            onClick={onClose}
+            className={({isActive})=>
+              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition
+              ${isActive
+                ? "bg-yellow-500 text-black"
+                : "text-gray-400 hover:bg-yellow-500 hover:text-black"}`
+            }
+          >
+            <Icon size={18}/>
+            {item.name}
+          </NavLink>
+        )
+      })}
+
+      <div className="pt-4 pb-2 px-4 mt-2">
+        <p className="text-sm font-bold text-gray-300 uppercase tracking-wider">Content</p>
+      </div>
+
+      {contentMenu.map((item,index)=>{
+        const Icon = item.icon
+        return(
+          <NavLink
+            key={`content-${index}`}
             to={item.path}
             onClick={onClose}
             className={({isActive})=>

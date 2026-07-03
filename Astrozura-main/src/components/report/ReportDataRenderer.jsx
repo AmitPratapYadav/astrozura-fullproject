@@ -8,7 +8,7 @@ const isPrimitive = (value) =>
 const compactText = (value) => {
   if (React.isValidElement(value)) return value;
   if (isPrimitive(value)) return displayCell(value);
-  return JSON.stringify(value);
+  return displayCell(value);
 };
 
 const objectColumns = (items) =>
@@ -61,10 +61,7 @@ export function ReportDataBlock({ title, data, depth = 0 }) {
           columns={columns.map((key) => ({
             key,
             label: formatReportLabel(key),
-            render: (row) =>
-              isPrimitive(row[key]) || React.isValidElement(row[key])
-                ? compactText(row[key])
-                : JSON.stringify(row[key]),
+            render: (row) => compactText(row[key]),
           }))}
           rows={data.map((item, index) => ({ id: item.id || index, ...item }))}
         />
@@ -105,14 +102,14 @@ export function ReportDataBlock({ title, data, depth = 0 }) {
         />
       )}
       {nestedEntries.map(([key, value]) => (
-        <details key={key} open={depth < 1} className="rounded-sm border border-gray-200 bg-white">
-          <summary className="cursor-pointer border-b border-[#e7c76c] bg-[#fff8df] px-3 py-2 text-sm font-bold text-[#7a5205]">
+        <section key={key} className="overflow-hidden rounded-md border border-[#ead79d] bg-white shadow-sm">
+          <h3 className="border-b border-[#e7c76c] bg-[#fff3c7] px-4 py-3 text-sm font-bold text-[#6f4a04]">
             {formatReportLabel(key)}
-          </summary>
-          <div className="p-3">
+          </h3>
+          <div className="p-4">
             <ReportDataBlock title={formatReportLabel(key)} data={value} depth={depth + 1} />
           </div>
-        </details>
+        </section>
       ))}
     </div>
   );
@@ -127,12 +124,11 @@ export function ProviderSections({ sections = [] }) {
         <ReportPanel key={section.id || sectionIndex} title={section.title} subtitle={section.summary}>
           <div className="space-y-4">
             {Object.entries(section.items || {}).map(([key, item]) => (
-              <details key={key} open className="rounded-sm border border-gray-200 bg-white">
-                <summary className="cursor-pointer border-b border-[#e7c76c] bg-[#fff8df] px-3 py-2 text-sm font-bold text-[#7a5205]">
+              <section key={key} className="overflow-hidden rounded-md border border-[#ead79d] bg-white shadow-sm">
+                <h3 className="border-b border-[#e7c76c] bg-[#fff3c7] px-4 py-3 text-sm font-bold text-[#6f4a04]">
                   {formatReportLabel(key)}
-                  {item?.endpoint ? <span className="ml-2 text-xs font-medium text-gray-500">({item.endpoint})</span> : null}
-                </summary>
-                <div className="p-3">
+                </h3>
+                <div className="p-4">
                   {item?.status === "error" ? (
                     <KeyValueTable
                       columns={1}
@@ -145,7 +141,7 @@ export function ProviderSections({ sections = [] }) {
                     <ReportDataBlock title={formatReportLabel(key)} data={item?.data ?? item} />
                   )}
                 </div>
-              </details>
+              </section>
             ))}
           </div>
         </ReportPanel>

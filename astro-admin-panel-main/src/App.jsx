@@ -3,12 +3,11 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Astrologers from "./pages/Astrologers";
 import Users from "./pages/Users";
-import Consultations from "./pages/Consultations";
+import UserDetails from "./pages/UserDetails";
 import Bookings from "./pages/Bookings";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Reviews from "./pages/Review";
-import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import AddAstrologer from "./pages/AddAstrologer";
 import Categories from "./pages/Categories";
@@ -19,14 +18,17 @@ import AddProduct from "./pages/AddProduct";
 import EditProduct from "./pages/EditProduct";
 import Orders from "./pages/Orders";
 import Rituals from "./pages/Rituals";
-import SubscriptionPlans from "./pages/SubscriptionPlans";
+import BlogCategories from "./pages/BlogCategories";
+import Blogs from "./pages/Blogs";
 import UserSubscriptions from "./pages/UserSubscriptions";
+import OrderDetails from "./pages/OrderDetails";
+import RitualBookings from "./pages/RitualBookings";
+import Offers from "./pages/Offers";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import AdminLogin from "./pages/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AppProvider } from "./context/AppContext";
-import TestingAccessGate from "./components/TestingAccessGate";
 
 function AdminShell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,15 +53,21 @@ function AdminShell() {
             <Route path="/add-product" element={<AddProduct />} />
             <Route path="/edit-product/:id" element={<EditProduct />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/orders/:id" element={<OrderDetails />} />
             <Route path="/rituals" element={<Rituals />} />
+            <Route path="/ritual-bookings" element={<RitualBookings />} />
+            <Route path="/offers" element={<Offers />} />
+            <Route path="/blog-categories" element={<BlogCategories />} />
+            <Route path="/blogs" element={<Blogs />} />
             <Route path="/users" element={<Users />} />
-            <Route path="/consultations" element={<Consultations />} />
+            <Route path="/users/:id" element={<UserDetails />} />
+            <Route path="/consultations" element={<Navigate to="/bookings" replace />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/reviews" element={<Reviews />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/subscription-plans" element={<SubscriptionPlans />} />
+            <Route path="/settings" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/subscription-plans" element={<Navigate to="/user-subscriptions" replace />} />
             <Route path="/user-subscriptions" element={<UserSubscriptions />} />
             <Route path="/profile" element={<Profile />} />
           </Routes>
@@ -71,10 +79,9 @@ function AdminShell() {
 
 function App() {
   return (
-    <TestingAccessGate>
-      <BrowserRouter>
-        <AppProvider>
-          <Routes>
+    <BrowserRouter>
+      <AppProvider>
+        <Routes>
             <Route path="/login" element={<AdminLogin />} />
             <Route
               path="/*"
@@ -84,10 +91,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
-          </Routes>
-        </AppProvider>
-      </BrowserRouter>
-    </TestingAccessGate>
+        </Routes>
+      </AppProvider>
+    </BrowserRouter>
   );
 }
 

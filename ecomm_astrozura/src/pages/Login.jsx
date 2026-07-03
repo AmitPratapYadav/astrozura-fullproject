@@ -88,7 +88,12 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google?frontend=ecomm`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
+    const params = new URLSearchParams({
+      frontend: "ecomm",
+      frontend_url: window.location.origin,
+    });
+    window.location.href = `${apiBase.replace(/\/+$/, "")}/auth/google?${params.toString()}`;
   };
 
   return (

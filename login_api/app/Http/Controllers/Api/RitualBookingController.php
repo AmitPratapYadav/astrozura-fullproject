@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\RitualBooking;
 use App\Models\RitualService;
 use App\Models\AdminNotification;
+use App\Services\UserNotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -71,27 +72,22 @@ class RitualBookingController extends Controller
             'notes' => $validated['notes'] ?? null,
             'birth_details' => $validated['birth_details'] ?? null,
             'amount' => $ritual->price ?? 0,
-            'status' => 'pending',
-            'payment_status' => 'bypassed',
-        ]);
-
-        AdminNotification::create([
-            'type' => 'ritual_booking',
-            'title' => 'New ritual booking',
-            'message' => "{$booking->devotee_name} requested {$ritual->name}.",
-            'route' => '/rituals',
-            'data' => ['ritual_booking_id' => $booking->id],
+            'status' => 'payment_pending',
+            'payment_status' => 'pending',
+            'payment_method' => 'razorpay',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Ritual booking created successfully.',
+            'message' => 'Ritual request created. Complete payment to submit it.',
             'booking' => $booking->load(['ritual', 'astrologer']),
         ], 201);
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        abort_unless($request->user()?->role === 'admin', 403);
+
         return response()->json([
             'success' => true,
             'bookings' => RitualBooking::with(['ritual', 'user', 'astrologer'])
@@ -118,8 +114,14 @@ class RitualBookingController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, RitualBooking $ritualBooking)
+    public function updateStatus(
+        Request $request,
+        RitualBooking $ritualBooking,
+        UserNotificationService $notifications
+    )
     {
+        abort_unless($request->user()?->role === 'admin', 403);
+
         $validated = $request->validate([
             'status' => 'required|string|max:50',
             'admin_response' => 'nullable|string|max:4000',
@@ -136,6 +138,18 @@ class RitualBookingController extends Controller
                 ? Carbon::now('Asia/Kolkata')
                 : $ritualBooking->admin_response_at,
         ]);
+
+        if ($ritualBooking->user_id) {
+            $notifications->send(
+                $ritualBooking->user_id,
+                'main',
+                'ritual_status',
+                'Pooja Anusthan update',
+                $validated['admin_response'] ?: "Your ritual booking is now {$validated['status']}.",
+                '/my-bookings',
+                ['ritual_booking_id' => $ritualBooking->id, 'status' => $validated['status']]
+            );
+        }
 
         return response()->json([
             'success' => true,

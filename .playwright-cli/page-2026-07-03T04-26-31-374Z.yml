@@ -1,0 +1,131 @@
+- generic [ref=f1e4]:
+  - generic [ref=f1e5]:
+    - img "AstroZura Admin Panel" [ref=f1e7]
+    - generic [ref=f1e8]:
+      - link "Dashboard" [ref=f1e9] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=f1e10]
+        - text: Dashboard
+      - link "Astrologers" [ref=f1e15] [cursor=pointer]:
+        - /url: /astrologers
+        - img [ref=f1e16]
+        - text: Astrologers
+      - link "Add Astrologer" [ref=f1e18] [cursor=pointer]:
+        - /url: /add-astrologer
+        - img [ref=f1e19]
+        - text: Add Astrologer
+      - link "Users" [ref=f1e22] [cursor=pointer]:
+        - /url: /users
+        - img [ref=f1e23]
+        - text: Users
+      - link "Bookings" [ref=f1e28] [cursor=pointer]:
+        - /url: /bookings
+        - img [ref=f1e29]
+        - text: Bookings
+      - link "Payments" [ref=f1e31] [cursor=pointer]:
+        - /url: /payments
+        - img [ref=f1e32]
+        - text: Payments
+      - link "Reports" [ref=f1e34] [cursor=pointer]:
+        - /url: /reports
+        - img [ref=f1e35]
+        - text: Reports
+      - link "Reviews" [ref=f1e38] [cursor=pointer]:
+        - /url: /reviews
+        - img [ref=f1e39]
+        - text: Reviews
+      - paragraph [ref=f1e42]: E-Commerce
+      - link "Categories" [ref=f1e43] [cursor=pointer]:
+        - /url: /categories
+        - img [ref=f1e44]
+        - text: Categories
+      - link "Products" [ref=f1e48] [cursor=pointer]:
+        - /url: /products
+        - img [ref=f1e49]
+        - text: Products
+      - link "Orders" [ref=f1e53] [cursor=pointer]:
+        - /url: /orders
+        - img [ref=f1e54]
+        - text: Orders
+      - link "Rituals" [ref=f1e59] [cursor=pointer]:
+        - /url: /rituals
+        - img [ref=f1e60]
+        - text: Rituals
+      - link "Ritual Bookings" [ref=f1e62] [cursor=pointer]:
+        - /url: /ritual-bookings
+        - img [ref=f1e63]
+        - text: Ritual Bookings
+      - link "Offers" [ref=f1e65] [cursor=pointer]:
+        - /url: /offers
+        - img [ref=f1e66]
+        - text: Offers
+      - paragraph [ref=f1e72]: Subscriptions
+      - link "Newsletter Subscribers" [ref=f1e73] [cursor=pointer]:
+        - /url: /user-subscriptions
+        - img [ref=f1e74]
+        - text: Newsletter Subscribers
+      - paragraph [ref=f1e78]: Content
+      - link "Blog Categories" [ref=f1e79] [cursor=pointer]:
+        - /url: /blog-categories
+        - img [ref=f1e80]
+        - text: Blog Categories
+      - link "Blogs" [ref=f1e84] [cursor=pointer]:
+        - /url: /blogs
+        - img [ref=f1e85]
+        - text: Blogs
+    - link "Admin Profile" [ref=f1e89] [cursor=pointer]:
+      - /url: /profile
+      - img [ref=f1e90]
+      - text: Admin Profile
+  - generic [ref=f1e93]:
+    - generic [ref=f1e94]:
+      - heading "Welcome, Profile Form Smoke" [level=1] [ref=f1e96]
+      - generic [ref=f1e97]:
+        - generic [ref=f1e99]:
+          - img [ref=f1e100]
+          - textbox "Search bookings, users, astrologers..." [ref=f1e103]
+        - button "Admin notifications" [ref=f1e105] [cursor=pointer]:
+          - img [ref=f1e106]
+        - button "Admin Profile" [ref=f1e109]:
+          - img [ref=f1e110]
+        - button "Logout" [ref=f1e113]
+    - main [ref=f1e114]:
+      - generic [ref=f1e115]:
+        - generic [ref=f1e116]:
+          - heading "Admin Profile" [level=1] [ref=f1e117]
+          - paragraph [ref=f1e118]: Update the main admin account details, login email, and profile photo.
+        - generic [ref=f1e119]:
+          - generic [ref=f1e121]:
+            - img "Profile Form Smoke" [ref=f1e160]
+            - heading "Profile Form Smoke" [level=2] [ref=f1e124]
+            - paragraph [ref=f1e125]: codex-profile-form-smoke@astrozura.test
+            - paragraph [ref=f1e126]: General Administrator
+          - generic [ref=f1e127]:
+            - generic [ref=f1e128]:
+              - generic [ref=f1e129]:
+                - generic [ref=f1e130]: First Name
+                - textbox [ref=f1e131]: Profile
+              - generic [ref=f1e132]:
+                - generic [ref=f1e133]: Last Name
+                - textbox [ref=f1e134]: Form Smoke
+              - generic [ref=f1e135]:
+                - generic [ref=f1e136]: Email
+                - textbox [ref=f1e137]: codex-profile-form-smoke@astrozura.test
+              - generic [ref=f1e138]:
+                - generic [ref=f1e139]: Phone
+                - textbox [ref=f1e140]: "9999909380"
+              - generic [ref=f1e141]:
+                - generic [ref=f1e142]: New Password
+                - generic [ref=f1e143]:
+                  - textbox "Leave blank to keep the current password" [ref=f1e144]: ChangedPassword9380
+                  - button "Show password" [ref=f1e145]:
+                    - img [ref=f1e146]
+                - paragraph [ref=f1e149]: Use at least 6 characters.
+              - generic [ref=f1e150]:
+                - generic [ref=f1e151]: Profile Picture
+                - generic [ref=f1e152] [cursor=pointer]:
+                  - img [ref=f1e153]
+                  - generic [ref=f1e156]: aquarius.png
+                  - button "aquarius.png" [active] [ref=f1e161]
+                - paragraph [ref=f1e158]: JPG, PNG, GIF, or WebP up to 5 MB.
+            - button "Save Profile Changes" [ref=f1e159]

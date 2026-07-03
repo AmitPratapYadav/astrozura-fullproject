@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import { getVedicCalculator, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 import { FaShieldAlt, FaStar, FaExclamationTriangle, FaCheckCircle, FaSpinner } from "react-icons/fa";
+import { getServiceIcon } from "../data/serviceIcons";
 
 const initialForm = {
   date_of_birth: "",
@@ -15,6 +16,8 @@ const initialForm = {
   language: "en",
 };
 
+const pageIcon = getServiceIcon("detailed-dosha");
+
 export default function DetailedDosha() {
   const { user } = useAuth();
   const [form, setForm] = useState(initialForm);
@@ -24,8 +27,7 @@ export default function DetailedDosha() {
   const [toast, setToast] = useState("");
   const [results, setResults] = useState(null);
 
-  // Check premium status
-  const isPaid = user?.subscription_status === "active" || user?.plan_name?.toLowerCase().includes("premium");
+  const isPaid = Boolean(user);
 
   useEffect(() => {
     if (!user) return;
@@ -137,16 +139,21 @@ export default function DetailedDosha() {
       <Navbar />
 
       <section className="bg-gradient-to-r from-[#B05B35] to-[#D4A373] px-4 py-20 text-white md:px-10">
-        <div className="mx-auto max-w-7xl text-center md:text-left">
-          <span className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
-            Premium Vedic Reports
-          </span>
-          <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
-            Detailed Dosha Analysis
-          </h1>
-          <p className="mt-6 max-w-3xl text-sm leading-7 text-white/85 md:text-base">
-            In-depth checks for Manglik dosha, Kaalsarpa combinations, Pitra effects, and Shani Sade Sati cycles with tailored Vedic remedies.
-          </p>
+        <div className="mx-auto grid max-w-7xl gap-8 text-center md:grid-cols-[1fr_auto] md:items-center md:text-left">
+          <div>
+            <span className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
+              Premium Vedic Reports
+            </span>
+            <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
+              Detailed Dosha Analysis
+            </h1>
+            <p className="mt-6 max-w-3xl text-sm leading-7 text-white/85 md:text-base">
+              In-depth checks for Manglik dosha, Kaalsarpa combinations, Pitra effects, and Shani Sade Sati cycles with tailored Vedic remedies.
+            </p>
+          </div>
+          <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-white p-3 shadow-2xl md:h-36 md:w-36">
+            <img src={pageIcon} alt="" className="h-full w-full object-contain" />
+          </div>
         </div>
       </section>
 
@@ -170,14 +177,12 @@ export default function DetailedDosha() {
               <span className="rounded-full bg-[#B05B35]/15 px-3 py-1 text-xs font-bold text-[#B05B35] uppercase tracking-wider">
                 Special Offer Today
               </span>
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <span className="text-lg text-gray-400 line-through">₹4,999</span>
-                <span className="text-4xl font-black text-[#1E3557]">₹2,100<span className="text-base font-normal">/-</span></span>
-              </div>
-              <p className="mt-2 text-xs font-bold text-emerald-600">You Save ₹2,899 (58% OFF)</p>
+              <p className="mt-4 text-sm font-semibold text-emerald-700">
+                Sign in to generate this report without a service charge.
+              </p>
               
               <Link
-                to="/subscription"
+                to="/login"
                 className="mt-6 block w-full rounded-2xl bg-[#B05B35] py-3.5 text-center text-sm font-bold text-white shadow-md shadow-[#B05B35]/25 hover:bg-[#974A25] transition"
               >
                 Unlock Detailed Dosha Report Now
@@ -239,6 +244,7 @@ export default function DetailedDosha() {
                     type="date"
                     name="date_of_birth"
                     value={form.date_of_birth}
+                    max={new Date().toISOString().slice(0, 10)}
                     onChange={handleChange}
                     className="w-full rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                   />

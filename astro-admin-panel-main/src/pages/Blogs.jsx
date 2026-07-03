@@ -1,0 +1,397 @@
+import { useEffect, useMemo, useState } from "react";
+import { apiRequest, assetUrl } from "../lib/api";
+
+const emptyBlock = { type: "paragraph", text: "" };
+const emptyForm = {
+  blog_category_id: "",
+  title: "",
+  slug: "",
+  excerpt: "",
+  author_name: "AstroZura Team",
+  status: "1",
+  published_at: "",
+  seo_title: "",
+  seo_description: "",
+  seo_keywords: "",
+  cover_image: null,
+  content_blocks: [{ ...emptyBlock }],
+  block_images: {},
+};
+
+const normalizeBlogs = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+export default function Blogs() {
+  const [blogs, setBlogs] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const selectedBlog = useMemo(() => blogs.find((blog) => Number(blog.id) === Number(editingId)), [blogs, editingId]);
+
+  const loadData = async () => {
+    const [blogResponse, categoryResponse] = await Promise.all([
+      apiRequest("/admin/blogs?per_page=50"),
+      apiRequest("/admin/blog-categories"),
+    ]);
+    setBlogs(normalizeBlogs(blogResponse.data));
+    setCategories(categoryResponse.data || []);
+  };
+
+  useEffect(() => {
+    loadData().catch((error) => setMessage(error.message));
+  }, []);
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+  };
+
+  const updateBlock = (index, updates) => {
+    setForm((current) => ({
+      ...current,
+      content_blocks: current.content_blocks.map((block, blockIndex) =>
+        blockIndex === index ? { ...block, ...updates } : block
+      ),
+    }));
+  };
+
+  const addBlock = (type) => {
+    setForm((current) => ({
+      ...current,
+      content_blocks: [
+        ...current.content_blocks,
+        type === "image" ? { type: "image", url: "", alt: "", caption: "" } : { type, text: "" },
+      ],
+    }));
+  };
+
+  const removeBlock = (index) => {
+    setForm((current) => ({
+      ...current,
+      content_blocks: current.content_blocks.filter((_, blockIndex) => blockIndex !== index),
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const payload = new FormData();
+      [
+        "blog_category_id",
+        "title",
+        "slug",
+        "excerpt",
+        "author_name",
+        "status",
+        "published_at",
+        "seo_title",
+        "seo_description",
+        "seo_keywords",
+      ].forEach((key) => {
+        if (form[key] !== null && form[key] !== undefined) payload.append(key, form[key]);
+      });
+      if (form.cover_image) payload.append("cover_image", form.cover_image);
+      payload.append("content_blocks", JSON.stringify(form.content_blocks));
+      Object.entries(form.block_images || {}).forEach(([index, file]) => {
+        if (file) payload.append(`block_images[${index}]`, file);
+      });
+
+      await apiRequest(editingId ? `/admin/blogs/${editingId}` : "/admin/blogs", {
+        method: "POST",
+        body: payload,
+      });
+
+      setMessage(editingId ? "Blog updated." : "Blog created.");
+      resetForm();
+      await loadData();
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = async (blog) => {
+    setMessage("");
+    try {
+      const response = await apiRequest(`/admin/blogs/${blog.id}`);
+      const record = response.data || blog;
+      setEditingId(record.id);
+      setForm({
+        blog_category_id: record.blog_category_id || record.category?.id || "",
+        title: record.title || "",
+        slug: record.slug || "",
+        excerpt: record.excerpt || "",
+        author_name: record.author_name || "AstroZura Team",
+        status: record.status ? "1" : "0",
+        published_at: record.published_at ? String(record.published_at).slice(0, 16) : "",
+        seo_title: record.seo_title || "",
+        seo_description: record.seo_description || "",
+        seo_keywords: record.seo_keywords || "",
+        cover_image: null,
+        content_blocks: Array.isArray(record.content_blocks) && record.content_blocks.length
+          ? record.content_blocks
+          : [{ ...emptyBlock }],
+        block_images: {},
+      });
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  const handleDelete = async (blog) => {
+    if (!window.confirm(`Delete blog "${blog.title}"?`)) return;
+    try {
+      await apiRequest(`/admin/blogs/${blog.id}`, { method: "DELETE" });
+      await loadData();
+      if (editingId === blog.id) resetForm();
+      setMessage("Blog deleted.");
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Blogs</h1>
+        <p className="mt-1 text-sm text-gray-500">Create public blog posts using heading, paragraph, and image blocks.</p>
+      </div>
+
+      {message && (
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-800">
+          {message}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="rounded-xl bg-white p-5 shadow-sm">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <label>
+            <span className="text-sm font-semibold text-gray-700">Title</span>
+            <input
+              value={form.title}
+              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+              required
+            />
+          </label>
+          <label>
+            <span className="text-sm font-semibold text-gray-700">Category</span>
+            <select
+              value={form.blog_category_id}
+              onChange={(event) => setForm((current) => ({ ...current, blog_category_id: event.target.value }))}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+            >
+              <option value="">Uncategorized</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="text-sm font-semibold text-gray-700">Slug</span>
+            <input
+              value={form.slug}
+              onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+              placeholder="Auto generated when empty"
+            />
+          </label>
+          <label>
+            <span className="text-sm font-semibold text-gray-700">Author</span>
+            <input
+              value={form.author_name}
+              onChange={(event) => setForm((current) => ({ ...current, author_name: event.target.value }))}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+            />
+          </label>
+          <label>
+            <span className="text-sm font-semibold text-gray-700">Status</span>
+            <select
+              value={form.status}
+              onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+            >
+              <option value="1">Published</option>
+              <option value="0">Draft</option>
+            </select>
+          </label>
+          <label>
+            <span className="text-sm font-semibold text-gray-700">Published At</span>
+            <input
+              type="datetime-local"
+              value={form.published_at}
+              onChange={(event) => setForm((current) => ({ ...current, published_at: event.target.value }))}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+            />
+          </label>
+          <label className="lg:col-span-2">
+            <span className="text-sm font-semibold text-gray-700">Excerpt</span>
+            <textarea
+              value={form.excerpt}
+              onChange={(event) => setForm((current) => ({ ...current, excerpt: event.target.value }))}
+              rows={3}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+            />
+          </label>
+          <label className="lg:col-span-2">
+            <span className="text-sm font-semibold text-gray-700">Cover Image</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => setForm((current) => ({ ...current, cover_image: event.target.files?.[0] || null }))}
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2"
+            />
+            {selectedBlog?.cover_image && <img src={assetUrl(selectedBlog.cover_image)} alt="" className="mt-3 h-24 w-40 rounded-lg object-cover" />}
+          </label>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-gray-200 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-gray-900">Content Blocks</h2>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => addBlock("heading")} className="rounded-lg border px-3 py-2 text-sm font-semibold">Heading</button>
+              <button type="button" onClick={() => addBlock("paragraph")} className="rounded-lg border px-3 py-2 text-sm font-semibold">Paragraph</button>
+              <button type="button" onClick={() => addBlock("image")} className="rounded-lg border px-3 py-2 text-sm font-semibold">Image</button>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-4">
+            {form.content_blocks.map((block, index) => (
+              <div key={index} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <select
+                    value={block.type}
+                    onChange={(event) => updateBlock(index, { type: event.target.value })}
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  >
+                    <option value="heading">Heading</option>
+                    <option value="paragraph">Paragraph</option>
+                    <option value="image">Image</option>
+                  </select>
+                  <button type="button" onClick={() => removeBlock(index)} className="text-sm font-semibold text-red-600">Remove</button>
+                </div>
+
+                {block.type === "image" ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          block_images: { ...current.block_images, [index]: event.target.files?.[0] || null },
+                        }))
+                      }
+                      className="rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                    <input
+                      value={block.alt || ""}
+                      onChange={(event) => updateBlock(index, { alt: event.target.value })}
+                      placeholder="Alt text"
+                      className="rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                    <input
+                      value={block.caption || ""}
+                      onChange={(event) => updateBlock(index, { caption: event.target.value })}
+                      placeholder="Caption"
+                      className="rounded-lg border border-gray-200 px-3 py-2 md:col-span-2"
+                    />
+                    {block.url && <img src={assetUrl(block.url)} alt={block.alt || ""} className="h-24 w-40 rounded-lg object-cover" />}
+                  </div>
+                ) : (
+                  <textarea
+                    value={block.text || ""}
+                    onChange={(event) => updateBlock(index, { text: event.target.value })}
+                    rows={block.type === "heading" ? 2 : 5}
+                    placeholder={block.type === "heading" ? "Heading text" : "Paragraph text"}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <input
+            value={form.seo_title}
+            onChange={(event) => setForm((current) => ({ ...current, seo_title: event.target.value }))}
+            placeholder="SEO title"
+            className="rounded-lg border border-gray-200 px-3 py-2"
+          />
+          <input
+            value={form.seo_keywords}
+            onChange={(event) => setForm((current) => ({ ...current, seo_keywords: event.target.value }))}
+            placeholder="SEO keywords"
+            className="rounded-lg border border-gray-200 px-3 py-2"
+          />
+          <input
+            value={form.seo_description}
+            onChange={(event) => setForm((current) => ({ ...current, seo_description: event.target.value }))}
+            placeholder="SEO description"
+            className="rounded-lg border border-gray-200 px-3 py-2"
+          />
+        </div>
+
+        <div className="mt-5 flex gap-3">
+          <button type="submit" disabled={loading} className="rounded-lg bg-yellow-500 px-5 py-2 text-sm font-bold text-black disabled:opacity-60">
+            {loading ? "Saving..." : editingId ? "Update Blog" : "Create Blog"}
+          </button>
+          {editingId && <button type="button" onClick={resetForm} className="rounded-lg border border-gray-200 px-5 py-2 text-sm font-semibold">Cancel</button>}
+        </div>
+      </form>
+
+      <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+            <tr>
+              <th className="px-4 py-3">Cover</th>
+              <th className="px-4 py-3">Title</th>
+              <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {blogs.map((blog) => (
+              <tr key={blog.id} className="border-t border-gray-100">
+                <td className="px-4 py-3">
+                  {blog.cover_image ? (
+                    <img src={assetUrl(blog.cover_image)} alt={blog.title} className="h-12 w-20 rounded-lg object-cover" />
+                  ) : (
+                    <span className="text-gray-400">No image</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <p className="font-semibold text-gray-900">{blog.title}</p>
+                  <p className="text-xs text-gray-500">{blog.slug}</p>
+                </td>
+                <td className="px-4 py-3">{blog.category?.name || "-"}</td>
+                <td className="px-4 py-3">{blog.status ? "Published" : "Draft"}</td>
+                <td className="px-4 py-3 text-right">
+                  <button onClick={() => handleEdit(blog)} className="mr-3 font-semibold text-blue-600">Edit</button>
+                  <button onClick={() => handleDelete(blog)} className="font-semibold text-red-600">Delete</button>
+                </td>
+              </tr>
+            ))}
+            {!blogs.length && (
+              <tr>
+                <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No blogs yet.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

@@ -1,18 +1,22 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
+import { Bell, Heart, Home, LayoutDashboard, LogOut, Menu, Package, UserRound } from "lucide-react";
+import logo from "../../assets/vedic-astrology.png";
+import { assetUrl } from "../../utils/assetUrl";
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const avatarImage = assetUrl(user?.profile_image);
 
   const menuItems = [
-    { path: "/", name: "Back to Home", icon: "🏠" },
-    { path: "/dashboard", name: "Overview", icon: "📊", end: true },
-    { path: "/dashboard/profile", name: "My Profile", icon: "👤" },
-    { path: "/dashboard/orders", name: "My Orders", icon: "📦" },
-    { path: "/dashboard/wishlist", name: "Wishlist", icon: "❤️" },
+    { path: "/dashboard", name: "Overview", icon: LayoutDashboard, end: true },
+    { path: "/dashboard/profile", name: "My Profile", icon: UserRound },
+    { path: "/dashboard/orders", name: "My Orders", icon: Package },
+    { path: "/dashboard/wishlist", name: "Wishlist", icon: Heart },
+    { path: "/dashboard/notifications", name: "Notifications", icon: Bell },
   ];
 
   const handleLogout = async () => {
@@ -37,13 +41,19 @@ export default function DashboardLayout() {
       `}>
         <div className="flex flex-col h-full">
           {/* SIDEBAR HEADER */}
-          <div className="flex items-center justify-center h-20 border-b border-gray-800">
-            <h1 className="text-xl font-bold text-[#c9a227] tracking-wider uppercase">User Panel</h1>
+          <div className="flex h-24 items-center gap-3 border-b border-gray-800 px-5">
+            <img src={logo} alt="AstroZura" className="h-12 w-12 rounded-full bg-white object-contain" />
+            <div>
+              <h1 className="font-bold text-[#c9a227]">AstroZura</h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">User Panel</p>
+            </div>
           </div>
 
           {/* NAV LINKS */}
           <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
-            {menuItems.map((item) => (
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
               <NavLink
                 key={item.path}
                 to={item.path}
@@ -56,19 +66,27 @@ export default function DashboardLayout() {
                     : "hover:bg-white/5 hover:text-white"}
                 `}
               >
-                <span className="text-lg">{item.icon}</span>
+                <Icon size={18} />
                 {item.name}
               </NavLink>
-            ))}
+              );
+            })}
           </nav>
 
           {/* SIDEBAR FOOTER */}
           <div className="p-4 border-t border-gray-800">
             <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="mb-2 flex w-full items-center gap-3 rounded-xl border border-gray-700 px-4 py-3 text-sm font-medium text-gray-300 transition hover:border-[#c9a227] hover:text-white"
+            >
+              <Home size={18} /> Back to Home
+            </button>
+            <button
               onClick={handleLogout}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"
             >
-              <span>🚪</span>
+              <LogOut size={18} />
               Logout
             </button>
           </div>
@@ -83,7 +101,7 @@ export default function DashboardLayout() {
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 -ml-2 text-gray-600 lg:hidden"
           >
-            ☰
+            <Menu size={22} />
           </button>
           
           <div className="flex items-center gap-4">
@@ -91,8 +109,12 @@ export default function DashboardLayout() {
               <p className="text-sm font-bold text-gray-900 leading-none">Welcome back,</p>
               <p className="text-xs text-gray-500 mt-1">{user?.name || "Guest"}</p>
             </div>
-            <div className="w-10 h-10 bg-[#c9a227]/10 rounded-full flex items-center justify-center border border-[#c9a227]/20">
-              <span className="text-[#c9a227] font-bold">{user?.name ? user.name[0].toUpperCase() : "U"}</span>
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#c9a227]/20 bg-[#c9a227]/10">
+              {avatarImage ? (
+                <img src={avatarImage} alt={user?.name || "User"} className="h-full w-full object-cover" />
+              ) : (
+                <span className="font-bold text-[#c9a227]">{user?.name ? user.name[0].toUpperCase() : "U"}</span>
+              )}
             </div>
           </div>
         </header>

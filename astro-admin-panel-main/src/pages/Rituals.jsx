@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pencil, RotateCcw, Save, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { apiRequest, assetUrl } from "../lib/api";
 
 const initialForm = {
@@ -22,6 +23,9 @@ const initialForm = {
   is_popular: false,
   status: true,
   image: null,
+  name_hi: "",
+  short_description_hi: "",
+  description_hi: "",
 };
 
 const statusOptions = ["pending", "confirmed", "scheduled", "completed", "cancelled"];
@@ -75,9 +79,9 @@ export default function Rituals() {
     try {
       setLoading(true);
       const [ritualResponse, astrologerResponse, bookingsResponse] = await Promise.all([
-        apiRequest("/admin/rituals", { requiresAuth: false }),
+        apiRequest("/admin/rituals"),
         apiRequest("/astrologers", { requiresAuth: false }),
-        apiRequest("/admin/ritual-bookings", { requiresAuth: false }),
+        apiRequest("/admin/ritual-bookings"),
       ]);
 
       const bookings = bookingsResponse?.bookings || [];
@@ -147,6 +151,9 @@ export default function Rituals() {
       is_popular: Boolean(ritual.is_popular),
       status: Boolean(ritual.status),
       image: null,
+      name_hi: ritual.translations?.hi?.name || "",
+      short_description_hi: ritual.translations?.hi?.short_description || "",
+      description_hi: ritual.translations?.hi?.description || "",
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -160,6 +167,9 @@ export default function Rituals() {
       const payload = new FormData();
 
       Object.entries(form).forEach(([key, value]) => {
+        if (["name_hi", "short_description_hi", "description_hi"].includes(key)) {
+          return;
+        }
         if (key === "image") {
           if (value) {
             payload.append("image", value);
@@ -178,12 +188,16 @@ export default function Rituals() {
 
         payload.append(key, value);
       });
+      payload.append("translations", JSON.stringify({ hi: {
+        name: form.name_hi,
+        short_description: form.short_description_hi,
+        description: form.description_hi,
+      } }));
 
       const endpoint = editingId ? `/admin/rituals/${editingId}` : "/admin/rituals";
       const response = await apiRequest(endpoint, {
         method: "POST",
         body: payload,
-        requiresAuth: false,
       });
 
       if (response?.success) {
@@ -204,7 +218,6 @@ export default function Rituals() {
     try {
       await apiRequest(`/admin/rituals/${id}`, {
         method: "DELETE",
-        requiresAuth: false,
       });
 
       if (editingId === id) {
@@ -234,7 +247,6 @@ export default function Rituals() {
       const response = await apiRequest(`/admin/ritual-bookings/${bookingId}/status`, {
         method: "POST",
         body: bookingDrafts[bookingId],
-        requiresAuth: false,
       });
 
       if (response?.success) {
@@ -259,8 +271,11 @@ export default function Rituals() {
       <div>
         <h1 className="text-2xl font-bold">Pooja / Anusthan Management</h1>
         <p className="mt-2 text-sm text-gray-500">
-          Create, edit, delete, and monitor ritual offerings and bookings from one screen.
+          Create and maintain the Pooja Anusthan service catalogue.
         </p>
+        <Link to="/ritual-bookings" className="mt-4 inline-flex rounded-xl bg-yellow-500 px-4 py-2 text-sm font-semibold text-black">
+          View Ritual Bookings
+        </Link>
       </div>
 
       {message && <div className="rounded-2xl bg-white p-4 text-sm shadow">{message}</div>}
@@ -308,6 +323,11 @@ export default function Rituals() {
         <textarea name="description" value={form.description} onChange={handleChange} rows="4" placeholder="Full Description" className="w-full rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" />
         <textarea name="benefits" value={form.benefits} onChange={handleChange} rows="2" placeholder="Benefits Summary" className="w-full rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" />
         <textarea name="materials_required" value={form.materials_required} onChange={handleChange} rows="2" placeholder="Materials Required" className="w-full rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" />
+        <div className="grid gap-3 rounded-xl border bg-gray-50 p-4 md:grid-cols-2">
+          <input name="name_hi" value={form.name_hi} onChange={handleChange} placeholder="Ritual name in Hindi" className="rounded-xl border px-4 py-3" />
+          <textarea name="short_description_hi" value={form.short_description_hi} onChange={handleChange} placeholder="Short description in Hindi" className="rounded-xl border px-4 py-3" />
+          <textarea name="description_hi" value={form.description_hi} onChange={handleChange} rows="3" placeholder="Full description in Hindi" className="rounded-xl border px-4 py-3 md:col-span-2" />
+        </div>
 
         <div className="grid gap-5 md:grid-cols-2">
           <textarea name="steps" value={form.steps} onChange={handleChange} rows="5" placeholder="Steps (one per line)" className="w-full rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" />
@@ -401,7 +421,7 @@ export default function Rituals() {
         )}
       </div>
 
-      <div className="rounded-2xl bg-white p-6 shadow">
+      {false && <div className="rounded-2xl bg-white p-6 shadow">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold">Ritual Bookings</h2>
@@ -570,7 +590,7 @@ export default function Rituals() {
             <p className="text-sm text-gray-500">No ritual bookings yet.</p>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

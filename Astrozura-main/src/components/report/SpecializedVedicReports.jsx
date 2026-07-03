@@ -110,22 +110,8 @@ const providerErrorRows = (providerPayload = {}) =>
       message: item.message || "Provider returned no data.",
     }));
 
-export function ProviderErrorNotice({ providerPayload = {} }) {
-  const rows = providerErrorRows(providerPayload);
-  if (!rows.length) return null;
-
-  return (
-    <ReportPanel title="API Response Status" subtitle="The upstream Astrology API did not return data for these modules.">
-      <ReportTable
-        columns={[
-          { key: "endpoint", label: "Endpoint", render: (row) => renderCleanValue(row.endpoint) },
-          { key: "message", label: "Message", render: (row) => <span className="font-semibold text-red-700">{renderCleanValue(row.message)}</span> },
-        ]}
-        rows={rows}
-        compact
-      />
-    </ReportPanel>
-  );
+export function ProviderErrorNotice() {
+  return null;
 }
 
 const flattenEntries = (value, prefix = "") => {
@@ -155,7 +141,7 @@ const normalizeList = (value) => {
   if (Array.isArray(value)) {
     return value
       .flatMap((item) => {
-        if (isObject(item)) return item.remedy || item.description || item.name || item.report || JSON.stringify(item);
+        if (isObject(item)) return item.remedy || item.description || item.name || item.report || renderCleanValue(item);
         return item;
       })
       .map(stripHtml)
@@ -720,12 +706,48 @@ export function KaalSarpDoshaReport({ result }) {
   );
 }
 
+export function MangalDoshaReport({ result }) {
+  const data = getSuccessData(result?.data?.provider_payload, "manglik") || result?.data?.manglik || result?.data || {};
+  const report = data?.manglik_report || data?.report || data?.msg || data?.description;
+  const status =
+    data?.is_present !== undefined
+      ? data.is_present ? "Yes" : "No"
+      : data?.manglik_status || data?.status || "Not clearly indicated";
+  const statusRows = [
+    ["Is Mangal Dosha Present", <StatusBadge value={status} />],
+    ["Mangal Dosha Status", data?.manglik_status || data?.status || "-"],
+    ["Percentage Present", data?.percentage_manglik_present ?? data?.percentage ?? "-"],
+    ["After Cancellation", data?.percentage_manglik_after_cancellation ?? data?.percentage_after_cancellation ?? "-"],
+    ["Is Cancelled", data?.is_mars_manglik_cancelled ?? data?.is_cancelled ?? "-"],
+  ];
+  const ruleRows = normalizeList(data?.manglik_present_rule || data?.rules || data?.based_on_aspect || data?.based_on_house);
+
+  return (
+    <div className="space-y-6">
+      <ReportPanel title="Mangal Dosha Status">
+        <AttributeTable rows={statusRows} />
+        {report ? (
+          <div className="mt-5 rounded-sm border border-amber-200 bg-amber-50 p-4">
+            <TextBlock value={report} />
+          </div>
+        ) : null}
+      </ReportPanel>
+
+      {ruleRows.length ? (
+        <ReportPanel title="Rules Matched">
+          <SimpleTextTable heading="Rule" items={ruleRows} />
+        </ReportPanel>
+      ) : null}
+    </div>
+  );
+}
+
 export function GemstoneSuggestionReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const data = getSuccessData(providerPayload, "basic_gem_suggestion") || result?.data;
   const life = parseMaybeJson(data?.LIFE || data?.life || data?.Life);
   const lucky = parseMaybeJson(data?.LUCKY || data?.lucky || data?.Lucky);
-  const fallbackRows = objectRows(data);
+  const fallbackRows = objectRows(data, ["gem_key"]);
 
   return (
     <ReportPanel title="Gemstone Suggestion" subtitle="Basic gemstone recommendations from the horoscope.">
@@ -734,13 +756,13 @@ export function GemstoneSuggestionReport({ result }) {
           {isObject(life) && (
             <div className="space-y-3">
               <h4 className="text-base font-black text-[#1E3557]">Life Gemstone</h4>
-              <AttributeTable rows={objectRows(life)} />
+              <AttributeTable rows={objectRows(life, ["gem_key"])} />
             </div>
           )}
           {isObject(lucky) && (
             <div className="space-y-3">
               <h4 className="text-base font-black text-[#1E3557]">Lucky Gemstone</h4>
-              <AttributeTable rows={objectRows(lucky)} />
+              <AttributeTable rows={objectRows(lucky, ["gem_key"])} />
             </div>
           )}
         </div>
@@ -766,9 +788,7 @@ export function RudrakshaSuggestionReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const data = getSuccessData(providerPayload, "rudraksha_suggestion") || result?.data;
   const imageUrl = resolveRudrakshaImageUrl(data?.img_url || data?.image_url || data?.image || data?.imgUrl);
-  const rows = objectRows(data, ["img_url", "image_url", "image", "imgurl"]).map(([label, value]) =>
-    label === "Rudraksha Key" ? [label, humanizeRudrakshaKey(value)] : [label, value]
-  );
+  const rows = objectRows(data, ["img_url", "image_url", "image", "imgurl", "rudraksha_key"]);
 
   return (
     <ReportPanel title="Rudraksha Suggestion" subtitle="Rudraksha recommendation based on birth details.">
@@ -902,7 +922,7 @@ export function VimshottariDashaReport({ result }) {
             <h3 className="text-3xl font-black text-[#1E3557]">Vimshottari Dasha</h3>
             <p className="mt-5 text-sm leading-8 text-gray-700">
               Vimshottari Dasha is a Nakshatra-based planetary period system used to study the timing of important life events. The current
-              hierarchy shows the running major, antar, pratyantar, sookshm and pran periods returned by the Astrology API.
+              hierarchy shows the running major, antar, pratyantar, sookshm and pran periods for the native.
             </p>
           </div>
           <DashaFlow title="Current Vimshottari Dasha" items={flowItems} />
@@ -965,7 +985,7 @@ export function AshtakavargaReport({ result, planetLabel = "Sun" }) {
             <h3 className="text-2xl font-black text-[#1E3557]">What is Ashtakavarga (Bhinnashtak Varga)?</h3>
             <p className="mt-4 text-sm leading-8 text-gray-700">
               Bhinnashtak Varga shows the bindu contribution of a selected planet across zodiac signs. Use the Planet input selector to switch
-              the API call and regenerate this table for another planet.
+              the selected planet and regenerate this table for another view.
             </p>
           </div>
           <div className="text-center">

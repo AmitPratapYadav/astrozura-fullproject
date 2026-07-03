@@ -71,9 +71,29 @@ class User extends Authenticatable
         return $this->hasOne(AstrologerDetail::class);
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(UserAddress::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(UserNotification::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function ritualBookings()
+    {
+        return $this->hasMany(RitualBooking::class);
     }
 
     public function astrologerBookings()
@@ -89,6 +109,11 @@ class User extends Authenticatable
     public function receivedReviews()
     {
         return $this->hasMany(AstrologerReview::class, 'astrologer_id');
+    }
+
+    public function productReviews()
+    {
+        return $this->hasMany(ProductReview::class);
     }
 
     public function pushSubscriptions()

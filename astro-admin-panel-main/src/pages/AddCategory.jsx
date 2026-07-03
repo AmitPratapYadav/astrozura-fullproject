@@ -6,6 +6,8 @@ export default function AddCategory() {
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
   const [status, setStatus] = useState(true);
+  const [shippingCharge, setShippingCharge] = useState("0");
+  const [hindiName, setHindiName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -16,6 +18,8 @@ export default function AddCategory() {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("status", status ? 1 : 0);
+    formData.append("shipping_charge", shippingCharge || 0);
+    formData.append("translations", JSON.stringify({ hi: { name: hindiName } }));
     if (image) {
       formData.append("image", image);
     }
@@ -55,6 +59,10 @@ export default function AddCategory() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div><label className="mb-1 block text-sm font-medium text-gray-700">Hindi Name</label><input value={hindiName} onChange={(e) => setHindiName(e.target.value)} className="w-full rounded-lg border px-4 py-2" /></div>
+          <div><label className="mb-1 block text-sm font-medium text-gray-700">Shipping Charge (₹)</label><input type="number" min="0" step="0.01" value={shippingCharge} onChange={(e) => setShippingCharge(e.target.value)} className="w-full rounded-lg border px-4 py-2" /></div>
         </div>
 
         <div>

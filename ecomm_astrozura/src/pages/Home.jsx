@@ -20,6 +20,8 @@ import c1 from "../assets/c1.webp";
 import moon1 from "../assets/moon1.webp";
 import vedic from "../assets/k3.webp";
 import rudraksha from "../assets/4.webp";
+import CatalogImage from "../components/CatalogImage";
+import { assetUrl } from "../utils/assetUrl";
 export default function Home() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -34,8 +36,7 @@ export default function Home() {
     fetchTrendingProducts();
   }, []);
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
 
   const fetchCategories = async () => {
     try {
@@ -68,7 +69,7 @@ export default function Home() {
       id: item.id,
       name: item.name,
       price: item.price,
-      image: `${backendUrl}/${item.image}`,
+      image: assetUrl(item.image),
       category: item.category?.name || "Spiritual",
       qty: 1
     });
@@ -112,11 +113,11 @@ export default function Home() {
                 Shop Now
               </button>
               <button
-                onClick={() => setActiveBtn("view")}
+                onClick={() => window.location.assign("https://astrozura.com")}
                 className={`px-8 py-3.5 rounded-full font-bold transition-all border-2 border-white/50 hover:border-white hover:bg-white/10 ${
                   activeBtn === "view" ? "bg-white text-black" : "text-white"
                 }`} >
-                View Lookbook
+                Know Your Stars
               </button>
             </div>
           </div>
@@ -138,18 +139,13 @@ export default function Home() {
       categories.map((cat) => (
         <div
           key={cat.id}
-          onClick={() => navigate(`/all-products?category=${cat.id}`)}
+          onClick={() => navigate(`/allproduct?category=${cat.id}`)}
           className="cursor-pointer hover:scale-110 transition text-center" >
-          {cat.image ? (
-            <img
-              src={`${backendUrl}/${cat.image}`}
-              alt={cat.name}
-              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full mx-auto object-cover shadow-md"  />
-          ) : (
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full mx-auto bg-gray-200 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs shadow-md">
-              No Image
-            </div>
-          )}
+          <CatalogImage
+            src={cat.image}
+            alt={cat.name}
+            className="mx-auto h-24 w-24 rounded-full object-cover shadow-md sm:h-32 sm:w-32"
+          />
           <p className="mt-4 text-sm text-[#161439] font-medium">
             {cat.name}
           </p>
@@ -186,15 +182,11 @@ export default function Home() {
       <div
         key={item.id}
         className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition" >
-        {item.image ? (
-          <img
-            src={`${backendUrl}/${item.image}`}
-            className="rounded-xl h-40 sm:h-52 w-full object-cover bg-gray-100" />
-        ) : (
-          <div className="rounded-xl h-40 sm:h-52 w-full bg-gray-200 border border-gray-100 flex items-center justify-center text-gray-400 text-xs">
-            No Image
-          </div>
-        )}
+        <CatalogImage
+          src={item.image}
+          alt={item.name}
+          className="h-40 w-full rounded-xl bg-gray-100 object-cover sm:h-52"
+        />
 
         <p className="text-[10px] mt-4 text-[#161439] tracking-widest uppercase truncate">
           {item.category?.name || "Uncategorized"}
@@ -232,7 +224,7 @@ export default function Home() {
                 id: item.id,
                 name: item.name,
                 price: item.price,
-                image: `${backendUrl}/${item.image}`,
+                image: assetUrl(item.image),
                 category: item.category?.name || "Spiritual",
                 qty: 1
               });
@@ -303,19 +295,19 @@ export default function Home() {
       {
         img: u1,
         text: `"The citrine point I received is absolutely breathtaking. You can feel the energy radiating from it. Truly the best crystal shop I've found."`,
-        name: "Sienna Grace",
+        name: "Priya Sharma",
         role: "Yoga Instructor",
       },
       {
         img: u2,
         text: `"Finding authentic rudraksha is difficult, but Aura & Earth is my trusted source. The quality is unmatched and the packaging is beautiful."`,
-        name: "Marcus Thorne",
+        name: "Rohan Mehta",
         role: "Meditation Practitioner",
       },
       {
         img: u3,
         text: `"The ritual kits make the perfect gift for loved ones. They are curated with such intention and care. I buy one for every housewarming!"`,
-        name: "Elena Rossi",
+        name: "Ananya Verma",
         role: "Wellness Advocate",
       },
     ].map((item, i) => (

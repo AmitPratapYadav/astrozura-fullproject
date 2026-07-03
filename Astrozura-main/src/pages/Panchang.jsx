@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { getPanchang, searchLocation } from "../api/prokeralaApi";
+import { getPanchang, getPanchangExtras, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 
 const VIEW_CONFIG = {
@@ -70,7 +70,12 @@ const displayValue = (value) => {
     return value.map((item) => displayValue(item)).join(", ");
   }
   if (typeof value === "object") {
-    return value.name || value.full_name || value.title || value.value || JSON.stringify(value);
+    const directValue = value.name || value.full_name || value.title || value.value;
+    if (directValue) return displayValue(directValue);
+    return Object.entries(value)
+      .filter(([, item]) => item !== null && item !== undefined && item !== "")
+      .map(([key, item]) => `${cleanLabel(key)}: ${displayValue(item)}`)
+      .join(" | ") || "-";
   }
   return String(value);
 };
@@ -170,6 +175,139 @@ function InfoTable({ title, rows }) {
   );
 }
 
+const cleanLabel = (label) =>
+  String(label || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const tableValue = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (Array.isArray(value)) return value.map((item) => tableValue(item)).filter(Boolean).join(", ") || "-";
+  if (typeof value === "object") {
+    const preferred = value.name || value.full_name || value.title || value.value || value.sign || value.degree;
+    if (preferred) return String(preferred);
+    return Object.entries(value)
+      .filter(([, nestedValue]) => nestedValue !== null && nestedValue !== undefined && nestedValue !== "")
+      .map(([key, nestedValue]) => `${cleanLabel(key)}: ${tableValue(nestedValue)}`)
+      .join(" | ") || "-";
+  }
+  return String(value);
+};
+
+const firstArrayFrom = (payload, keys = []) => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  for (const key of keys) {
+    if (Array.isArray(payload[key])) return payload[key];
+  }
+
+  const nestedArray = Object.values(payload).find(
+    (value) => Array.isArray(value) && value.some((item) => item && typeof item === "object")
+  );
+
+  return nestedArray || [];
+};
+
+const normalizePlanetRows = (payload) =>
+  firstArrayFrom(payload, ["planets", "planet_details", "planetary_positions", "planet_panchang", "data"]).map((item, index) => ({
+    id: `${item.name || item.planet || item.full_name || "planet"}-${index}`,
+    planet: tableValue(item.name || item.planet || item.full_name),
+    sign: tableValue(item.sign || item.zodiac || item.rashi),
+    degree: tableValue(item.degree || item.normDegree || item.full_degree || item.longitude),
+    nakshatra: tableValue(item.nakshatra || item.nakshatra_name || item.nak_name),
+    house: tableValue(item.house || item.house_id),
+    motion: tableValue(item.isRetro === true || item.is_retro === true ? "Retrograde" : item.isRetro === false || item.is_retro === false ? "Direct" : item.motion),
+  }));
+
+const objectRows = (payload) => {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return [];
+  return Object.entries(payload)
+    .filter(([, value]) => value !== null && value !== undefined && value !== "")
+    .map(([key, value]) => [cleanLabel(key), tableValue(value)]);
+};
+
+function PanchangDataTable({ title, rows, columns }) {
+  return (
+    <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
+      <h3 className="border-b border-slate-200 bg-[#FFF6D8] px-5 py-4 text-lg font-black text-slate-950">{title}</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse text-left text-sm">
+          <thead className="bg-[#FFF1BD] text-slate-950">
+            <tr>
+              {columns.map((column) => (
+                <th key={column.key} className="border-b border-slate-200 px-4 py-3 font-black">
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(rows.length ? rows : [{ id: "empty" }]).map((row, index) => (
+              <tr key={row.id || index} className="odd:bg-white even:bg-slate-50">
+                {columns.map((column) => (
+                  <td key={column.key} className="border-b border-slate-200 px-4 py-3 text-slate-700">
+                    {row[column.key] || "-"}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
+  const planetaryRows = normalizePlanetRows(extrasData?.planetary_positions);
+  const sunriseRows = normalizePlanetRows(extrasData?.sunrise_planetary_positions);
+  const chartPayload = extrasData?.panchang_chart;
+  const chartSvg = chartPayload?.svg || chartPayload?.chart_svg || chartPayload?.chart;
+  const chartRows = objectRows(chartPayload);
+  const planetColumns = [
+    { key: "planet", label: "Planet" },
+    { key: "sign", label: "Sign" },
+    { key: "degree", label: "Degree" },
+    { key: "nakshatra", label: "Nakshatra" },
+    { key: "house", label: "House" },
+    { key: "motion", label: "Motion" },
+  ];
+
+  return (
+    <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
+      <h2 className="bg-[#FFF6D8] px-5 py-4 text-xl font-black text-slate-950">
+        Planetary Positions & Panchang Chart
+      </h2>
+      <div className="space-y-6 p-5">
+          {extrasLoading ? <p className="rounded-md bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">Loading planetary details...</p> : null}
+          {extrasError ? <p className="rounded-md bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{extrasError}</p> : null}
+          {!extrasLoading && !extrasError ? (
+            <>
+              <PanchangDataTable title="Planetary Positions" rows={planetaryRows} columns={planetColumns} />
+              <PanchangDataTable title="Sunrise Planetary Positions" rows={sunriseRows} columns={planetColumns} />
+              {chartSvg && String(chartSvg).includes("<svg") ? (
+                <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
+                  <h3 className="border-b border-slate-200 bg-[#FFF6D8] px-5 py-4 text-lg font-black text-slate-950">Panchang Chart</h3>
+                  <div className="mx-auto max-w-xl p-5 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: chartSvg }} />
+                </section>
+              ) : (
+                <PanchangDataTable
+                  title="Panchang Chart"
+                  rows={chartRows.map(([label, value]) => ({ id: label, label, value }))}
+                  columns={[
+                    { key: "label", label: "Attribute" },
+                    { key: "value", label: "Value" },
+                  ]}
+                />
+              )}
+            </>
+          ) : null}
+      </div>
+    </section>
+  );
+}
+
 function ViewButtons({ activeView, onChange }) {
   return (
     <div className="mx-auto mt-14 grid max-w-5xl gap-6 md:grid-cols-3">
@@ -212,6 +350,9 @@ export default function Panchang() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [data, setData] = useState(null);
+  const [extrasData, setExtrasData] = useState(null);
+  const [extrasLoading, setExtrasLoading] = useState(false);
+  const [extrasError, setExtrasError] = useState("");
 
   const selectedDateLabel = formatPageDate(selectedDate);
   const selectedInputLabel = formatInputDateLabel(selectedDate);
@@ -232,9 +373,35 @@ export default function Panchang() {
     try {
       setLoading(true);
       const datetime = `${date}T06:00:00+05:30`;
-      const response = await getPanchang(datetime, coords, 1, { mode, la: nextLanguage });
+      if (mode === "daily") {
+        setExtrasLoading(true);
+        setExtrasError("");
+      }
+      const [response, extrasResponse] = await Promise.all([
+        getPanchang(datetime, coords, 1, { mode, la: nextLanguage }),
+        mode === "daily"
+          ? getPanchangExtras(datetime, coords, 1, {
+              la: nextLanguage,
+              extras: ["planetary_positions", "sunrise_planetary_positions", "panchang_chart"],
+            }).catch((error) => ({
+              status: "error",
+              message: error?.response?.data?.message || "Unable to load planetary details.",
+            }))
+          : Promise.resolve(null),
+      ]);
       if (response?.status === "success") {
         setData(response.data);
+        if (mode === "daily") {
+          if (extrasResponse?.status === "success") {
+            setExtrasData(extrasResponse.data);
+          } else {
+            setExtrasData(null);
+            setExtrasError(extrasResponse?.message || "Unable to load planetary details.");
+          }
+        } else {
+          setExtrasData(null);
+          setExtrasError("");
+        }
       } else {
         showToast(response?.message || "Unable to fetch Panchang.");
       }
@@ -242,6 +409,7 @@ export default function Panchang() {
       showToast(error?.response?.data?.message || "Unable to fetch Panchang.");
     } finally {
       setLoading(false);
+      setExtrasLoading(false);
     }
   };
 
@@ -401,7 +569,7 @@ export default function Panchang() {
             </select>
           </FieldShell>
 
-          <FieldShell label=" ">
+          <FieldShell label="Location">
             <div className="relative">
               <input
                 type="text"
@@ -522,6 +690,12 @@ export default function Panchang() {
                 ))}
               </div>
             </section>
+
+            <PanchangExtraBlocks
+              extrasData={extrasData}
+              extrasLoading={extrasLoading}
+              extrasError={extrasError}
+            />
           </div>
         ) : (
           <div>

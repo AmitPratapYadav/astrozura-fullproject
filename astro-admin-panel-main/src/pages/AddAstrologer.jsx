@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
+import { apiRequest } from "../lib/api";
 
 export default function AddAstrologer() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,16 @@ export default function AddAstrologer() {
     about_bio: "",
     profile_image: null,
     is_featured: false,
+    supports_chat: true,
+    supports_call: true,
+    is_online: true,
+    chat_commission_percentage: "20",
+    call_commission_percentage: "20",
+    chat_price_10: "", chat_price_15: "", chat_price_20: "", chat_price_30: "",
+    call_price_10: "", call_price_15: "", call_price_20: "", call_price_30: "",
+    languages_hi: "",
+    specialities_hi: "",
+    about_bio_hi: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -38,23 +49,28 @@ export default function AddAstrologer() {
     try {
       const dataToSubmit = new FormData();
       Object.keys(formData).forEach((key) => {
+        if (key.endsWith("_hi") || /^(chat|call)_price_(10|15|20|30)$/.test(key)) return;
         if (formData[key] !== null) {
-          const value = key === "is_featured"
+          const value = ["is_featured", "supports_chat", "supports_call", "is_online"].includes(key)
             ? (formData[key] ? "1" : "0")
             : formData[key];
           dataToSubmit.append(key, value);
         }
       });
-
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/astrologers/create`, {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
+      dataToSubmit.append("translations", JSON.stringify({
+        hi: {
+          languages: formData.languages_hi,
+          specialities: formData.specialities_hi,
+          about_bio: formData.about_bio_hi,
         },
+      }));
+      dataToSubmit.append("chat_duration_prices", JSON.stringify(Object.fromEntries([10, 15, 20, 30].map((duration) => [duration, formData[`chat_price_${duration}`]]).filter(([, value]) => value !== ""))));
+      dataToSubmit.append("call_duration_prices", JSON.stringify(Object.fromEntries([10, 15, 20, 30].map((duration) => [duration, formData[`call_price_${duration}`]]).filter(([, value]) => value !== ""))));
+
+      const data = await apiRequest("/admin/astrologers/create", {
+        method: "POST",
         body: dataToSubmit,
       });
-
-      const data = await response.json();
 
       if (data.success) {
         setMessage({ type: "success", text: "Astrologer created successfully!" });
@@ -71,6 +87,16 @@ export default function AddAstrologer() {
           about_bio: "",
           profile_image: null,
           is_featured: false,
+          supports_chat: true,
+          supports_call: true,
+          is_online: true,
+          chat_commission_percentage: "20",
+          call_commission_percentage: "20",
+          chat_price_10: "", chat_price_15: "", chat_price_20: "", chat_price_30: "",
+          call_price_10: "", call_price_15: "", call_price_20: "", call_price_30: "",
+          languages_hi: "",
+          specialities_hi: "",
+          about_bio_hi: "",
         });
       } else {
         setMessage({ type: "error", text: data.message || "Failed to create astrologer." });
@@ -139,6 +165,31 @@ export default function AddAstrologer() {
               </div>
             </div>
 
+            <div className="rounded-xl border bg-gray-50 p-4">
+              <h3 className="mb-1 font-semibold">Duration Pricing</h3>
+              <p className="mb-4 text-xs text-gray-500">Optional total prices. Empty values use the per-minute rate.</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {["chat", "call"].map((mode) => <div key={mode}><p className="mb-2 text-sm font-semibold capitalize">{mode}</p><div className="grid grid-cols-2 gap-2">{[10, 15, 20, 30].map((duration) => <label key={duration} className="text-xs text-gray-500">{duration} minutes<input type="number" min="0" step="0.01" name={`${mode}_price_${duration}`} value={formData[`${mode}_price_${duration}`]} onChange={handleChange} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm" /></label>)}</div></div>)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Chat Commission %</label>
+                <input type="number" min="0" max="100" step="0.01" name="chat_commission_percentage" value={formData.chat_commission_percentage} onChange={handleChange} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-yellow-500" />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Call Commission %</label>
+                <input type="number" min="0" max="100" step="0.01" name="call_commission_percentage" value={formData.call_commission_percentage} onChange={handleChange} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-yellow-500" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-5 rounded-lg bg-gray-50 p-4 text-sm font-medium">
+              <label className="flex items-center gap-2"><input type="checkbox" name="supports_chat" checked={formData.supports_chat} onChange={handleChange} /> Available for Chat</label>
+              <label className="flex items-center gap-2"><input type="checkbox" name="supports_call" checked={formData.supports_call} onChange={handleChange} /> Available for Call</label>
+              <label className="flex items-center gap-2"><input type="checkbox" name="is_online" checked={formData.is_online} onChange={handleChange} /> Online</label>
+            </div>
+
             <div>
               <label className="block text-sm text-gray-600 mb-1">Specialities (comma separated)</label>
               <input type="text" name="specialities" placeholder="Vedic Astrology, Tarot" value={formData.specialities} onChange={handleChange} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-yellow-500" />
@@ -163,6 +214,13 @@ export default function AddAstrologer() {
           <div>
             <label className="block text-sm text-gray-600 mb-1">Profile Image</label>
             <input type="file" name="profile_image" accept="image/*" onChange={handleChange} className="w-full border rounded-lg px-4 py-2 outline-none focus:border-yellow-500 bg-white" />
+          </div>
+
+          <div className="grid gap-4 rounded-xl border border-yellow-200 bg-yellow-50 p-4 md:grid-cols-2">
+            <div className="md:col-span-2"><h3 className="font-semibold">Hindi Content</h3></div>
+            <input name="languages_hi" value={formData.languages_hi} onChange={handleChange} placeholder="Languages in Hindi" className="w-full rounded-lg border px-4 py-2" />
+            <input name="specialities_hi" value={formData.specialities_hi} onChange={handleChange} placeholder="Specialities in Hindi" className="w-full rounded-lg border px-4 py-2" />
+            <textarea name="about_bio_hi" value={formData.about_bio_hi} onChange={handleChange} rows="3" placeholder="Bio in Hindi" className="w-full rounded-lg border px-4 py-2 md:col-span-2" />
           </div>
 
           <div>

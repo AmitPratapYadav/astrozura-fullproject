@@ -1,0 +1,134 @@
+- generic [ref=f1e4]:
+  - generic [ref=f1e5]:
+    - img "AstroZura Admin Panel" [ref=f1e7]
+    - generic [ref=f1e8]:
+      - link "Dashboard" [ref=f1e9] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=f1e10]
+        - text: Dashboard
+      - link "Astrologers" [ref=f1e15] [cursor=pointer]:
+        - /url: /astrologers
+        - img [ref=f1e16]
+        - text: Astrologers
+      - link "Add Astrologer" [ref=f1e18] [cursor=pointer]:
+        - /url: /add-astrologer
+        - img [ref=f1e19]
+        - text: Add Astrologer
+      - link "Users" [ref=f1e22] [cursor=pointer]:
+        - /url: /users
+        - img [ref=f1e23]
+        - text: Users
+      - link "Bookings" [ref=f1e28] [cursor=pointer]:
+        - /url: /bookings
+        - img [ref=f1e29]
+        - text: Bookings
+      - link "Payments" [ref=f1e31] [cursor=pointer]:
+        - /url: /payments
+        - img [ref=f1e32]
+        - text: Payments
+      - link "Reports" [ref=f1e34] [cursor=pointer]:
+        - /url: /reports
+        - img [ref=f1e35]
+        - text: Reports
+      - link "Reviews" [ref=f1e38] [cursor=pointer]:
+        - /url: /reviews
+        - img [ref=f1e39]
+        - text: Reviews
+      - paragraph [ref=f1e42]: E-Commerce
+      - link "Categories" [ref=f1e43] [cursor=pointer]:
+        - /url: /categories
+        - img [ref=f1e44]
+        - text: Categories
+      - link "Products" [ref=f1e48] [cursor=pointer]:
+        - /url: /products
+        - img [ref=f1e49]
+        - text: Products
+      - link "Orders" [ref=f1e53] [cursor=pointer]:
+        - /url: /orders
+        - img [ref=f1e54]
+        - text: Orders
+      - link "Rituals" [ref=f1e59] [cursor=pointer]:
+        - /url: /rituals
+        - img [ref=f1e60]
+        - text: Rituals
+      - link "Ritual Bookings" [ref=f1e62] [cursor=pointer]:
+        - /url: /ritual-bookings
+        - img [ref=f1e63]
+        - text: Ritual Bookings
+      - link "Offers" [ref=f1e65] [cursor=pointer]:
+        - /url: /offers
+        - img [ref=f1e66]
+        - text: Offers
+      - paragraph [ref=f1e72]: Subscriptions
+      - link "Newsletter Subscribers" [ref=f1e73] [cursor=pointer]:
+        - /url: /user-subscriptions
+        - img [ref=f1e74]
+        - text: Newsletter Subscribers
+      - paragraph [ref=f1e78]: Content
+      - link "Blog Categories" [ref=f1e79] [cursor=pointer]:
+        - /url: /blog-categories
+        - img [ref=f1e80]
+        - text: Blog Categories
+      - link "Blogs" [ref=f1e84] [cursor=pointer]:
+        - /url: /blogs
+        - img [ref=f1e85]
+        - text: Blogs
+    - link "Admin Profile" [ref=f1e89] [cursor=pointer]:
+      - /url: /profile
+      - img [ref=f1e90]
+      - text: Admin Profile
+  - generic [ref=f1e93]:
+    - generic [ref=f1e94]:
+      - heading "Welcome, Codex UI Admin" [level=1] [ref=f1e96]
+      - generic [ref=f1e97]:
+        - generic [ref=f1e99]:
+          - img [ref=f1e100]
+          - textbox "Search bookings, users, astrologers..." [ref=f1e103]
+        - button "Admin notifications" [ref=f1e105] [cursor=pointer]:
+          - img [ref=f1e106]
+        - button "Admin Profile" [ref=f1e109]:
+          - img [ref=f1e110]
+        - button "Logout" [ref=f1e113]
+    - main [ref=f1e114]:
+      - generic [ref=f1e452]:
+        - generic [ref=f1e453]:
+          - link [ref=f1e454] [cursor=pointer]:
+            - /url: /users
+            - img [ref=f1e455]
+          - generic [ref=f1e457]:
+            - heading "Amit Yadav" [level=1] [ref=f1e458]
+            - paragraph [ref=f1e459]: yadavamit658@asia.com
+        - generic [ref=f1e460]:
+          - generic [ref=f1e461]:
+            - paragraph [ref=f1e462]: Orders
+            - paragraph [ref=f1e463]: "1"
+          - generic [ref=f1e464]:
+            - paragraph [ref=f1e465]: Consultations
+            - paragraph [ref=f1e466]: "1"
+          - generic [ref=f1e467]:
+            - paragraph [ref=f1e468]: Rituals
+            - paragraph [ref=f1e469]: "1"
+          - generic [ref=f1e470]:
+            - paragraph [ref=f1e471]: Order spend
+            - paragraph [ref=f1e472]: ₹0
+          - generic [ref=f1e473]:
+            - paragraph [ref=f1e474]: Consultation spend
+            - paragraph [ref=f1e475]: ₹0
+        - generic [ref=f1e476]:
+          - heading "Orders" [level=2] [ref=f1e477]
+          - generic [ref=f1e479]:
+            - generic [ref=f1e480]: ORD-C5FH0Z6K
+            - generic [ref=f1e481]: pending
+            - generic [ref=f1e482]: ₹93.76
+        - generic [ref=f1e483]:
+          - heading "Consultations" [level=2] [ref=f1e484]
+          - generic [ref=f1e486]:
+            - generic [ref=f1e487]: "#44 · Ananya Gupta"
+            - generic [ref=f1e488]: chat · completed
+            - generic [ref=f1e489]: 2026-07-01T00:00:00.000000Z 5:30 AM
+        - generic [ref=f1e490]:
+          - heading "Pooja Anusthan" [level=2] [ref=f1e491]
+          - generic [ref=f1e493]:
+            - generic [ref=f1e494]: Ganesh Chaturthi Maha Pooja
+            - generic [ref=f1e495]: confirmed
+            - generic [ref=f1e496]: 2026-07-15T00:00:00.000000Z

@@ -15,11 +15,21 @@ use App\Http\Controllers\Api\RitualController;
 use App\Http\Controllers\Api\RitualBookingController;
 use App\Http\Controllers\Api\BookingSessionController;
 use App\Http\Controllers\Api\BookingMessageController;
+use App\Http\Controllers\Api\BookingKundaliController;
+use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\AstrologerReviewController;
 use App\Http\Controllers\Api\LiveSessionController;
 use App\Http\Controllers\Api\PushNotificationController;
 use App\Http\Controllers\Api\AdminNotificationController;
+use App\Http\Controllers\Api\RazorpayPaymentController;
+use App\Http\Controllers\Api\UserNotificationController;
+use App\Http\Controllers\Api\NewsletterSubscriberController;
+use App\Http\Controllers\Api\UserAddressController;
+use App\Http\Controllers\Api\OrderInvoiceController;
+use App\Http\Controllers\Api\AdminOfferController;
+use App\Http\Controllers\Api\AdminAnalyticsController;
+use App\Http\Controllers\Api\ProductReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +40,7 @@ use App\Http\Controllers\Api\AdminNotificationController;
 // Google Auth Routes
 Route::get('/auth/google', [ApiAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [ApiAuthController::class, 'handleGoogleCallback']);
+Route::post('/auth/google/mobile', [ApiAuthController::class, 'mobileGoogleLogin']);
 
 // Public Auth Routes
 Route::post('/send-otp', [ApiAuthController::class, 'sendOtp']);
@@ -38,12 +49,14 @@ Route::post('/register', [ApiAuthController::class, 'register']);
 Route::post('/login-password', [ApiAuthController::class, 'loginWithPassword']);
 Route::post('/astrologer/login', [ApiAuthController::class, 'astrologerLogin']);
 Route::post('/admin/login', [ApiAuthController::class, 'adminLogin']);
+Route::post('/payments/razorpay/webhook', [RazorpayPaymentController::class, 'webhook']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [ApiAuthController::class, 'user']);
     Route::post('/logout', [ApiAuthController::class, 'logout']);
     Route::post('/astrologer/profile/update', [ApiAuthController::class, 'updateAstrologerProfile']);
+    Route::post('/astrologer/availability', [ApiAuthController::class, 'updateAstrologerAvailability']);
     Route::get('/admin/profile', [ApiAuthController::class, 'getAdminProfile']);
     Route::post('/admin/profile/update', [ApiAuthController::class, 'updateAdminProfile']);
     Route::post('/bookings', [BookingController::class, 'store']);
@@ -58,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bookings/{booking}/session/extend', [BookingSessionController::class, 'extend']);
     Route::get('/bookings/{booking}/messages', [BookingMessageController::class, 'index']);
     Route::post('/bookings/{booking}/messages', [BookingMessageController::class, 'store']);
+    Route::get('/bookings/{booking}/kundali', [BookingKundaliController::class, 'show']);
     Route::post('/media/chat-image', [MediaController::class, 'uploadChatImage']);
     Route::get('/live-sessions/current/viewer', [LiveSessionController::class, 'viewer']);
     Route::post('/live-sessions/start', [LiveSessionController::class, 'start']);
@@ -68,9 +82,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/profile', [UserDashboardController::class, 'getProfile']);
     Route::post('/dashboard/profile/update', [UserDashboardController::class, 'updateProfile']);
     Route::get('/dashboard/orders', [UserDashboardController::class, 'getOrders']);
+    Route::get('/dashboard/stats', [UserDashboardController::class, 'getStats']);
     Route::post('/dashboard/orders/store', [UserDashboardController::class, 'storeOrder']);
+    Route::get('/dashboard/orders/{order}', [OrderInvoiceController::class, 'userShow']);
+    Route::get('/dashboard/orders/{order}/invoice', [OrderInvoiceController::class, 'userInvoice']);
     Route::get('/dashboard/wishlist', [UserDashboardController::class, 'getWishlist']);
     Route::post('/dashboard/wishlist/toggle', [UserDashboardController::class, 'toggleWishlist']);
+    Route::get('/ecomm/products/{product}/review-eligibility', [ProductReviewController::class, 'eligibility']);
+    Route::post('/ecomm/products/{product}/reviews', [ProductReviewController::class, 'store']);
+    Route::get('/dashboard/addresses', [UserAddressController::class, 'index']);
+    Route::post('/dashboard/addresses', [UserAddressController::class, 'store']);
+    Route::put('/dashboard/addresses/{address}', [UserAddressController::class, 'update']);
+    Route::delete('/dashboard/addresses/{address}', [UserAddressController::class, 'destroy']);
+    Route::get('/notifications', [UserNotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [UserNotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [UserNotificationController::class, 'markRead']);
+    Route::get('/payments/razorpay/config', [RazorpayPaymentController::class, 'config']);
+    Route::post('/payments/razorpay/order', [RazorpayPaymentController::class, 'createOrder']);
+    Route::post('/payments/razorpay/verify', [RazorpayPaymentController::class, 'verify']);
 
     // Booking Routes (auth required)
     Route::get('/my-bookings', [BookingController::class, 'myBookings']);
@@ -82,6 +111,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/notifications/{adminNotification}/read', [AdminNotificationController::class, 'markRead']);
     Route::get('/admin/ecomm/orders', [AdminEcommController::class, 'getOrders']);
     Route::post('/admin/ecomm/orders/{order}/status', [AdminEcommController::class, 'updateOrderStatus']);
+    Route::get('/admin/ecomm/orders/{order}', [OrderInvoiceController::class, 'adminShow']);
+    Route::get('/admin/ecomm/orders/{order}/invoice', [OrderInvoiceController::class, 'adminInvoice']);
     Route::get('/admin/ecomm/categories', [AdminEcommController::class, 'getCategories']);
     Route::post('/admin/ecomm/categories/create', [AdminEcommController::class, 'storeCategory']);
     Route::get('/admin/ecomm/categories/{id}', [AdminEcommController::class, 'getCategory']);
@@ -93,6 +124,47 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/ecomm/products/{id}', [AdminEcommController::class, 'getProduct']);
     Route::post('/admin/ecomm/products/update/{id}', [AdminEcommController::class, 'updateProduct']);
     Route::delete('/admin/ecomm/products/{id}', [AdminEcommController::class, 'deleteProduct']);
+
+    Route::get('/admin/blog-categories', [BlogController::class, 'categories']);
+    Route::post('/admin/blog-categories', [BlogController::class, 'adminStoreCategory']);
+    Route::post('/admin/blog-categories/{id}', [BlogController::class, 'adminUpdateCategory']);
+    Route::delete('/admin/blog-categories/{id}', [BlogController::class, 'adminDeleteCategory']);
+    Route::get('/admin/blogs', [BlogController::class, 'blogs']);
+    Route::get('/admin/blogs/{id}', [BlogController::class, 'adminShowBlog']);
+    Route::post('/admin/blogs', [BlogController::class, 'adminStoreBlog']);
+    Route::post('/admin/blogs/{id}', [BlogController::class, 'adminUpdateBlog']);
+    Route::delete('/admin/blogs/{id}', [BlogController::class, 'adminDeleteBlog']);
+    Route::get('/admin/rituals', [RitualController::class, 'adminIndex']);
+    Route::post('/admin/rituals', [RitualController::class, 'store']);
+    Route::post('/admin/rituals/{id}', [RitualController::class, 'update']);
+    Route::delete('/admin/rituals/{id}', [RitualController::class, 'destroy']);
+    Route::get('/admin/newsletter-subscribers', [NewsletterSubscriberController::class, 'adminIndex']);
+    Route::post('/admin/offers', [AdminOfferController::class, 'store']);
+    Route::get('/admin/analytics', [AdminAnalyticsController::class, 'overview']);
+    Route::get('/admin/payments', [AdminAnalyticsController::class, 'payments']);
+    Route::get('/admin/payments/astrologers', [AdminAnalyticsController::class, 'astrologers']);
+    Route::get('/admin/payments/astrologers/{astrologer}', [AdminAnalyticsController::class, 'astrologer']);
+    Route::get('/admin/bookings', [AdminBookingController::class, 'index']);
+    Route::post('/admin/bookings/{id}/status', [AdminBookingController::class, 'updateStatus']);
+    Route::post('/admin/bookings/{id}/reassign', [AdminBookingController::class, 'reassign']);
+    Route::get('/admin/bookings/stats', [AdminBookingController::class, 'stats']);
+    Route::get('/admin/ritual-bookings', [RitualBookingController::class, 'index']);
+    Route::post('/admin/ritual-bookings/{ritualBooking}/status', [RitualBookingController::class, 'updateStatus']);
+    Route::get('/admin/users', [ApiAuthController::class, 'getAllUsers']);
+    Route::get('/admin/users/{user}', [ApiAuthController::class, 'getAdminUser']);
+    Route::get('/admin/dashboard-stats', [ApiAuthController::class, 'getAdminDashboardStats']);
+    Route::post('/admin/astrologers/create', [ApiAuthController::class, 'createAstrologer']);
+    Route::get('/admin/astrologers', [ApiAuthController::class, 'getAstrologers']);
+    Route::get('/admin/astrologers/{id}', [ApiAuthController::class, 'getAdminAstrologer']);
+    Route::post('/admin/astrologers/{id}', [ApiAuthController::class, 'updateAdminAstrologer']);
+    Route::delete('/admin/astrologers/{id}', [ApiAuthController::class, 'deleteAdminAstrologer']);
+    Route::get('/admin/search', [ApiAuthController::class, 'adminSearch']);
+    Route::get('/admin/subscription-plans', [AdminSubscriptionController::class, 'getPlans']);
+    Route::post('/admin/subscription-plans', [AdminSubscriptionController::class, 'storePlan']);
+    Route::post('/admin/subscription-plans/{id}', [AdminSubscriptionController::class, 'updatePlan']);
+    Route::delete('/admin/subscription-plans/{id}', [AdminSubscriptionController::class, 'deletePlan']);
+    Route::get('/admin/user-subscriptions', [AdminSubscriptionController::class, 'getUserSubscriptions']);
+    Route::get('/admin/subscriptions/stats', [AdminSubscriptionController::class, 'stats']);
 });
 
 Route::get('/bookings/availability', [BookingController::class, 'getAvailability']);
@@ -101,52 +173,29 @@ Route::get('/live-sessions/{liveSession}/comments', [LiveSessionController::clas
 Route::get('/notifications/live/status', [PushNotificationController::class, 'status']);
 Route::post('/notifications/live/subscribe', [PushNotificationController::class, 'subscribe']);
 Route::post('/notifications/live/unsubscribe', [PushNotificationController::class, 'unsubscribe']);
+Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'store']);
+Route::get('/ecomm/products/{product}/reviews', [ProductReviewController::class, 'index']);
 
 // Subscription Plans - Public
 Route::get('/subscriptions/plans', [SubscriptionController::class, 'getPlans']);
 Route::post('/subscriptions/subscribe', [SubscriptionController::class, 'subscribe']);
-
-// Admin API Routes (No auth required for demo, ideally we'd add admin auth middleware)
-Route::get('/admin/users', [ApiAuthController::class, 'getAllUsers']);
-Route::get('/admin/dashboard-stats', [ApiAuthController::class, 'getAdminDashboardStats']);
-Route::post('/admin/astrologers/create', [ApiAuthController::class, 'createAstrologer']);
-Route::get('/admin/astrologers', [ApiAuthController::class, 'getAstrologers']);
-Route::get('/admin/astrologers/{id}', [ApiAuthController::class, 'getAdminAstrologer']);
-Route::post('/admin/astrologers/{id}', [ApiAuthController::class, 'updateAdminAstrologer']);
-Route::delete('/admin/astrologers/{id}', [ApiAuthController::class, 'deleteAdminAstrologer']);
-Route::get('/admin/search', [ApiAuthController::class, 'adminSearch']);
-
-// Admin Booking Routes
-Route::get('/admin/bookings', [AdminBookingController::class, 'index']);
-Route::post('/admin/bookings/{id}/status', [AdminBookingController::class, 'updateStatus']);
-Route::get('/admin/bookings/stats', [AdminBookingController::class, 'stats']);
-
-// Admin Subscription Routes
-Route::get('/admin/subscription-plans', [AdminSubscriptionController::class, 'getPlans']);
-Route::post('/admin/subscription-plans', [AdminSubscriptionController::class, 'storePlan']);
-Route::post('/admin/subscription-plans/{id}', [AdminSubscriptionController::class, 'updatePlan']);
-Route::delete('/admin/subscription-plans/{id}', [AdminSubscriptionController::class, 'deletePlan']);
-Route::get('/admin/user-subscriptions', [AdminSubscriptionController::class, 'getUserSubscriptions']);
-Route::get('/admin/subscriptions/stats', [AdminSubscriptionController::class, 'stats']);
 
 // Public Astrologer Endpoints
 Route::get('/astrologers', [ApiAuthController::class, 'getAstrologers']);
 Route::get('/astrologer/{id}', [ApiAuthController::class, 'getAstrologerProfile']);
 Route::get('/rituals', [RitualController::class, 'index']);
 Route::get('/rituals/{slug}', [RitualController::class, 'show']);
+Route::get('/blog-categories', [BlogController::class, 'categories']);
+Route::get('/blogs', [BlogController::class, 'blogs']);
+Route::get('/blogs/{slug}', [BlogController::class, 'showBlog']);
 
 // Public E-Commerce Endpoints
 Route::get('/ecomm/categories', [EcommController::class, 'getCategories']);
 Route::get('/ecomm/products/trending', [EcommController::class, 'getTrendingProducts']);
+Route::post('/ecomm/shipping-quote', [EcommController::class, 'shippingQuote']);
 Route::get('/ecomm/products', [EcommController::class, 'getAllProducts']);
 Route::get('/ecomm/products/{id}', [EcommController::class, 'getProduct']);
 
-Route::get('/admin/rituals', [RitualController::class, 'adminIndex']);
-Route::post('/admin/rituals', [RitualController::class, 'store']);
-Route::post('/admin/rituals/{id}', [RitualController::class, 'update']);
-Route::delete('/admin/rituals/{id}', [RitualController::class, 'destroy']);
-Route::get('/admin/ritual-bookings', [RitualBookingController::class, 'index']);
-Route::post('/admin/ritual-bookings/{ritualBooking}/status', [RitualBookingController::class, 'updateStatus']);
 
 // Astrology API Proxy Endpoints
 Route::get('/astrology/horoscope/daily', [AstrologyController::class, 'getDailyHoroscope']);
@@ -159,6 +208,7 @@ Route::post('/prokerala/kundli/free-pdf', [AstrologyController::class, 'download
 Route::post('/prokerala/matching', [AstrologyController::class, 'matchMaking']);
 Route::post('/prokerala/matching/pdf', [AstrologyController::class, 'downloadMatchMakingPdf']);
 Route::post('/prokerala/panchang', [AstrologyController::class, 'getPanchang']);
+Route::post('/prokerala/panchang/extras', [AstrologyController::class, 'getPanchangExtras']);
 Route::get('/prokerala/location/search', [AstrologyController::class, 'searchLocation']);
 
 // Extended Astrology API Endpoints

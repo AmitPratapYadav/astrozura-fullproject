@@ -1,4 +1,5 @@
 import { matchingCalculatorTools, vedicCalculatorTools } from "./astrologyTools";
+import { getServiceIcon } from "./serviceIcons";
 
 const staticServices = [
   {
@@ -11,17 +12,6 @@ const staticServices = [
     ctaLabel: "Open Service",
     ctaTo: "/services/lal-kitab-report",
     accent: "from-[#8C3B3B] to-[#C86B3C]",
-  },
-  {
-    slug: "kundali-report",
-    title: "Kundali Report",
-    category: "Reports",
-    summary: "Comprehensive digital natal report featuring charts D1-D16, core yogas, life predictions, and Vimshottari dasha timelines.",
-    description:
-      "Use the full kundali module to review graha placements, divisional charts, doshas, yogas, and timing-based observations in one place.",
-    ctaLabel: "Open Kundali Report",
-    ctaTo: "/kundli",
-    accent: "from-[#204A72] to-[#3D78A7]",
   },
   {
     slug: "detailed-kundali",
@@ -71,7 +61,7 @@ const staticServices = [
     slug: "tarot-reading",
     title: "Tarot Reading",
     category: "Calculators",
-    summary: "Live Tarot API readings for love, career, finance, and yes/no questions.",
+    summary: "Tarot readings for love, career, finance, and yes/no questions.",
     description:
       "Use the active tarot reading workflow for card-based predictions, then continue to an astrologer consultation when deeper interpretation is needed.",
     ctaLabel: "Open Tarot Reading",
@@ -111,6 +101,7 @@ const vedicServiceEntries = vedicCalculatorTools.map((tool) => ({
   ctaLabel: tool.externalFlow ? "Open Calculator" : "Run Calculator",
   ctaTo: tool.route,
   accent: tool.accent,
+  icon: getServiceIcon(tool.key, tool.slug, tool.title),
 }));
 
 const matchingServiceEntries = matchingCalculatorTools.map((tool) => ({
@@ -122,10 +113,14 @@ const matchingServiceEntries = matchingCalculatorTools.map((tool) => ({
   ctaLabel: tool.externalFlow ? "Open Matching Flow" : "Run Matching Tool",
   ctaTo: tool.route,
   accent: tool.accent,
+  icon: getServiceIcon(tool.key, tool.slug, tool.title),
 }));
 
 export const serviceCatalog = [
-  ...staticServices,
+  ...staticServices.map((service) => ({
+    ...service,
+    icon: getServiceIcon(service.slug, service.title),
+  })),
   ...vedicServiceEntries,
   ...matchingServiceEntries,
 ];
@@ -135,13 +130,13 @@ export const groupedServices = {
     { label: "Rashifal", to: "/rashifal" },
   ],
   reports: [
-    { label: "Lal Kitab Reports", to: "/services/lal-kitab-report" },
-    { label: "Kundali Report", to: "/services/kundali-report" },
-    { label: "Matchmaking Report", to: "/matching" },
-    { label: "Detailed Kundali Analysis", to: "/services/detailed-kundali" },
-    { label: "Detailed Dosha Analysis", to: "/services/detailed-dosha" },
-    { label: "Detailed Matchmaking Report", to: "/services/detailed-matchmaking" },
-    { label: "Daily Nakshatra Predictions", to: "/vedic-calculators?tool=daily-nakshatra-predictions" },
+    { label: "Lal Kitab Reports", to: "/services/lal-kitab-report", icon: getServiceIcon("lal-kitab-report", "Lal Kitab Reports") },
+    { label: "Detailed Dosha Analysis", to: "/services/detailed-dosha", icon: getServiceIcon("detailed-dosha", "Detailed Dosha Analysis") },
+    {
+      label: "Daily Nakshatra Predictions",
+      to: "/vedic-calculators?tool=daily-nakshatra-predictions",
+      icon: getServiceIcon("daily-nakshatra-predictions", "Daily Nakshatra Predictions"),
+    },
   ],
   calculators: [
     ...vedicCalculatorTools
@@ -149,16 +144,13 @@ export const groupedServices = {
       .map((tool) => ({
         label: tool.title,
         to: tool.route,
+        icon: getServiceIcon(tool.key, tool.slug, tool.title),
       })),
-    { label: "Detailed Numerology", to: "/detailed-numerology" },
-    { label: "Tarot Reading", to: "/services/tarot-reading" },
-    { label: "Palm Reading", to: "/services/palm-reading" },
   ],
   premium: [
     { label: "Vedic Astrology", to: "/astrologers" },
     { label: "Muhurat Guidance", to: "/panchang" },
     { label: "Lal Kitab", to: "/services/lal-kitab-report" },
-    { label: "Palmistry", to: "/services/palm-reading" },
   ],
 };
 

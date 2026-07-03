@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\AdminNotification;
 use App\Models\User;
+use App\Services\UserNotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -30,6 +31,7 @@ class BookingController extends Controller
 
         $timezone = 'Asia/Kolkata';
         $astrologer = User::with('astrologerDetail')->findOrFail($validated['astrologer_id']);
+        $this->ensureAstrologerCanAccept($astrologer, $validated['consultation_type']);
         $day = Carbon::parse($validated['booking_date'], $timezone)->startOfDay();
         $slots = $this->generateAvailabilitySlots(
             $astrologer->id,
@@ -38,20 +40,19 @@ class BookingController extends Controller
             $timezone
         );
 
-        $rate = $validated['consultation_type'] === 'chat'
-            ? (float) ($astrologer->astrologerDetail?->chat_price ?? 0)
-            : (float) ($astrologer->astrologerDetail?->call_price ?? 0);
+        $amount = $this->consultationAmount($astrologer, $validated['consultation_type'], (int) $validated['duration']);
+        $rate = $amount / (int) $validated['duration'];
 
         return response()->json([
             'success' => true,
             'slots' => $slots,
-            'amount' => $rate * (int) $validated['duration'],
+            'amount' => $amount,
             'rate_per_minute' => $rate,
             'timezone' => $timezone,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, UserNotificationService $notifications)
     {
         $validated = $request->validate([
             'astrologer_id'     => [
@@ -84,6 +85,7 @@ class BookingController extends Controller
         }
 
         $astrologer = User::with('astrologerDetail')->findOrFail($validated['astrologer_id']);
+        $this->ensureAstrologerCanAccept($astrologer, $validated['consultation_type']);
         $timezone = 'Asia/Kolkata';
         $scheduledAt = $this->parseScheduledAt($validated['booking_date'], $validated['booking_time'], $timezone);
         $endsAt = $scheduledAt->copy()->addMinutes((int) $validated['duration']);
@@ -102,9 +104,13 @@ class BookingController extends Controller
             ], 422);
         }
 
-        $rate = $validated['consultation_type'] === 'chat'
-            ? (float) ($astrologer->astrologerDetail?->chat_price ?? 0)
-            : (float) ($astrologer->astrologerDetail?->call_price ?? 0);
+        $amount = $this->consultationAmount($astrologer, $validated['consultation_type'], (int) $validated['duration']);
+        $commissionPercentage = (float) (
+            $validated['consultation_type'] === 'chat'
+                ? $astrologer->astrologerDetail?->chat_commission_percentage
+                : $astrologer->astrologerDetail?->call_commission_percentage
+        );
+        $platformCommission = round($amount * $commissionPercentage / 100, 2);
 
         $booking = Booking::create([
             'user_id' => $user->id,
@@ -119,10 +125,13 @@ class BookingController extends Controller
             'scheduled_at' => $scheduledAt,
             'ends_at' => $endsAt,
             'timezone' => $timezone,
-            'amount' => $rate * (int) $validated['duration'],
-            'status' => 'confirmed',
-            'payment_status' => 'paid',
-            'payment_method' => 'mock_gateway',
+            'amount' => $amount,
+            'commission_percentage' => $commissionPercentage,
+            'platform_commission_amount' => $platformCommission,
+            'astrologer_earning_amount' => round($amount - $platformCommission, 2),
+            'status' => 'payment_pending',
+            'payment_status' => 'pending',
+            'payment_method' => 'razorpay',
             'notes' => $validated['notes'] ?? null,
             'birth_details' => $this->extractBirthDetails($validated['birth_details'] ?? null),
         ]);
@@ -131,17 +140,19 @@ class BookingController extends Controller
             'booking_reference' => 'BK-' . str_pad((string) $booking->id, 6, '0', STR_PAD_LEFT),
         ]);
 
-        AdminNotification::create([
-            'type' => 'consultation_booking',
-            'title' => 'New consultation booking',
-            'message' => "{$user->name} booked a {$booking->consultation_type} session with {$astrologer->name}.",
-            'route' => '/bookings',
-            'data' => ['booking_id' => $booking->id],
-        ]);
+        $notifications->send(
+            $user,
+            'main',
+            'booking_created',
+            'Consultation reserved',
+            "{$booking->booking_reference} is awaiting payment confirmation.",
+            '/my-bookings',
+            ['booking_id' => $booking->id]
+        );
 
         return response()->json([
             'success' => true,
-            'message' => 'Booking created successfully',
+            'message' => 'Booking created. Complete payment to confirm the session.',
             'booking' => $booking->fresh()->load(['astrologer.astrologerDetail', 'user']),
         ], 201);
     }
@@ -273,7 +284,13 @@ class BookingController extends Controller
         $endUtc = $end->copy()->utc();
 
         return Booking::where('astrologer_id', $astrologerId)
-            ->whereIn('status', $this->blockingStatuses)
+            ->where(function ($query) {
+                $query->whereIn('status', $this->blockingStatuses)
+                    ->orWhere(function ($pending) {
+                        $pending->where('status', 'payment_pending')
+                            ->where('created_at', '>=', Carbon::now()->subMinutes(15));
+                    });
+            })
             ->where(function ($query) use ($startUtc, $endUtc) {
                 $query->where('scheduled_at', '<', $endUtc)
                     ->where('ends_at', '>', $startUtc);
@@ -336,5 +353,32 @@ class BookingController extends Controller
         ], fn ($value) => $value !== null && $value !== '');
 
         return $normalized === [] ? null : $normalized;
+    }
+
+    private function ensureAstrologerCanAccept(User $astrologer, string $type): void
+    {
+        $detail = $astrologer->astrologerDetail;
+        abort_if(!$detail?->is_online, 422, 'This astrologer is currently unavailable.');
+        abort_if($type === 'chat' && !$detail->supports_chat, 422, 'This astrologer is not available for chat consultations.');
+        abort_if($type === 'call' && !$detail->supports_call, 422, 'This astrologer is not available for call consultations.');
+    }
+
+    private function consultationAmount(User $astrologer, string $type, int $duration): float
+    {
+        $detail = $astrologer->astrologerDetail;
+        $durationPrices = $type === 'chat'
+            ? ($detail?->chat_duration_prices ?? [])
+            : ($detail?->call_duration_prices ?? []);
+        $override = $durationPrices[(string) $duration] ?? $durationPrices[$duration] ?? null;
+
+        if ($override !== null && $override !== '') {
+            return round((float) $override, 2);
+        }
+
+        $rate = $type === 'chat'
+            ? (float) ($detail?->chat_price ?? 0)
+            : (float) ($detail?->call_price ?? 0);
+
+        return round($rate * $duration, 2);
     }
 }

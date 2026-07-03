@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, CheckCheck, Menu, Search, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import { apiRequest } from "../lib/api";
+import { apiRequest, assetUrl } from "../lib/api";
 
 function Topbar({ toggleSidebar }) {
   const navigate = useNavigate();
@@ -39,9 +39,7 @@ function Topbar({ toggleSidebar }) {
     const timeoutId = window.setTimeout(async () => {
       try {
         setSearching(true);
-        const response = await apiRequest(`/admin/search?q=${encodeURIComponent(query.trim())}`, {
-          requiresAuth: false,
-        });
+        const response = await apiRequest(`/admin/search?q=${encodeURIComponent(query.trim())}`);
         setResults(response?.results || []);
       } catch (error) {
         console.error("Admin search failed", error);
@@ -179,7 +177,7 @@ function Topbar({ toggleSidebar }) {
           className="w-9 h-9 rounded-full bg-yellow-500 flex items-center justify-center text-black hover:bg-yellow-400 transition"
           title="Admin Profile"
         >
-          <User size={18} />
+          {adminUser?.profile_image ? <img src={assetUrl(adminUser.profile_image)} alt="" className="h-full w-full rounded-full object-cover" /> : <User size={18} />}
         </button>
 
         <button

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useTranslation } from "react-i18next";
+import { Download } from "lucide-react";
+import ComingSoonPopover from "./ComingSoonPopover";
 import users from "../assets/avatar-users.jpg";
 import { downloadFreeKundliPdf, searchLocation } from "../api/prokeralaApi";
 
@@ -97,12 +99,12 @@ export default function HeroServices() {
 
   const handleCreateKundli = async () => {
     if (!form.name || !form.gender || !form.birthDate || !form.timeOfBirth || !form.placeOfBirth) {
-      setMessage("Complete all kundli details before generating the PDF.");
+      setMessage(t("hero.complete_details"));
       return;
     }
 
     if (!form.coordinates) {
-      setMessage("Choose the place of birth from the search dropdown.");
+      setMessage(t("hero.choose_birth_place"));
       return;
     }
 
@@ -132,13 +134,13 @@ export default function HeroServices() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
-      setMessage("Kundli PDF downloaded successfully.");
+      setMessage(t("hero.downloaded"));
     } catch (error) {
       const blob = error?.response?.data;
       if (blob instanceof Blob) {
         setMessage(await parseBlobError(blob));
       } else {
-        setMessage(error?.response?.data?.message || "Unable to generate the kundli PDF.");
+        setMessage(error?.response?.data?.message || t("hero.unable_generate"));
       }
     } finally {
       setLoading(false);
@@ -146,7 +148,7 @@ export default function HeroServices() {
   };
 
   return (
-    <div className="bg-[#FAF7F2] min-h-screen font-sans">
+    <div className="min-h-screen bg-gradient-to-r from-[#5206E1] to-[#8B2BE2] font-sans">
       {message && (
       <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-lg bg-[#d8ba4a] px-6 py-3 text-sm text-white shadow-lg">
           {message}
@@ -157,11 +159,11 @@ export default function HeroServices() {
         <section className="py-10 md:py-16">
           <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
             <div className="text-center md:text-left">
-              <p className="text-xs md:text-sm text-[#D4A73C] font-semibold mb-3">
+              <p className="mb-3 text-xs font-semibold text-[#F2D36B] md:text-sm">
                 {t("hero.tagline")}
               </p>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1F2937] leading-tight">
+              <h1 className="text-3xl font-extrabold leading-tight text-white sm:text-4xl md:text-5xl">
                 {t("hero.title_main")}{" "}
                 <span className="bg-gradient-to-r from-[#d8b14a] to-[#c7926a] bg-clip-text text-transparent italic">
                   {t("hero.title_span")}
@@ -169,28 +171,40 @@ export default function HeroServices() {
                 {t("hero.title_end")}
               </h1>
 
-              <p className="text-[#6B7280] mt-4 md:mt-5 max-w-md mx-auto md:mx-0 text-sm md:text-base">
+              <p className="mx-auto mt-4 max-w-md text-sm text-white/80 md:mx-0 md:mt-5 md:text-base">
                 {t("hero.desc")}
               </p>
 
-              <div className="mt-6 max-w-md mx-auto md:mx-0 text-left bg-white/50 p-4 rounded-xl border border-white shadow-sm inline-block">
-                <p className="text-[11px] font-black text-[#1E3557] uppercase tracking-widest mb-3">Free Kundli Includes:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-xs text-[#6B7280] font-medium">
-                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>General Birth Details (D1)</div>
-                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>Basic Astrological Details</div>
-                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>Rashiphal</div>
-                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>Nakshatraphal</div>
-                  <div className="flex items-center gap-2 sm:col-span-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>Remedy (Past & Present)</div>
+              <div className="mx-auto mt-6 inline-block max-w-md rounded-xl border border-white/20 bg-white/10 p-4 text-left shadow-sm backdrop-blur-sm md:mx-0">
+                <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-white">{t("hero.free_kundli_includes")}</p>
+                <div className="grid grid-cols-1 gap-x-6 gap-y-2 text-xs font-medium text-white/80 sm:grid-cols-2">
+                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>{t("hero.birth_details")}</div>
+                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>{t("hero.basic_astrological_details")}</div>
+                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>{t("hero.rashiphal")}</div>
+                  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>{t("hero.nakshatraphal")}</div>
+                  <div className="flex items-center gap-2 sm:col-span-2"><div className="w-1.5 h-1.5 rounded-full bg-[#d8b14a] shadow-sm"></div>{t("hero.remedy")}</div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 mt-6 justify-center md:justify-start">
-                <button
-                  onClick={handleFreeKundliClick}
-                  className="bg-[#d8b14a] text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-[#c79c3a] transition shadow-lg w-full sm:w-auto"
-                >
-                  {t("hero.cta")}
-                </button>
+              <div className="mt-6 flex flex-col items-center gap-4 md:items-start">
+                <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
+                  <button
+                    onClick={handleFreeKundliClick}
+                    className="group relative w-full overflow-hidden rounded-full bg-gradient-to-r from-[#D4A73C] via-[#e2bd58] to-[#c7924e] px-7 py-3.5 text-sm font-black text-white shadow-[0_16px_30px_rgba(212,167,60,0.28)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_38px_rgba(212,167,60,0.36)] active:translate-y-0 sm:w-auto"
+                  >
+                    <span className="absolute inset-y-0 -left-10 w-8 skew-x-[-18deg] bg-white/30 transition duration-500 group-hover:left-[115%]" />
+                    <span className="relative">{t("hero.cta")}</span>
+                  </button>
+
+                  <ComingSoonPopover className="w-full sm:w-auto">
+                    <span className="group inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#1E3557]/15 bg-white px-7 py-3.5 text-sm font-black text-[#1E3557] shadow-[0_14px_26px_rgba(30,53,87,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-[#D4A73C] hover:bg-[#1E3557] hover:text-white sm:w-auto">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F8E7B8] text-[#1E3557] transition group-hover:bg-white group-hover:text-[#D4A73C]">
+                        <Download size={16} />
+                      </span>
+                      {t("hero.download_app")}
+                    </span>
+                  </ComingSoonPopover>
+                </div>
 
                 <div className="flex items-center gap-2">
                   <img
@@ -198,7 +212,7 @@ export default function HeroServices() {
                     alt="users"
                     className="w-9 h-9 rounded-full object-cover border-2 border-white shadow"
                   />
-                  <p className="text-xs text-[#6B7280]">
+                  <p className="text-xs text-white/80">
                     {t("hero.users_count")}
                   </p>
                 </div>
@@ -239,6 +253,12 @@ export default function HeroServices() {
                   placeholderText={t("hero.form_dob")}
                   dateFormat="dd/MM/yyyy"
                   maxDate={new Date()}
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  yearDropdownItemNumber={100}
+                  scrollableYearDropdown
+                  wrapperClassName="w-full min-w-0"
                   className="border border-gray-200 p-3 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#D4A73C]"
                 />
               </div>
@@ -247,7 +267,7 @@ export default function HeroServices() {
                 type="time"
                 value={form.timeOfBirth}
                 onChange={(event) => handleFieldChange("timeOfBirth", event.target.value)}
-                className="border border-gray-200 p-3 w-full mb-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#D4A73C]"
+                className="min-w-0 border border-gray-200 p-3 w-full mb-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#D4A73C]"
               />
 
               <div className="relative mb-2">
@@ -299,22 +319,22 @@ export default function HeroServices() {
             <div className="grid grid-cols-2 md:grid-cols-4 text-center gap-y-8 gap-x-4">
               <div>
                 <h2 className="text-xl md:text-2xl font-black">25M+</h2>
-                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">HOROSCOPE READS</p>
+                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">{t("hero.stats.horoscope_reads")}</p>
               </div>
 
               <div>
                 <h2 className="text-xl md:text-2xl font-black">1.2k+</h2>
-                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">EXPERT ASTROLOGERS</p>
+                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">{t("hero.stats.expert_astrologers")}</p>
               </div>
 
               <div>
                 <h2 className="text-xl md:text-2xl font-black">4.9/5</h2>
-                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">USER RATINGS</p>
+                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">{t("hero.stats.user_ratings")}</p>
               </div>
 
               <div>
                 <h2 className="text-xl md:text-2xl font-black">150+</h2>
-                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">COUNTRIES SERVED</p>
+                <p className="text-[10px] md:text-xs font-bold opacity-70 tracking-wider">{t("hero.stats.countries_served")}</p>
               </div>
             </div>
           </div>

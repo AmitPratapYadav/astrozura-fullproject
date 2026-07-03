@@ -1,164 +1,18 @@
-import { Download } from "lucide-react"
-import { exportToExcel } from "../utils/exportExcel"
+import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { apiRequest } from "../lib/api";
 
-import {
-BarChart,
-Bar,
-LineChart,
-Line,
-XAxis,
-YAxis,
-CartesianGrid,
-Tooltip,
-ResponsiveContainer
-} from "recharts"
-
-const reportsData = [
-
-{ month:"Jan", revenue:20000, bookings:45 },
-{ month:"Feb", revenue:35000, bookings:60 },
-{ month:"Mar", revenue:40000, bookings:75 },
-{ month:"Apr", revenue:45000, bookings:90 },
-{ month:"May", revenue:50000, bookings:110 }
-
-]
-
-function Reports(){
-
-return(
-
-<div className="space-y-6">
-
-{/* HEADER */}
-
-<div className="flex justify-between items-center">
-
-<h1 className="text-2xl font-bold">
-Reports
-</h1>
-
-<button
-onClick={()=>exportToExcel(reportsData,"reports")}
-className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-yellow-500 hover:text-black"
->
-<Download size={16}/> Export Excel
-</button>
-
-</div>
-
-{/* CHARTS */}
-
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-{/* REVENUE */}
-
-<div className="bg-white rounded-xl shadow p-5">
-
-<h2 className="font-semibold mb-4">
-Revenue
-</h2>
-
-<ResponsiveContainer width="100%" height={250}>
-
-<BarChart data={reportsData}>
-
-<CartesianGrid strokeDasharray="3 3"/>
-
-<XAxis dataKey="month"/>
-
-<YAxis/>
-
-<Tooltip/>
-
-<Bar dataKey="revenue" fill="#facc15"/>
-
-</BarChart>
-
-</ResponsiveContainer>
-
-</div>
-
-{/* BOOKINGS */}
-
-<div className="bg-white rounded-xl shadow p-5">
-
-<h2 className="font-semibold mb-4">
-Bookings
-</h2>
-
-<ResponsiveContainer width="100%" height={250}>
-
-<LineChart data={reportsData}>
-
-<CartesianGrid strokeDasharray="3 3"/>
-
-<XAxis dataKey="month"/>
-
-<YAxis/>
-
-<Tooltip/>
-
-<Line
-type="monotone"
-dataKey="bookings"
-stroke="#3b82f6"
-strokeWidth={3}
-/>
-
-</LineChart>
-
-</ResponsiveContainer>
-
-</div>
-
-</div>
-
-{/* TABLE */}
-
-<div className="bg-white rounded-xl shadow overflow-x-auto">
-
-<table className="w-full text-sm">
-
-<thead className="bg-gray-100">
-
-<tr>
-
-<th className="p-3 text-left">Month</th>
-<th className="p-3 text-left">Revenue</th>
-<th className="p-3 text-left">Bookings</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-{reportsData.map((item,index)=>(
-
-<tr key={index} className="border-b hover:bg-gray-50">
-
-<td className="p-3">{item.month}</td>
-
-<td className="p-3">
-₹{item.revenue.toLocaleString()}
-</td>
-
-<td className="p-3">{item.bookings}</td>
-
-</tr>
-
-))}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-)
-
+export default function Reports() {
+  const [period, setPeriod] = useState("month");
+  const [report, setReport] = useState(null);
+  useEffect(() => { apiRequest(`/admin/analytics?period=${period}`).then(setReport); }, [period]);
+  const totals = report?.totals || {};
+  const cards = [["Users", totals.users], ["Bookings", totals.bookings], ["Consultation revenue", totals.booking_revenue], ["Platform commission", totals.platform_commission], ["Orders", totals.orders], ["Order revenue", totals.order_revenue], ["Rituals", totals.rituals], ["Ritual revenue", totals.ritual_revenue]];
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">Reports</h1><p className="text-sm text-gray-500">Live business performance across every surface.</p></div><select value={period} onChange={(e) => setPeriod(e.target.value)} className="rounded-lg border bg-white px-4 py-2"><option value="week">Weekly</option><option value="month">Monthly</option><option value="year">Yearly</option></select></div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{cards.map(([label, value]) => <div key={label} className="rounded-xl bg-white p-5 shadow"><p className="text-xs uppercase text-gray-500">{label}</p><p className="mt-2 text-2xl font-bold">{label.toLowerCase().includes("revenue") || label.includes("commission") ? `₹${Number(value || 0).toLocaleString("en-IN")}` : value || 0}</p></div>)}</div>
+      {[["Consultations", report?.series?.bookings], ["Shop orders", report?.series?.orders], ["Pooja Anusthan", report?.series?.rituals]].map(([label, series]) => <section key={label} className="rounded-xl bg-white p-5 shadow"><h2 className="mb-4 font-semibold">{label}</h2><div className="h-72 w-full"><ResponsiveContainer><BarChart data={series || []}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="label" /><YAxis /><Tooltip /><Bar dataKey="revenue" fill="#eab308" /><Bar dataKey="total" fill="#1e3a5f" /></BarChart></ResponsiveContainer></div></section>)}
+    </div>
+  );
 }
-
-export default Reports

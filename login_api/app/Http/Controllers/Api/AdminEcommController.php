@@ -10,6 +10,7 @@ use App\Support\MediaStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Services\UserNotificationService;
 
 class AdminEcommController extends Controller
 {
@@ -29,14 +30,19 @@ class AdminEcommController extends Controller
     public function storeCategory(Request $request)
     {
         $this->ensureAdmin($request);
+        $this->normalizeJsonField($request, 'translations');
 
         $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'shipping_charge' => 'nullable|numeric|min:0',
+            'translations' => 'nullable|array',
         ]);
 
         $category = new Category();
         $category->name = $request->name;
+        $category->shipping_charge = $request->input('shipping_charge', 0);
+        $category->translations = $request->input('translations');
 
         if ($request->hasFile('image')) {
             $category->image = MediaStorage::store($request->file('image'), 'categories');
@@ -61,16 +67,23 @@ class AdminEcommController extends Controller
     public function updateCategory(Request $request, $id)
     {
         $this->ensureAdmin($request);
+        $this->normalizeJsonField($request, 'translations');
 
         $category = Category::find($id);
         if (!$category) return response()->json(['status' => 'error', 'message' => 'Category not found'], 404);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($category->id)],
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'shipping_charge' => 'nullable|numeric|min:0',
+            'translations' => 'nullable|array',
         ]);
 
         $category->name = $request->name;
+        $category->shipping_charge = $request->input('shipping_charge', $category->shipping_charge);
+        if ($request->has('translations')) {
+            $category->translations = $request->input('translations');
+        }
 
         if ($request->hasFile('image')) {
             $category->image = MediaStorage::store($request->file('image'), 'categories');
@@ -267,7 +280,7 @@ class AdminEcommController extends Controller
         ]);
     }
 
-    public function updateOrderStatus(Request $request, Order $order)
+    public function updateOrderStatus(Request $request, Order $order, UserNotificationService $notifications)
     {
         $this->ensureAdmin($request);
 
@@ -277,6 +290,15 @@ class AdminEcommController extends Controller
         ]);
 
         $order->update($validated);
+        $notifications->send(
+            $order->user_id,
+            'shop',
+            'order_status',
+            'Order status updated',
+            "{$order->order_number} is now {$order->status}.",
+            "/dashboard/orders/{$order->id}",
+            ['order_id' => $order->id, 'status' => $order->status]
+        );
 
         return response()->json([
             'status' => 'success',
@@ -319,6 +341,7 @@ class AdminEcommController extends Controller
             'variants.*.status' => 'nullable|boolean',
             'variants.*.position' => 'nullable|integer|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'translations' => 'nullable|array',
         ];
     }
 
@@ -338,18 +361,24 @@ class AdminEcommController extends Controller
             'seed_type' => $this->nullableText($validated['seed_type'] ?? null),
             'thread_type' => $this->nullableText($validated['thread_type'] ?? null),
             'origin' => $this->nullableText($validated['origin'] ?? null),
+            'translations' => $validated['translations'] ?? $product->translations,
             'option_names' => array_values($validated['option_names'] ?? []),
         ]);
     }
 
     private function normalizeVariantPayload(Request $request): void
     {
-        foreach (['option_names', 'variants'] as $key) {
-            $value = $request->input($key);
-            if (is_string($value)) {
-                $decoded = json_decode($value, true);
-                $request->merge([$key => is_array($decoded) ? $decoded : []]);
-            }
+        foreach (['option_names', 'variants', 'translations'] as $key) {
+            $this->normalizeJsonField($request, $key);
+        }
+    }
+
+    private function normalizeJsonField(Request $request, string $key): void
+    {
+        $value = $request->input($key);
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $request->merge([$key => is_array($decoded) ? $decoded : []]);
         }
     }
 

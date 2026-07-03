@@ -1,0 +1,305 @@
+- generic [ref=f1e4]:
+  - generic [ref=f1e5]:
+    - img "AstroZura Admin Panel" [ref=f1e7]
+    - generic [ref=f1e8]:
+      - link "Dashboard" [ref=f1e9] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=f1e10]
+        - text: Dashboard
+      - link "Astrologers" [ref=f1e15] [cursor=pointer]:
+        - /url: /astrologers
+        - img [ref=f1e16]
+        - text: Astrologers
+      - link "Add Astrologer" [ref=f1e18] [cursor=pointer]:
+        - /url: /add-astrologer
+        - img [ref=f1e19]
+        - text: Add Astrologer
+      - link "Users" [active] [ref=f1e22] [cursor=pointer]:
+        - /url: /users
+        - img [ref=f1e23]
+        - text: Users
+      - link "Bookings" [ref=f1e28] [cursor=pointer]:
+        - /url: /bookings
+        - img [ref=f1e29]
+        - text: Bookings
+      - link "Payments" [ref=f1e31] [cursor=pointer]:
+        - /url: /payments
+        - img [ref=f1e32]
+        - text: Payments
+      - link "Reports" [ref=f1e34] [cursor=pointer]:
+        - /url: /reports
+        - img [ref=f1e35]
+        - text: Reports
+      - link "Reviews" [ref=f1e38] [cursor=pointer]:
+        - /url: /reviews
+        - img [ref=f1e39]
+        - text: Reviews
+      - paragraph [ref=f1e42]: E-Commerce
+      - link "Categories" [ref=f1e43] [cursor=pointer]:
+        - /url: /categories
+        - img [ref=f1e44]
+        - text: Categories
+      - link "Products" [ref=f1e48] [cursor=pointer]:
+        - /url: /products
+        - img [ref=f1e49]
+        - text: Products
+      - link "Orders" [ref=f1e53] [cursor=pointer]:
+        - /url: /orders
+        - img [ref=f1e54]
+        - text: Orders
+      - link "Rituals" [ref=f1e59] [cursor=pointer]:
+        - /url: /rituals
+        - img [ref=f1e60]
+        - text: Rituals
+      - link "Ritual Bookings" [ref=f1e62] [cursor=pointer]:
+        - /url: /ritual-bookings
+        - img [ref=f1e63]
+        - text: Ritual Bookings
+      - link "Offers" [ref=f1e65] [cursor=pointer]:
+        - /url: /offers
+        - img [ref=f1e66]
+        - text: Offers
+      - paragraph [ref=f1e72]: Subscriptions
+      - link "Newsletter Subscribers" [ref=f1e73] [cursor=pointer]:
+        - /url: /user-subscriptions
+        - img [ref=f1e74]
+        - text: Newsletter Subscribers
+      - paragraph [ref=f1e78]: Content
+      - link "Blog Categories" [ref=f1e79] [cursor=pointer]:
+        - /url: /blog-categories
+        - img [ref=f1e80]
+        - text: Blog Categories
+      - link "Blogs" [ref=f1e84] [cursor=pointer]:
+        - /url: /blogs
+        - img [ref=f1e85]
+        - text: Blogs
+    - link "Admin Profile" [ref=f1e89] [cursor=pointer]:
+      - /url: /profile
+      - img [ref=f1e90]
+      - text: Admin Profile
+  - generic [ref=f1e93]:
+    - generic [ref=f1e94]:
+      - heading "Welcome, Codex UI Admin" [level=1] [ref=f1e96]
+      - generic [ref=f1e97]:
+        - generic [ref=f1e99]:
+          - img [ref=f1e100]
+          - textbox "Search bookings, users, astrologers..." [ref=f1e103]
+        - button "Admin notifications" [ref=f1e105] [cursor=pointer]:
+          - img [ref=f1e106]
+        - button "Admin Profile" [ref=f1e109]:
+          - img [ref=f1e110]
+        - button "Logout" [ref=f1e113]
+    - main [ref=f1e114]:
+      - generic [ref=f1e260]:
+        - generic [ref=f1e261]:
+          - heading "Users" [level=1] [ref=f1e262]
+          - paragraph [ref=f1e263]: Customer accounts across AstroZura and the shop.
+        - generic [ref=f1e264]:
+          - generic [ref=f1e265]:
+            - img [ref=f1e266]
+            - textbox [ref=f1e269]:
+              - /placeholder: Search users
+          - button "Export" [ref=f1e270]:
+            - img [ref=f1e271]
+            - text: Export
+        - table [ref=f1e275]:
+          - rowgroup [ref=f1e276]:
+            - row "Name Email Phone Joined Activity" [ref=f1e277]:
+              - columnheader "Name" [ref=f1e278]
+              - columnheader "Email" [ref=f1e279]
+              - columnheader "Phone" [ref=f1e280]
+              - columnheader "Joined" [ref=f1e281]
+              - columnheader "Activity" [ref=f1e282]
+          - rowgroup [ref=f1e283]:
+            - row "Amit Yadav yadavamit658@asia.com - 7/1/2026 View Details" [ref=f1e284]:
+              - cell "Amit Yadav" [ref=f1e285]
+              - cell "yadavamit658@asia.com" [ref=f1e286]
+              - cell "-" [ref=f1e287]
+              - cell "7/1/2026" [ref=f1e288]
+              - cell "View Details" [ref=f1e289]:
+                - link "View Details" [ref=f1e290] [cursor=pointer]:
+                  - /url: /users/29
+            - row "test test spiringer9@gmail.com - 6/24/2026 View Details" [ref=f1e291]:
+              - cell "test test" [ref=f1e292]
+              - cell "spiringer9@gmail.com" [ref=f1e293]
+              - cell "-" [ref=f1e294]
+              - cell "6/24/2026" [ref=f1e295]
+              - cell "View Details" [ref=f1e296]:
+                - link "View Details" [ref=f1e297] [cursor=pointer]:
+                  - /url: /users/28
+            - row "Amit Yadav hrd.mdenterprises@gmail.com - 6/20/2026 View Details" [ref=f1e298]:
+              - cell "Amit Yadav" [ref=f1e299]
+              - cell "hrd.mdenterprises@gmail.com" [ref=f1e300]
+              - cell "-" [ref=f1e301]
+              - cell "6/20/2026" [ref=f1e302]
+              - cell "View Details" [ref=f1e303]:
+                - link "View Details" [ref=f1e304] [cursor=pointer]:
+                  - /url: /users/27
+            - row "User Fhcxk - 1234567890 6/15/2026 View Details" [ref=f1e305]:
+              - cell "User Fhcxk" [ref=f1e306]
+              - cell "-" [ref=f1e307]
+              - cell "1234567890" [ref=f1e308]
+              - cell "6/15/2026" [ref=f1e309]
+              - cell "View Details" [ref=f1e310]:
+                - link "View Details" [ref=f1e311] [cursor=pointer]:
+                  - /url: /users/26
+            - row "User mvWJB - 7814086588 5/13/2026 View Details" [ref=f1e312]:
+              - cell "User mvWJB" [ref=f1e313]
+              - cell "-" [ref=f1e314]
+              - cell "7814086588" [ref=f1e315]
+              - cell "5/13/2026" [ref=f1e316]
+              - cell "View Details" [ref=f1e317]:
+                - link "View Details" [ref=f1e318] [cursor=pointer]:
+                  - /url: /users/25
+            - row "Sahil M example@gmail.com - 5/8/2026 View Details" [ref=f1e319]:
+              - cell "Sahil M" [ref=f1e320]
+              - cell "example@gmail.com" [ref=f1e321]
+              - cell "-" [ref=f1e322]
+              - cell "5/8/2026" [ref=f1e323]
+              - cell "View Details" [ref=f1e324]:
+                - link "View Details" [ref=f1e325] [cursor=pointer]:
+                  - /url: /users/24
+            - row "Amit Yadav yadavamit658@rediffmail.com - 5/6/2026 View Details" [ref=f1e326]:
+              - cell "Amit Yadav" [ref=f1e327]
+              - cell "yadavamit658@rediffmail.com" [ref=f1e328]
+              - cell "-" [ref=f1e329]
+              - cell "5/6/2026" [ref=f1e330]
+              - cell "View Details" [ref=f1e331]:
+                - link "View Details" [ref=f1e332] [cursor=pointer]:
+                  - /url: /users/23
+            - row "User fTY3r - 8744863238 5/1/2026 View Details" [ref=f1e333]:
+              - cell "User fTY3r" [ref=f1e334]
+              - cell "-" [ref=f1e335]
+              - cell "8744863238" [ref=f1e336]
+              - cell "5/1/2026" [ref=f1e337]
+              - cell "View Details" [ref=f1e338]:
+                - link "View Details" [ref=f1e339] [cursor=pointer]:
+                  - /url: /users/22
+            - row "User QrWWv - 7906931044 4/29/2026 View Details" [ref=f1e340]:
+              - cell "User QrWWv" [ref=f1e341]
+              - cell "-" [ref=f1e342]
+              - cell "7906931044" [ref=f1e343]
+              - cell "4/29/2026" [ref=f1e344]
+              - cell "View Details" [ref=f1e345]:
+                - link "View Details" [ref=f1e346] [cursor=pointer]:
+                  - /url: /users/21
+            - row "User EhUtu - 9356765324 4/29/2026 View Details" [ref=f1e347]:
+              - cell "User EhUtu" [ref=f1e348]
+              - cell "-" [ref=f1e349]
+              - cell "9356765324" [ref=f1e350]
+              - cell "4/29/2026" [ref=f1e351]
+              - cell "View Details" [ref=f1e352]:
+                - link "View Details" [ref=f1e353] [cursor=pointer]:
+                  - /url: /users/20
+            - row "User sS7BX - 8130270994 4/29/2026 View Details" [ref=f1e354]:
+              - cell "User sS7BX" [ref=f1e355]
+              - cell "-" [ref=f1e356]
+              - cell "8130270994" [ref=f1e357]
+              - cell "4/29/2026" [ref=f1e358]
+              - cell "View Details" [ref=f1e359]:
+                - link "View Details" [ref=f1e360] [cursor=pointer]:
+                  - /url: /users/19
+            - row "User vWRXw - 9357468560 4/29/2026 View Details" [ref=f1e361]:
+              - cell "User vWRXw" [ref=f1e362]
+              - cell "-" [ref=f1e363]
+              - cell "9357468560" [ref=f1e364]
+              - cell "4/29/2026" [ref=f1e365]
+              - cell "View Details" [ref=f1e366]:
+                - link "View Details" [ref=f1e367] [cursor=pointer]:
+                  - /url: /users/18
+            - row "krishna singh krishna@gmail.com - 4/24/2026 View Details" [ref=f1e368]:
+              - cell "krishna singh" [ref=f1e369]
+              - cell "krishna@gmail.com" [ref=f1e370]
+              - cell "-" [ref=f1e371]
+              - cell "4/24/2026" [ref=f1e372]
+              - cell "View Details" [ref=f1e373]:
+                - link "View Details" [ref=f1e374] [cursor=pointer]:
+                  - /url: /users/17
+            - row "User L7qW8 - 8141594182 4/16/2026 View Details" [ref=f1e375]:
+              - cell "User L7qW8" [ref=f1e376]
+              - cell "-" [ref=f1e377]
+              - cell "8141594182" [ref=f1e378]
+              - cell "4/16/2026" [ref=f1e379]
+              - cell "View Details" [ref=f1e380]:
+                - link "View Details" [ref=f1e381] [cursor=pointer]:
+                  - /url: /users/16
+            - row "SHREYA GUPTA shreyagupta0726@gmail.com - 4/15/2026 View Details" [ref=f1e382]:
+              - cell "SHREYA GUPTA" [ref=f1e383]
+              - cell "shreyagupta0726@gmail.com" [ref=f1e384]
+              - cell "-" [ref=f1e385]
+              - cell "4/15/2026" [ref=f1e386]
+              - cell "View Details" [ref=f1e387]:
+                - link "View Details" [ref=f1e388] [cursor=pointer]:
+                  - /url: /users/15
+            - row "User FUGvZ - 6395279589 4/15/2026 View Details" [ref=f1e389]:
+              - cell "User FUGvZ" [ref=f1e390]
+              - cell "-" [ref=f1e391]
+              - cell "6395279589" [ref=f1e392]
+              - cell "4/15/2026" [ref=f1e393]
+              - cell "View Details" [ref=f1e394]:
+                - link "View Details" [ref=f1e395] [cursor=pointer]:
+                  - /url: /users/14
+            - row "Amit Yadav - 8367992345 4/14/2026 View Details" [ref=f1e396]:
+              - cell "Amit Yadav" [ref=f1e397]
+              - cell "-" [ref=f1e398]
+              - cell "8367992345" [ref=f1e399]
+              - cell "4/14/2026" [ref=f1e400]
+              - cell "View Details" [ref=f1e401]:
+                - link "View Details" [ref=f1e402] [cursor=pointer]:
+                  - /url: /users/13
+            - row "Ananaya Gupta Astroexpertananyagupta@gmail.com - 4/14/2026 View Details" [ref=f1e403]:
+              - cell "Ananaya Gupta" [ref=f1e404]
+              - cell "Astroexpertananyagupta@gmail.com" [ref=f1e405]
+              - cell "-" [ref=f1e406]
+              - cell "4/14/2026" [ref=f1e407]
+              - cell "View Details" [ref=f1e408]:
+                - link "View Details" [ref=f1e409] [cursor=pointer]:
+                  - /url: /users/12
+            - row "User 8GxC4 - 8433486459 4/14/2026 View Details" [ref=f1e410]:
+              - cell "User 8GxC4" [ref=f1e411]
+              - cell "-" [ref=f1e412]
+              - cell "8433486459" [ref=f1e413]
+              - cell "4/14/2026" [ref=f1e414]
+              - cell "View Details" [ref=f1e415]:
+                - link "View Details" [ref=f1e416] [cursor=pointer]:
+                  - /url: /users/11
+            - row "Amit Yadav yadavamit658@gmail.com 8368002595 4/14/2026 View Details" [ref=f1e417]:
+              - cell "Amit Yadav" [ref=f1e418]
+              - cell "yadavamit658@gmail.com" [ref=f1e419]
+              - cell "8368002595" [ref=f1e420]
+              - cell "4/14/2026" [ref=f1e421]
+              - cell "View Details" [ref=f1e422]:
+                - link "View Details" [ref=f1e423] [cursor=pointer]:
+                  - /url: /users/10
+            - row "Vishal Yadav yadavamit658@yahoo.com - 4/14/2026 View Details" [ref=f1e424]:
+              - cell "Vishal Yadav" [ref=f1e425]
+              - cell "yadavamit658@yahoo.com" [ref=f1e426]
+              - cell "-" [ref=f1e427]
+              - cell "4/14/2026" [ref=f1e428]
+              - cell "View Details" [ref=f1e429]:
+                - link "View Details" [ref=f1e430] [cursor=pointer]:
+                  - /url: /users/9
+            - row "Amit Yadav - 9891446746 4/14/2026 View Details" [ref=f1e431]:
+              - cell "Amit Yadav" [ref=f1e432]
+              - cell "-" [ref=f1e433]
+              - cell "9891446746" [ref=f1e434]
+              - cell "4/14/2026" [ref=f1e435]
+              - cell "View Details" [ref=f1e436]:
+                - link "View Details" [ref=f1e437] [cursor=pointer]:
+                  - /url: /users/8
+            - row "Test Name nope you@example.com - 4/14/2026 View Details" [ref=f1e438]:
+              - cell "Test Name nope" [ref=f1e439]
+              - cell "you@example.com" [ref=f1e440]
+              - cell "-" [ref=f1e441]
+              - cell "4/14/2026" [ref=f1e442]
+              - cell "View Details" [ref=f1e443]:
+                - link "View Details" [ref=f1e444] [cursor=pointer]:
+                  - /url: /users/7
+            - row "Amit Yadav amit.nathoasto@gmail.com - 4/14/2026 View Details" [ref=f1e445]:
+              - cell "Amit Yadav" [ref=f1e446]
+              - cell "amit.nathoasto@gmail.com" [ref=f1e447]
+              - cell "-" [ref=f1e448]
+              - cell "4/14/2026" [ref=f1e449]
+              - cell "View Details" [ref=f1e450]:
+                - link "View Details" [ref=f1e451] [cursor=pointer]:
+                  - /url: /users/6

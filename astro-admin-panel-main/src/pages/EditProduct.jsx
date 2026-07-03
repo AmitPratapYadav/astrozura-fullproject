@@ -27,6 +27,9 @@ export default function EditProduct() {
     origin: "",
     is_trending: false,
     status: true,
+    name_hi: "",
+    description_hi: "",
+    benefits_hi: "",
   });
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -70,6 +73,9 @@ export default function EditProduct() {
           origin: product.origin || "",
           is_trending: Boolean(product.is_trending),
           status: Boolean(product.status),
+          name_hi: product.translations?.hi?.name || "",
+          description_hi: product.translations?.hi?.description || "",
+          benefits_hi: product.translations?.hi?.benefits || "",
         });
         if (product.image) {
           setPreview(assetUrl(product.image));
@@ -134,6 +140,11 @@ export default function EditProduct() {
       data.append("status", formData.status ? 1 : 0);
       data.append("option_names", JSON.stringify(optionNames));
       data.append("variants", JSON.stringify(variants));
+      data.append("translations", JSON.stringify({ hi: {
+        name: formData.name_hi,
+        description: formData.description_hi,
+        benefits: formData.benefits_hi,
+      } }));
       
       if (imageFile) {
         data.append("image", imageFile);
@@ -295,6 +306,10 @@ export default function EditProduct() {
               placeholder="Care instructions and safety information..."
             ></textarea>
           </div>
+        </div>
+        <div className="rounded-xl border bg-gray-50 p-4">
+          <h2 className="mb-3 font-semibold">Hindi Content</h2>
+          <div className="grid gap-4 md:grid-cols-2"><input name="name_hi" value={formData.name_hi} onChange={handleInputChange} placeholder="Product name in Hindi" className="rounded-lg border p-3" /><textarea name="description_hi" value={formData.description_hi} onChange={handleInputChange} placeholder="Description in Hindi" className="rounded-lg border p-3" /><textarea name="benefits_hi" value={formData.benefits_hi} onChange={handleInputChange} placeholder="Benefits in Hindi" className="rounded-lg border p-3 md:col-span-2" /></div>
         </div>
 
         <div className="border-t pt-4">

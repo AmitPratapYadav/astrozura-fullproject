@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
 import { FaChevronLeft, FaChevronRight, FaStar } from "react-icons/fa"
+import AstrologerStatusBadge from "../components/AstrologerStatusBadge"
 
 import avatar from "../assets/astrologer-avatar.jpg"
 import img1 from "../assets/img1.png"
@@ -34,7 +35,7 @@ const handleBtn = (id,text)=>{
 useEffect(() => {
   const fetchAstrologer = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://astrozura.com/apigateway/index.php/api';
       const response = await fetch(`${apiUrl}/astrologer/${id}`);
       const data = await response.json();
       if (data.success) {
@@ -52,7 +53,7 @@ useEffect(() => {
   
   const fetchSimilarExperts = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://astrozura.com/apigateway/index.php/api';
       const response = await fetch(`${apiUrl}/astrologers`);
       const data = await response.json();
       if (data.success) {
@@ -74,7 +75,7 @@ useEffect(() => {
 const getImageUrl = (path) => {
   if (!path) return avatar;
   if (path.startsWith('http')) return path;
-  const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://astrozura.com';
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
@@ -185,6 +186,9 @@ return(
 <p className="opacity-70 mt-2">
 {details.experience_years || 0}+ Years Experience | {details.languages || 'English, Hindi'}
 </p>
+<div className="mt-3 flex justify-center md:justify-start">
+  <AstrologerStatusBadge status={astrologer.availability_status} />
+</div>
 
 <div className="flex flex-wrap gap-3 mt-5 justify-center md:justify-start">
 
@@ -368,6 +372,9 @@ Similar Experts
 <div className="p-4">
 
 <h3 className="font-semibold">{astro.name}</h3>
+<div className="mt-2">
+  <AstrologerStatusBadge status={astro.availability_status} />
+</div>
 <p className="text-gray-500 text-sm mt-1">
   {astro.astrologer_detail?.specialities || "Astrology"}
 </p>

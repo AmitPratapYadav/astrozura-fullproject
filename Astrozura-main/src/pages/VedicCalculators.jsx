@@ -12,7 +12,6 @@ import {
   GemstoneSuggestionReport,
   KaalSarpDoshaReport,
   PitraDoshaReport,
-  ProviderErrorNotice,
   PujaSuggestionReport,
   RudrakshaSuggestionReport,
   SadeSatiReport,
@@ -29,6 +28,7 @@ import {
   vedicCalculatorTools,
 } from "../data/astrologyTools";
 import { groupedServices } from "../data/serviceCatalog";
+import { getServiceIcon } from "../data/serviceIcons";
 
 const initialForm = {
   date_of_birth: "",
@@ -121,6 +121,8 @@ export default function VedicCalculators() {
   if (tool.externalFlow) {
     return <Navigate to={tool.route} replace />;
   }
+
+  const toolIcon = getServiceIcon(tool.key, tool.slug, tool.title);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -240,12 +242,21 @@ export default function VedicCalculators() {
 
       <section className={`relative overflow-hidden bg-gradient-to-r pb-28 pt-20 text-white md:pb-32 ${tool.accent}`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0))]" />
-        <div className="relative mx-auto max-w-7xl px-4 md:px-8">
-          <span className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
-            Vedic Calculator
-          </span>
-          <h1 className="mt-6 max-w-4xl text-4xl font-black md:text-5xl">{tool.title}</h1>
-          <p className="mt-5 max-w-3xl text-sm leading-7 text-white/85 md:text-base">{tool.description}</p>
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 md:grid-cols-[1fr_auto] md:items-center md:px-8">
+          <div>
+            <span className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
+              Vedic Calculator
+            </span>
+            <h1 className="mt-6 max-w-4xl text-4xl font-black md:text-5xl">{tool.title}</h1>
+            <p className="mt-5 max-w-3xl text-sm leading-7 text-white/85 md:text-base">{tool.description}</p>
+          </div>
+          <div className="flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-white/95 p-3 shadow-2xl md:h-36 md:w-36">
+            {toolIcon ? (
+              <img src={toolIcon} alt="" className="h-full w-full object-contain" />
+            ) : (
+              <span className="text-3xl font-black text-[#1E3557]">AZ</span>
+            )}
+          </div>
         </div>
       </section>
 
@@ -254,7 +265,7 @@ export default function VedicCalculators() {
           <div className="space-y-6">
             <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold">Calculator Inputs</h2>
-              <p className="mt-2 text-sm text-slate-500">This tool uses the exact parameter contract from the active Astrology API calculator mapping.</p>
+              <p className="mt-2 text-sm text-slate-500">Enter the required details for the selected calculator.</p>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-5">
 
@@ -266,6 +277,7 @@ export default function VedicCalculators() {
                       type="date"
                       name="date_of_birth"
                       value={form.date_of_birth}
+                      max={new Date().toISOString().slice(0, 10)}
                       onChange={handleChange}
                       className="w-full rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                     />
@@ -404,7 +416,7 @@ export default function VedicCalculators() {
                 <div className="rounded-2xl border border-slate-200 bg-[#f8f9fc] p-4">
                   <p className="text-sm font-bold text-slate-700">Optional Dasha Sub-period Inputs</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Leave blank to generate the core dasha report. Fill these when you want the parameterized sub-period APIs.
+                    Leave blank to generate the core dasha report. Fill these only when you want a specific sub-period calculation.
                   </p>
                   <div className="mt-4 space-y-3">
                     <input
@@ -537,7 +549,7 @@ export default function VedicCalculators() {
               <div className="rounded-3xl border border-slate-100 bg-white p-10 shadow-sm">
                 <h2 className="text-2xl font-bold">Ready to Calculate</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-                  Use this page to run live Astrology API-backed Vedic calculators with the inputs required by the selected tool.
+                  Use this page to generate the selected Vedic calculation from the required birth details.
                 </p>
               </div>
             ) : (
@@ -573,8 +585,6 @@ export default function VedicCalculators() {
                   </div>
                 </div>
 
-                <ProviderErrorNotice providerPayload={providerPayload} />
-
                 {tool.key === "pitra-dosha" ? (
                   <PitraDoshaReport result={result} />
                 ) : tool.key === "sade-sati" ? (
@@ -598,14 +608,8 @@ export default function VedicCalculators() {
                 ) : providerSections.length > 0 ? (
                   <ProviderSections sections={providerSections} />
                 ) : (
-                  <ReportPanel title="Detailed Result" subtitle="Complete response returned by the backend.">
+                  <ReportPanel title="Detailed Result" subtitle="Complete calculated details for this module.">
                     <ReportDataBlock title="Result" data={result?.data} />
-                  </ReportPanel>
-                )}
-
-                {Object.keys(providerPayload || {}).length > 0 && providerSections.length === 0 && !hasSpecializedReport && (
-                  <ReportPanel title="Provider Payload">
-                    <ReportDataBlock title="Provider Payload" data={providerPayload} />
                   </ReportPanel>
                 )}
 

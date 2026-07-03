@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
@@ -20,14 +21,19 @@ import DashboardHome from "./pages/Dashboard/DashboardHome";
 import UserProfile from "./pages/Dashboard/UserProfile";
 import UserOrders from "./pages/Dashboard/UserOrders";
 import UserWishlist from "./pages/Dashboard/UserWishlist";
+import UserNotifications from "./pages/Dashboard/UserNotifications";
+import OrderDetails from "./pages/Dashboard/OrderDetails";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
-import TestingAccessGate from "./components/TestingAccessGate";
 
 function AppContent() {
   const location = useLocation();
   const hideNavbarPaths = ["/dashboard"];
   const shouldHideNavbar = hideNavbarPaths.some(path => location.pathname.startsWith(path));
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search]);
 
   return (
     <>
@@ -54,7 +60,9 @@ function AppContent() {
           <Route index element={<DashboardHome />} />
           <Route path="profile" element={<UserProfile />} />
           <Route path="orders" element={<UserOrders />} />
+          <Route path="orders/:id" element={<OrderDetails />} />
           <Route path="wishlist" element={<UserWishlist />} />
+          <Route path="notifications" element={<UserNotifications />} />
         </Route>
       </Routes>
     </>
@@ -63,15 +71,13 @@ function AppContent() {
 
 function App() {
   return (
-    <TestingAccessGate>
-      <BrowserRouter>
-        <AuthProvider>
-          <CartProvider>
-            <AppContent />
-          </CartProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TestingAccessGate>
+    <BrowserRouter>
+      <AuthProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

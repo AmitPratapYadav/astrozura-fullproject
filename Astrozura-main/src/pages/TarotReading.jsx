@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getTarotReading } from "../api/prokeralaApi";
+import { getServiceIcon } from "../data/serviceIcons";
 
 const sections = [
   { key: "love", title: "Love" },
   { key: "career", title: "Career" },
   { key: "finance", title: "Finance" },
 ];
+
+const pageIcon = getServiceIcon("tarot-reading");
 
 export default function TarotReading() {
   const [mode, setMode] = useState("general");
@@ -41,7 +44,7 @@ export default function TarotReading() {
 
       showToast(response?.message || "Unable to generate tarot reading.");
     } catch (error) {
-      showToast(error?.response?.data?.message || "Unable to connect to tarot API.");
+      showToast(error?.response?.data?.message || "Unable to connect to the tarot service.");
     } finally {
       setLoading(false);
     }
@@ -55,12 +58,17 @@ export default function TarotReading() {
       <Navbar />
 
       <section className="bg-[#1E3557] px-4 py-20 text-white md:px-8">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#D4A73C]">Premium Calculator</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-black md:text-5xl">Tarot Reading</h1>
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-white/80 md:text-base">
-            Draw live Tarot API readings for love, career, finance, or a yes/no question.
-          </p>
+        <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#D4A73C]">Premium Calculator</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-black md:text-5xl">Tarot Reading</h1>
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-white/80 md:text-base">
+              Draw tarot readings for love, career, finance, or a yes/no question.
+            </p>
+          </div>
+          <div className="flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-white p-3 shadow-2xl md:h-36 md:w-36">
+            <img src={pageIcon} alt="" className="h-full w-full object-contain" />
+          </div>
         </div>
       </section>
 

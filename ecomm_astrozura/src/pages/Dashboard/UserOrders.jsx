@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
+import { useNavigate } from "react-router-dom";
 
 export default function UserOrders() {
   const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -94,7 +96,7 @@ export default function UserOrders() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-xs font-bold text-[#c9a227] hover:underline">View Details</button>
+                      <button onClick={() => navigate(`/dashboard/orders/${order.id}`)} className="text-xs font-bold text-[#c9a227] hover:underline">View Details</button>
                     </td>
                   </tr>
                 ))}
@@ -109,7 +111,7 @@ export default function UserOrders() {
             <h4 className="text-gray-900 font-bold text-lg">No orders found</h4>
             <p className="text-gray-500 mt-1">You haven't placed any {activeTab !== 'all' ? activeTab : ''} orders yet.</p>
             <button 
-              onClick={() => window.location.href = '/all-products'}
+              onClick={() => navigate('/allproduct')}
               className="mt-6 bg-[#c9a227] text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition">
               Start Shopping
             </button>

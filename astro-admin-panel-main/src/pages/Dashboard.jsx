@@ -22,10 +22,10 @@ export default function Dashboard() {
       try {
         setLoading(true);
         const [statsResponse, bookingsResponse, astrologersResponse, usersResponse] = await Promise.all([
-          apiRequest("/admin/dashboard-stats", { requiresAuth: false }),
-          apiRequest("/admin/bookings", { requiresAuth: false }),
-          apiRequest("/admin/astrologers", { requiresAuth: false }),
-          apiRequest("/admin/users", { requiresAuth: false }),
+          apiRequest("/admin/dashboard-stats"),
+          apiRequest("/admin/bookings"),
+          apiRequest("/admin/astrologers"),
+          apiRequest("/admin/users"),
         ]);
 
         if (statsResponse?.success) {

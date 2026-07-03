@@ -1,0 +1,160 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "logo" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "logo" [ref=e6]
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - button "Shop by Categories" [ref=e9] [cursor=pointer]:
+            - text: Shop by Categories
+            - img [ref=e10]
+        - listitem [ref=e12]:
+          - link "View All Products" [ref=e13] [cursor=pointer]:
+            - /url: /allproduct
+        - listitem [ref=e14]:
+          - link "Follow Your Stars" [ref=e15] [cursor=pointer]:
+            - /url: https://astrozura.com
+        - listitem [ref=e16]:
+          - link "Contact us" [ref=e17] [cursor=pointer]:
+            - /url: /Contact
+        - listitem [ref=e18]:
+          - link "About us" [ref=e19] [cursor=pointer]:
+            - /url: /About
+      - generic [ref=e20]:
+        - button "Search products" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+        - link "cart" [ref=e25] [cursor=pointer]:
+          - /url: /cart
+          - img "cart" [ref=e26]
+        - link "Sign In" [ref=e27] [cursor=pointer]:
+          - /url: /login
+          - button "Sign In" [ref=e28]
+  - generic [ref=e29]:
+    - generic [ref=e33]:
+      - paragraph [ref=e34]: SPIRITUAL COLLECTION
+      - heading "Discover Inner Peace Through Sacred Energy" [level=1] [ref=e35]:
+        - text: Discover Inner Peace
+        - text: Through Sacred Energy
+      - paragraph [ref=e36]: Explore powerful crystals, authentic rudraksha, and spiritual tools designed to balance your energy and elevate your lifestyle.
+      - generic [ref=e37]:
+        - button "Shop Now" [ref=e38] [cursor=pointer]
+        - button "Know Your Stars" [ref=e39] [cursor=pointer]
+    - generic [ref=e40]:
+      - paragraph [ref=e41]: CURATED COLLECTIONS
+      - heading "Shop by Category" [level=2] [ref=e42]
+      - paragraph [ref=e44]: No curated collections found right now.
+    - generic [ref=e46]:
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - paragraph [ref=e49]: MOST LOVED
+          - heading "Trending This Week" [level=2] [ref=e50]
+        - generic [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: View All Arrivals
+          - img [ref=e53]
+      - paragraph [ref=e55]: New arrivals are currently being updated.
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - img [ref=e59]
+        - heading "Ethically Sourced" [level=3] [ref=e60]
+        - paragraph [ref=e61]: Supporting local artisans globally.
+      - generic [ref=e62]:
+        - img [ref=e63]
+        - heading "Fast Delivery" [level=3] [ref=e64]
+        - paragraph [ref=e65]: Quick & safe shipping worldwide.
+      - generic [ref=e66]:
+        - img [ref=e67]
+        - heading "Energy Cleansed" [level=3] [ref=e68]
+        - paragraph [ref=e69]: All items purified before shipping.
+      - generic [ref=e70]:
+        - img [ref=e71]
+        - heading "Trusted by 15k+" [level=3] [ref=e72]
+        - paragraph [ref=e73]: Loved by our spiritual community.
+    - generic [ref=e74]:
+      - paragraph [ref=e75]: CUSTOMER STORIES
+      - heading "What Our Tribe Says" [level=2] [ref=e76]
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - img [ref=e80]
+            - img [ref=e81]
+            - img [ref=e82]
+            - img [ref=e83]
+            - img [ref=e84]
+          - paragraph [ref=e85]: "\"The citrine point I received is absolutely breathtaking. You can feel the energy radiating from it. Truly the best crystal shop I've found.\""
+          - img [ref=e86]
+          - heading "Priya Sharma" [level=4] [ref=e87]
+          - paragraph [ref=e88]: Yoga Instructor
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - img [ref=e91]
+            - img [ref=e92]
+            - img [ref=e93]
+            - img [ref=e94]
+            - img [ref=e95]
+          - paragraph [ref=e96]: "\"Finding authentic rudraksha is difficult, but Aura & Earth is my trusted source. The quality is unmatched and the packaging is beautiful.\""
+          - img [ref=e97]
+          - heading "Rohan Mehta" [level=4] [ref=e98]
+          - paragraph [ref=e99]: Meditation Practitioner
+        - generic [ref=e100]:
+          - generic [ref=e101]:
+            - img [ref=e102]
+            - img [ref=e103]
+            - img [ref=e104]
+            - img [ref=e105]
+            - img [ref=e106]
+          - paragraph [ref=e107]: "\"The ritual kits make the perfect gift for loved ones. They are curated with such intention and care. I buy one for every housewarming!\""
+          - img [ref=e108]
+          - heading "Ananya Verma" [level=4] [ref=e109]
+          - paragraph [ref=e110]: Wellness Advocate
+    - contentinfo [ref=e111]:
+      - generic [ref=e112]:
+        - generic [ref=e113]:
+          - img "AstroZura Logo" [ref=e115]
+          - paragraph [ref=e116]: Bringing celestial wisdom to your fingertips. AstroZura connects you with the world's most gifted astrologers.
+          - generic [ref=e117]:
+            - link "Instagram" [ref=e118] [cursor=pointer]:
+              - /url: https://www.instagram.com/astrozura__?utm_source=qr
+            - link "Facebook" [ref=e119] [cursor=pointer]:
+              - /url: https://www.facebook.com/share/1BE7DqPJb4/?mibextid=wwXIfr
+            - link "YouTube" [ref=e120] [cursor=pointer]:
+              - /url: http://www.youtube.com/@AstroZura
+        - generic [ref=e121]:
+          - heading "Company" [level=3] [ref=e122]
+          - list [ref=e123]:
+            - listitem [ref=e124]:
+              - link "About Us" [ref=e125] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e126]:
+              - link "Contact Support" [ref=e127] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e128]:
+              - link "Shipping & Return Policy" [ref=e129] [cursor=pointer]:
+                - /url: /shipping-return
+            - listitem [ref=e130]:
+              - link "Privacy Policy" [ref=e131] [cursor=pointer]:
+                - /url: /privacy-policy
+            - listitem [ref=e132]:
+              - link "Support" [ref=e133] [cursor=pointer]:
+                - /url: /support
+            - listitem [ref=e134]:
+              - link "Refund & Exchange Policy" [ref=e135] [cursor=pointer]:
+                - /url: /refund-policy
+        - generic [ref=e136]:
+          - heading "Newsletter" [level=3] [ref=e137]
+          - paragraph [ref=e138]: Get daily cosmic insights delivered to your inbox.
+          - textbox "Your email address" [ref=e139]
+          - button "Subscribe" [ref=e140] [cursor=pointer]
+        - generic [ref=e141]:
+          - heading "Download App" [level=3] [ref=e142]
+          - paragraph [ref=e143]: Keep AstroZura rituals, consultations, and shop updates close at hand.
+          - generic [ref=e144]:
+            - button "Coming soon" [ref=e146] [cursor=pointer]:
+              - img "Download on the App Store" [ref=e147]
+            - button "Coming soon" [ref=e149] [cursor=pointer]:
+              - img "Get it on Google Play" [ref=e150]
+      - generic [ref=e152]:
+        - paragraph [ref=e153]: © 2026 AstroZura Inc. All rights reserved.
+        - generic [ref=e154]:
+          - generic [ref=e155] [cursor=pointer]: Disclaimer
+          - generic [ref=e156] [cursor=pointer]: Sitemap

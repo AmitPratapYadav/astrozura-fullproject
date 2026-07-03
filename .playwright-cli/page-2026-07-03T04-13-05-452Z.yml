@@ -1,0 +1,12 @@
+- generic [ref=e4]:
+  - paragraph [ref=e5]: Astro Zura
+  - heading "Admin Login" [level=1] [ref=e6]
+  - paragraph [ref=e7]: Sign in to manage astrologers, bookings, products, and reports.
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]: Email
+      - textbox [ref=e11]: admin@astrozura.com
+    - generic [ref=e12]:
+      - generic [ref=e13]: Password
+      - textbox [ref=e14]: "123456"
+    - button "Sign In" [ref=e15]

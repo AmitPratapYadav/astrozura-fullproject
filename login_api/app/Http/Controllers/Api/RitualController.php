@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\RitualService;
 use App\Models\User;
+use App\Models\Booking;
 use App\Support\MediaStorage;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -35,6 +37,7 @@ class RitualController extends Controller
         }
 
         $rituals = $query->paginate((int) $request->query('per_page', 12));
+        $this->localize(collect($rituals->items()), $request->query('la'));
 
         return response()->json([
             'success' => true,
@@ -49,7 +52,7 @@ class RitualController extends Controller
         ]);
     }
 
-    public function show(string $slug)
+    public function show(Request $request, string $slug)
     {
         $ritual = RitualService::query()
             ->with(['assignedAstrologer.astrologerDetail'])
@@ -69,6 +72,8 @@ class RitualController extends Controller
             ->sortByDesc(fn ($astrologer) => (int) ($astrologer->astrologerDetail->is_featured ?? false) * 100 + (float) ($astrologer->astrologerDetail->rating ?? 0))
             ->take(3)
             ->values();
+        $this->appendAvailabilityStatuses($recommendedAstrologers);
+        $this->localize(collect([$ritual]), $request->query('la'));
 
         $similar = RitualService::query()
             ->where('status', true)
@@ -80,6 +85,7 @@ class RitualController extends Controller
             ->orderByDesc('is_popular')
             ->take(4)
             ->get();
+        $this->localize($similar, $request->query('la'));
 
         return response()->json([
             'success' => true,
@@ -89,8 +95,32 @@ class RitualController extends Controller
         ]);
     }
 
-    public function adminIndex()
+    private function appendAvailabilityStatuses($astrologers): void
     {
+        $now = Carbon::now('Asia/Kolkata');
+        $active = Booking::query()
+            ->whereIn('astrologer_id', $astrologers->pluck('id'))
+            ->where('payment_status', 'paid')
+            ->whereIn('status', ['confirmed', 'in_progress'])
+            ->where('scheduled_at', '<=', $now)
+            ->where('ends_at', '>=', $now)
+            ->get()
+            ->keyBy('astrologer_id');
+
+        $astrologers->each(function ($astrologer) use ($active) {
+            $booking = $active->get($astrologer->id);
+            $astrologer->setAttribute(
+                'availability_status',
+                !$astrologer->astrologerDetail?->is_online
+                    ? 'unavailable'
+                    : ($booking ? ($booking->consultation_type === 'call' ? 'on_call' : 'on_chat') : 'available')
+            );
+        });
+    }
+
+    public function adminIndex(Request $request)
+    {
+        $this->ensureAdmin($request);
         return response()->json([
             'success' => true,
             'rituals' => RitualService::query()
@@ -102,6 +132,7 @@ class RitualController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureAdmin($request);
         $validated = $this->validateRitual($request);
 
         $slug = Str::slug($validated['name']);
@@ -123,6 +154,7 @@ class RitualController extends Controller
 
     public function update(Request $request, int $id)
     {
+        $this->ensureAdmin($request);
         $ritual = RitualService::find($id);
 
         if (!$ritual) {
@@ -151,8 +183,9 @@ class RitualController extends Controller
         ]);
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
+        $this->ensureAdmin($request);
         $ritual = RitualService::find($id);
 
         if (!$ritual) {
@@ -189,6 +222,7 @@ class RitualController extends Controller
             'materials' => 'nullable|string',
             'faqs' => 'nullable|string',
             'mantras' => 'nullable|string',
+            'translations' => 'nullable|string',
         ]);
     }
 
@@ -220,7 +254,41 @@ class RitualController extends Controller
             'materials' => $this->parseLineItems($request->input('materials')),
             'faqs' => $this->parseFaqItems($request->input('faqs')),
             'mantras' => $this->parseLineItems($request->input('mantras')),
+            'translations' => $this->decodeTranslations(
+                $validated['translations'] ?? null,
+                $ritual?->translations
+            ),
         ];
+    }
+
+    private function decodeTranslations(?string $value, ?array $fallback = null): ?array
+    {
+        if (!$value) {
+            return $fallback;
+        }
+
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : $fallback;
+    }
+
+    private function localize($models, ?string $language): void
+    {
+        if ($language !== 'hi') {
+            return;
+        }
+
+        foreach ($models as $model) {
+            foreach (($model?->translations['hi'] ?? []) as $field => $value) {
+                if ($value !== null && $value !== '') {
+                    $model->setAttribute($field, $value);
+                }
+            }
+        }
+    }
+
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
     }
 
     private function parseLineItems(?string $value): array

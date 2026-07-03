@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import { getMarriageMatching, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 import { FaHeart, FaStar, FaInfoCircle, FaSpinner, FaExchangeAlt } from "react-icons/fa";
+import { getServiceIcon } from "../data/serviceIcons";
 
 const initialForm = {
   boy_name: "",
@@ -22,6 +23,8 @@ const initialForm = {
   language: "en",
 };
 
+const pageIcon = getServiceIcon("detailed-matchmaking");
+
 export default function DetailedMatchmaking() {
   const { user } = useAuth();
   const [form, setForm] = useState(initialForm);
@@ -32,8 +35,7 @@ export default function DetailedMatchmaking() {
   const [toast, setToast] = useState("");
   const [matchData, setMatchData] = useState(null);
 
-  // Check premium status
-  const isPaid = user?.subscription_status === "active" || user?.plan_name?.toLowerCase().includes("premium");
+  const isPaid = Boolean(user);
 
   useEffect(() => {
     if (!user) return;
@@ -169,16 +171,21 @@ export default function DetailedMatchmaking() {
       <Navbar />
 
       <section className="bg-gradient-to-r from-[#8E2DE2] to-[#4A00E0] px-4 py-20 text-white md:px-10">
-        <div className="mx-auto max-w-7xl text-center md:text-left">
-          <span className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
-            Premium Relationship Reports
-          </span>
-          <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
-            Detailed Matchmaking Report
-          </h1>
-          <p className="mt-6 max-w-3xl text-sm leading-7 text-white/85 md:text-base">
-            Relationship compatibility report going far beyond standard 36-point Gun Milan. We analyze mutual wavelengths, emotional chemistry, romantic bonds, Manglik matching, and future timelines.
-          </p>
+        <div className="mx-auto grid max-w-7xl gap-8 text-center md:grid-cols-[1fr_auto] md:items-center md:text-left">
+          <div>
+            <span className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
+              Premium Relationship Reports
+            </span>
+            <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
+              Detailed Matchmaking Report
+            </h1>
+            <p className="mt-6 max-w-3xl text-sm leading-7 text-white/85 md:text-base">
+              Relationship compatibility report going far beyond standard 36-point Gun Milan. We analyze mutual wavelengths, emotional chemistry, romantic bonds, Manglik matching, and future timelines.
+            </p>
+          </div>
+          <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-white p-3 shadow-2xl md:h-36 md:w-36">
+            <img src={pageIcon} alt="" className="h-full w-full object-contain" />
+          </div>
         </div>
       </section>
 
@@ -202,17 +209,15 @@ export default function DetailedMatchmaking() {
               <span className="rounded-full bg-[#8E2DE2]/10 px-3 py-1 text-xs font-bold text-[#8E2DE2] uppercase tracking-wider">
                 Beyond 36 Points Milan
               </span>
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <span className="text-lg text-gray-400 line-through">₹4,999</span>
-                <span className="text-4xl font-black text-[#1E3557]">₹2,100<span className="text-base font-normal">/-</span></span>
-              </div>
-              <p className="mt-2 text-xs font-bold text-emerald-600">You Save ₹2,899 (58% OFF)</p>
+              <p className="mt-4 text-sm font-semibold text-emerald-700">
+                Sign in to generate this report without a service charge.
+              </p>
               
               <Link
-                to="/subscription"
+                to="/login"
                 className="mt-6 block w-full rounded-2xl bg-[#8E2DE2] py-3.5 text-center text-sm font-bold text-white shadow-md shadow-[#8E2DE2]/25 hover:bg-[#7724C3] transition"
               >
-                Get Premium Matchmaking Analysis
+                Sign In to Generate Report
               </Link>
               <p className="mt-3 text-[11px] text-gray-400">Includes complete compatibility dashboard & mutual remedies</p>
             </div>
@@ -269,6 +274,7 @@ export default function DetailedMatchmaking() {
                       type="date"
                       name="boy_dob"
                       value={form.boy_dob}
+                      max={new Date().toISOString().slice(0, 10)}
                       onChange={handleChange}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#D4A73C]"
                     />
@@ -327,6 +333,7 @@ export default function DetailedMatchmaking() {
                       type="date"
                       name="girl_dob"
                       value={form.girl_dob}
+                      max={new Date().toISOString().slice(0, 10)}
                       onChange={handleChange}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-[#D4A73C]"
                     />

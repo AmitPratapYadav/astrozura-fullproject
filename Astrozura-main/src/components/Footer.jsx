@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Globe, Instagram, Phone, Youtube } from "lucide-react";
+import { Facebook, Instagram, Youtube } from "lucide-react";
 import vedic from "../assets/vedic-astrology.png";
+import appStoreBadge from "../assets/app-store.png";
+import googlePlayBadge from "../assets/google-play.png";
+import paymentMethods from "../assets/footer/payment-methods.png";
 import { useAuth } from "../context/AuthContext";
+import ComingSoonPopover from "./ComingSoonPopover";
+import api from "../api/axios";
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -13,12 +18,12 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
   
   const servicesLinks = [
-    { label: "View All Services", to: "/services" },
-    { label: "Pooja Anusthan", to: "/rituals" },
-    { label: "Horoscope", to: "/rashifal" },
-    { label: "Matchmaking", to: "/matching" },
-    { label: "Kundali Report", to: "/services/kundali-report" },
-    { label: "Astrologers", to: "/astrologers" },
+    { label: t("footer.view_all_services"), to: "/services" },
+    { label: t("footer.pooja"), to: "/rituals" },
+    { label: t("footer.horoscope"), to: "/rashifal" },
+    { label: t("footer.matchmaking"), to: "/matching" },
+    { label: t("footer.kundali"), to: "/services/detailed-kundali" },
+    { label: t("footer.astrologers"), to: "/astrologers" },
   ];
 
   const companyLinks = [
@@ -26,16 +31,39 @@ export default function Footer() {
     { label: t("footer.contact"), to: "/contact-support" },
     { label: t("footer.privacy"), to: "/privacy-policy" },
     { label: t("footer.terms"), to: "/terms-and-conditions" },
+    { label: t("footer.blog"), to: "/blogs" },
   ];
 
-  const socialLinks = [Globe, Instagram, Phone, Youtube];
+  const socialLinks = [
+    {
+      label: "Instagram",
+      href: "https://www.instagram.com/astrozura__?utm_source=qr",
+      icon: Instagram,
+    },
+    {
+      label: "Facebook",
+      href: "https://www.facebook.com/share/1BE7DqPJb4/?mibextid=wwXIfr",
+      icon: Facebook,
+    },
+    {
+      label: "YouTube",
+      href: "http://www.youtube.com/@AstroZura",
+      icon: Youtube,
+    },
+  ];
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!email) {
       setMsg(t("footer.notif_email"));
-    } else {
+      setTimeout(() => setMsg(""), 2000);
+      return;
+    }
+    try {
+      await api.post("/newsletter/subscribe", { email, source: "main" });
       setMsg(t("footer.notif_success"));
       setEmail("");
+    } catch (error) {
+      setMsg(error?.response?.data?.message || "Subscription could not be saved.");
     }
     setTimeout(() => setMsg(""), 2000);
   };
@@ -59,14 +87,27 @@ export default function Footer() {
           </p>
 
           <div className="mt-5 flex gap-3">
-            {socialLinks.map((Icon, index) => (
-              <div
-                key={index}
+            {socialLinks.map(({ label, href, icon: Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
                 className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#2C4870] transition hover:bg-[#D4A73C]"
               >
                 <Icon size={16} />
-              </div>
+              </a>
             ))}
+          </div>
+
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <ComingSoonPopover>
+              <img src={appStoreBadge} alt="Download on the App Store" className="h-14 w-auto object-contain md:h-16" />
+            </ComingSoonPopover>
+            <ComingSoonPopover>
+              <img src={googlePlayBadge} alt="Get it on Google Play" className="h-14 w-auto object-contain md:h-16" />
+            </ComingSoonPopover>
           </div>
         </div>
 
@@ -116,12 +157,16 @@ export default function Footer() {
           >
             {t("footer.subscribe")}
           </button>
+
+          <div className="mt-5 rounded-xl bg-[#FFF8EA] px-4 py-3 shadow-sm">
+            <img src={paymentMethods} alt="Accepted payment methods" className="mx-auto h-auto max-h-12 w-full object-contain" />
+          </div>
         </div>
       </div>
 
       <div className="border-t border-[#2C4870] py-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between px-6 text-sm text-gray-300 md:flex-row">
-          <p>(c) {currentYear} AstroZura Inc. All cosmic rights reserved.</p>
+          <p>{t("footer.rights").replace("2026", currentYear)}</p>
 
           <div className="mt-3 flex items-center gap-6 md:mt-0">
             {!user && (

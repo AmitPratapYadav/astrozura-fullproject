@@ -4,10 +4,11 @@ import {
   TEST_ACCESS_HEADER,
   getTestingAccessPassword,
 } from '../lib/testingAccess';
+import { API_BASE_URL } from '../utils/apiBase';
 
 // Create an instance of axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Accept': 'application/json',
   },

@@ -24,3 +24,8 @@ export const extendBookingSession = async (bookingId, payload) => {
   const response = await api.post(`/bookings/${bookingId}/session/extend`, payload);
   return response.data;
 };
+
+export const getBookingKundali = async (bookingId) => {
+  const response = await api.get(`/bookings/${bookingId}/kundali`);
+  return response.data;
+};

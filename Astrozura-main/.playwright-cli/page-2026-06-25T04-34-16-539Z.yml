@@ -1,0 +1,251 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - navigation [ref=e5]:
+      - generic [ref=e6]:
+        - link "Astro Zura" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Astro Zura" [ref=e8]
+        - generic [ref=e9]:
+          - button "पंचांग" [ref=e335] [cursor=pointer]:
+            - generic [ref=e12]: पंचांग
+            - img [ref=e13]
+          - button "परामर्श" [ref=e336] [cursor=pointer]:
+            - generic [ref=e17]: परामर्श
+            - img [ref=e18]
+          - button "कैलकुलेटर्स" [ref=e337] [cursor=pointer]:
+            - generic [ref=e22]: कैलकुलेटर्स
+            - img [ref=e23]
+          - button "पूजा अनुष्ठान" [ref=e338] [cursor=pointer]:
+            - generic [ref=e27]: पूजा अनुष्ठान
+            - img [ref=e28]
+          - button "रिपोर्ट्स" [ref=e339] [cursor=pointer]:
+            - generic [ref=e32]: रिपोर्ट्स
+            - img [ref=e33]
+          - link "ब्लॉग" [ref=e340] [cursor=pointer]:
+            - /url: /blogs
+        - generic [ref=e37]:
+          - link "लाइव" [ref=e341] [cursor=pointer]:
+            - /url: /live
+          - button "HI" [ref=e342] [cursor=pointer]:
+            - img [ref=e41]
+            - text: HI
+          - link "साइन इन" [ref=e343] [cursor=pointer]:
+            - /url: /login
+    - navigation [ref=e47]:
+      - generic [ref=e49]:
+        - link "राशिफल" [ref=e345] [cursor=pointer]:
+          - /url: /rashifal
+        - button "कुंडली" [ref=e346] [cursor=pointer]:
+          - generic [ref=e54]: कुंडली
+          - img [ref=e55]
+        - link "मैच मेकिंग" [ref=e347] [cursor=pointer]:
+          - /url: /services/detailed-matchmaking
+        - link "अंक ज्योतिष" [ref=e348] [cursor=pointer]:
+          - /url: /detailed-numerology
+        - link "टैरो" [ref=e349] [cursor=pointer]:
+          - /url: /services/tarot-reading
+        - link "हस्तरेखा" [ref=e350] [cursor=pointer]:
+          - /url: /services/palm-reading
+        - link "शॉप" [ref=e351] [cursor=pointer]:
+          - /url: https://shop.astrozura.com
+  - generic [ref=e69]:
+    - generic [ref=e70]: राशि भविष्यफल
+    - heading "राशि के अनुसार राशिफल" [level=1] [ref=e352]
+    - paragraph [ref=e72]: अपनी राशि चुनें और कल, आज या आने वाले कल का मार्गदर्शन पढ़ें।
+  - generic [ref=e74]:
+    - button "अग्नि Mar 21 - Apr 19 मेष मंगल द्वारा संचालित आज की रीडिंग खोलें" [ref=e353] [cursor=pointer]:
+      - generic [ref=e78]:
+        - generic [ref=e79]: अग्नि
+        - generic [ref=e80]: Mar 21 - Apr 19
+      - generic [ref=e83]:
+        - heading "मेष" [level=3] [ref=e354]
+        - paragraph [ref=e85]: मंगल द्वारा संचालित
+      - generic [ref=e86]:
+        - paragraph [ref=e87]: आज की रीडिंग खोलें
+        - img [ref=e89]
+    - button "पृथ्वी Apr 20 - May 20 वृषभ शुक्र द्वारा संचालित आज की रीडिंग खोलें" [ref=e355] [cursor=pointer]:
+      - generic [ref=e94]:
+        - generic [ref=e95]: पृथ्वी
+        - generic [ref=e96]: Apr 20 - May 20
+      - generic [ref=e99]:
+        - heading "वृषभ" [level=3] [ref=e356]
+        - paragraph [ref=e101]: शुक्र द्वारा संचालित
+      - generic [ref=e102]:
+        - paragraph [ref=e103]: आज की रीडिंग खोलें
+        - img [ref=e105]
+    - button "वायु May 21 - Jun 20 मिथुन बुध द्वारा संचालित आज की रीडिंग खोलें" [ref=e357] [cursor=pointer]:
+      - generic [ref=e110]:
+        - generic [ref=e111]: वायु
+        - generic [ref=e112]: May 21 - Jun 20
+      - generic [ref=e115]:
+        - heading "मिथुन" [level=3] [ref=e358]
+        - paragraph [ref=e117]: बुध द्वारा संचालित
+      - generic [ref=e118]:
+        - paragraph [ref=e119]: आज की रीडिंग खोलें
+        - img [ref=e121]
+    - button "जल Jun 21 - Jul 22 कर्क चंद्र द्वारा संचालित आज की रीडिंग खोलें" [ref=e359] [cursor=pointer]:
+      - generic [ref=e126]:
+        - generic [ref=e127]: जल
+        - generic [ref=e128]: Jun 21 - Jul 22
+      - generic [ref=e131]:
+        - heading "कर्क" [level=3] [ref=e360]
+        - paragraph [ref=e133]: चंद्र द्वारा संचालित
+      - generic [ref=e134]:
+        - paragraph [ref=e135]: आज की रीडिंग खोलें
+        - img [ref=e137]
+    - button "अग्नि Jul 23 - Aug 22 सिंह सूर्य द्वारा संचालित आज की रीडिंग खोलें" [ref=e361] [cursor=pointer]:
+      - generic [ref=e142]:
+        - generic [ref=e143]: अग्नि
+        - generic [ref=e144]: Jul 23 - Aug 22
+      - generic [ref=e147]:
+        - heading "सिंह" [level=3] [ref=e362]
+        - paragraph [ref=e149]: सूर्य द्वारा संचालित
+      - generic [ref=e150]:
+        - paragraph [ref=e151]: आज की रीडिंग खोलें
+        - img [ref=e153]
+    - button "पृथ्वी Aug 23 - Sep 22 कन्या बुध द्वारा संचालित आज की रीडिंग खोलें" [ref=e363] [cursor=pointer]:
+      - generic [ref=e158]:
+        - generic [ref=e159]: पृथ्वी
+        - generic [ref=e160]: Aug 23 - Sep 22
+      - generic [ref=e163]:
+        - heading "कन्या" [level=3] [ref=e364]
+        - paragraph [ref=e165]: बुध द्वारा संचालित
+      - generic [ref=e166]:
+        - paragraph [ref=e167]: आज की रीडिंग खोलें
+        - img [ref=e169]
+    - button "वायु Sep 23 - Oct 22 तुला शुक्र द्वारा संचालित आज की रीडिंग खोलें" [ref=e365] [cursor=pointer]:
+      - generic [ref=e174]:
+        - generic [ref=e175]: वायु
+        - generic [ref=e176]: Sep 23 - Oct 22
+      - generic [ref=e179]:
+        - heading "तुला" [level=3] [ref=e366]
+        - paragraph [ref=e181]: शुक्र द्वारा संचालित
+      - generic [ref=e182]:
+        - paragraph [ref=e183]: आज की रीडिंग खोलें
+        - img [ref=e185]
+    - button "जल Oct 23 - Nov 21 वृश्चिक प्लूटो द्वारा संचालित आज की रीडिंग खोलें" [ref=e367] [cursor=pointer]:
+      - generic [ref=e190]:
+        - generic [ref=e191]: जल
+        - generic [ref=e192]: Oct 23 - Nov 21
+      - generic [ref=e195]:
+        - heading "वृश्चिक" [level=3] [ref=e368]
+        - paragraph [ref=e197]: प्लूटो द्वारा संचालित
+      - generic [ref=e198]:
+        - paragraph [ref=e199]: आज की रीडिंग खोलें
+        - img [ref=e201]
+    - button "अग्नि Nov 22 - Dec 21 धनु बृहस्पति द्वारा संचालित आज की रीडिंग खोलें" [ref=e369] [cursor=pointer]:
+      - generic [ref=e206]:
+        - generic [ref=e207]: अग्नि
+        - generic [ref=e208]: Nov 22 - Dec 21
+      - generic [ref=e211]:
+        - heading "धनु" [level=3] [ref=e370]
+        - paragraph [ref=e213]: बृहस्पति द्वारा संचालित
+      - generic [ref=e214]:
+        - paragraph [ref=e215]: आज की रीडिंग खोलें
+        - img [ref=e217]
+    - button "पृथ्वी Dec 22 - Jan 19 मकर शनि द्वारा संचालित आज की रीडिंग खोलें" [ref=e371] [cursor=pointer]:
+      - generic [ref=e222]:
+        - generic [ref=e223]: पृथ्वी
+        - generic [ref=e224]: Dec 22 - Jan 19
+      - generic [ref=e227]:
+        - heading "मकर" [level=3] [ref=e372]
+        - paragraph [ref=e229]: शनि द्वारा संचालित
+      - generic [ref=e230]:
+        - paragraph [ref=e231]: आज की रीडिंग खोलें
+        - img [ref=e233]
+    - button "वायु Jan 20 - Feb 18 कुंभ अरुण द्वारा संचालित आज की रीडिंग खोलें" [ref=e373] [cursor=pointer]:
+      - generic [ref=e238]:
+        - generic [ref=e239]: वायु
+        - generic [ref=e240]: Jan 20 - Feb 18
+      - generic [ref=e243]:
+        - heading "कुंभ" [level=3] [ref=e374]
+        - paragraph [ref=e245]: अरुण द्वारा संचालित
+      - generic [ref=e246]:
+        - paragraph [ref=e247]: आज की रीडिंग खोलें
+        - img [ref=e249]
+    - button "जल Feb 19 - Mar 20 मीन वरुण द्वारा संचालित आज की रीडिंग खोलें" [ref=e375] [cursor=pointer]:
+      - generic [ref=e254]:
+        - generic [ref=e255]: जल
+        - generic [ref=e256]: Feb 19 - Mar 20
+      - generic [ref=e259]:
+        - heading "मीन" [level=3] [ref=e376]
+        - paragraph [ref=e261]: वरुण द्वारा संचालित
+      - generic [ref=e262]:
+        - paragraph [ref=e263]: आज की रीडिंग खोलें
+        - img [ref=e265]
+  - contentinfo [ref=e267]:
+    - generic [ref=e268]:
+      - generic [ref=e269]:
+        - img "AstroZura Logo" [ref=e271]
+        - paragraph [ref=e272]: AstroZura आपको अनुभवी ज्योतिषियों और आध्यात्मिक सलाहकारों से जोड़कर दिव्य ज्ञान आपकी पहुंच तक लाता है।
+        - generic [ref=e273]:
+          - link "Instagram" [ref=e274] [cursor=pointer]:
+            - /url: https://www.instagram.com/astrozura__?utm_source=qr
+            - img [ref=e275]
+          - link "Facebook" [ref=e278] [cursor=pointer]:
+            - /url: https://www.facebook.com/share/1BE7DqPJb4/?mibextid=wwXIfr
+            - img [ref=e279]
+          - link "YouTube" [ref=e281] [cursor=pointer]:
+            - /url: http://www.youtube.com/@AstroZura
+            - img [ref=e282]
+        - generic [ref=e285]:
+          - link "Download on the App Store" [ref=e286] [cursor=pointer]:
+            - /url: "#"
+            - img "Download on the App Store" [ref=e287]
+          - link "Get it on Google Play" [ref=e288] [cursor=pointer]:
+            - /url: "#"
+            - img "Get it on Google Play" [ref=e289]
+      - generic [ref=e290]:
+        - heading "सेवाएं" [level=3] [ref=e377]
+        - list [ref=e292]:
+          - listitem [ref=e293]:
+            - link "सभी सेवाएं देखें" [ref=e378] [cursor=pointer]:
+              - /url: /services
+          - listitem [ref=e295]:
+            - link "पूजा अनुष्ठान" [ref=e379] [cursor=pointer]:
+              - /url: /rituals
+          - listitem [ref=e297]:
+            - link "राशिफल" [ref=e380] [cursor=pointer]:
+              - /url: /rashifal
+          - listitem [ref=e299]:
+            - link "मैचमेकिंग" [ref=e381] [cursor=pointer]:
+              - /url: /matching
+          - listitem [ref=e301]:
+            - link "विस्तृत कुंडली विश्लेषण" [ref=e382] [cursor=pointer]:
+              - /url: /services/detailed-kundali
+          - listitem [ref=e303]:
+            - link "ज्योतिषी" [ref=e383] [cursor=pointer]:
+              - /url: /astrologers
+      - generic [ref=e305]:
+        - heading "कंपनी" [level=3] [ref=e384]
+        - list [ref=e307]:
+          - listitem [ref=e308]:
+            - link "हमारे बारे में" [ref=e385] [cursor=pointer]:
+              - /url: /about-us
+          - listitem [ref=e310]:
+            - link "सपोर्ट से संपर्क करें" [ref=e386] [cursor=pointer]:
+              - /url: /contact-support
+          - listitem [ref=e312]:
+            - link "गोपनीयता नीति" [ref=e387] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=e314]:
+            - link "नियम और शर्तें" [ref=e388] [cursor=pointer]:
+              - /url: /terms-and-conditions
+          - listitem [ref=e316]:
+            - link "ब्लॉग" [ref=e389] [cursor=pointer]:
+              - /url: /blogs
+      - generic [ref=e318]:
+        - heading "न्यूजलेटर" [level=3] [ref=e390]
+        - paragraph [ref=e320]: दैनिक ज्योतिषीय संकेत सीधे अपने इनबॉक्स में पाएं।
+        - textbox "आपका ईमेल पता" [ref=e391]
+        - button "सब्सक्राइब करें" [ref=e392] [cursor=pointer]
+        - img "Accepted payment methods" [ref=e324]
+    - generic [ref=e326]:
+      - paragraph [ref=e327]: (c) 2026 AstroZura Inc. सर्वाधिकार सुरक्षित।
+      - generic [ref=e328]:
+        - link "ज्योतिषी लॉगिन" [ref=e393] [cursor=pointer]:
+          - /url: /astrologer/login
+        - link "अस्वीकरण" [ref=e394] [cursor=pointer]:
+          - /url: /terms-and-conditions
+        - link "साइटमैप" [ref=e395] [cursor=pointer]:
+          - /url: /services

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import AstrologerStatusBadge from "../components/AstrologerStatusBadge";
 import poojaRitual from "../assets/pooja ritual.png";
 import bhagwat from "../assets/bhagwat.png";
 import lamp from "../assets/lamp.png";
@@ -9,8 +10,8 @@ import astro1 from "../assets/astro1.png";
 import astro2 from "../assets/astro2.png";
 import astro3 from "../assets/astro3.png";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 const ritualFallbacks = [poojaRitual, bhagwat, lamp];
 const astrologerFallbacks = [astro1, astro2, astro3];
 
@@ -266,6 +267,9 @@ export default function RitualDetail() {
                         />
                         <div className="min-w-0">
                           <p className="truncate font-semibold">{astro.name}</p>
+                          <div className="mt-1">
+                            <AstrologerStatusBadge status={astro.availability_status} />
+                          </div>
                           <p className="truncate text-xs text-gray-500">
                             {astro.astrologer_detail?.specialities || "Astrology Specialist"}
                           </p>

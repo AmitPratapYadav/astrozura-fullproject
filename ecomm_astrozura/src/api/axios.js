@@ -7,7 +7,7 @@ import {
 
 // Create an instance of axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://astrozura.com/apigateway/index.php/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -27,6 +27,14 @@ api.interceptors.request.use(
       if (testingPassword) {
         config.headers[TEST_ACCESS_HEADER] = testingPassword;
       }
+    }
+
+    const isFormData =
+      typeof FormData !== 'undefined' && config.data instanceof FormData;
+
+    if (isFormData) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
     }
 
     return config;

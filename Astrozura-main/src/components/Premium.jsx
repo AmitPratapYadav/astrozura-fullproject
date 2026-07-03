@@ -1,38 +1,36 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Calculator, HeartHandshake, ScrollText, Star } from "lucide-react";
-import {
-  TbZodiacAquarius,
-  TbZodiacAries,
-  TbZodiacCancer,
-  TbZodiacCapricorn,
-  TbZodiacGemini,
-  TbZodiacLeo,
-  TbZodiacLibra,
-  TbZodiacPisces,
-  TbZodiacSagittarius,
-  TbZodiacScorpio,
-  TbZodiacTaurus,
-  TbZodiacVirgo,
-} from "react-icons/tb";
 import { getDailyHoroscope, getMonthlyHoroscope } from "../api/prokeralaApi";
 import { serviceCatalog } from "../data/serviceCatalog";
+import { getZodiacIcon } from "../data/zodiacIcons";
 
 const zodiac = [
-  { sign: "aries", id: "Aries", range: "March 21 - April 19", luckyColor: "Gold", luckyNumber: "08", icon: <TbZodiacAries size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "taurus", id: "Taurus", range: "April 20 - May 20", luckyColor: "Forest Green", luckyNumber: "06", icon: <TbZodiacTaurus size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "gemini", id: "Gemini", range: "May 21 - June 20", luckyColor: "Sky Blue", luckyNumber: "05", icon: <TbZodiacGemini size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "cancer", id: "Cancer", range: "June 21 - July 22", luckyColor: "Silver", luckyNumber: "02", icon: <TbZodiacCancer size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "leo", id: "Leo", range: "July 23 - August 22", luckyColor: "Amber", luckyNumber: "01", icon: <TbZodiacLeo size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "virgo", id: "Virgo", range: "August 23 - September 22", luckyColor: "Olive", luckyNumber: "07", icon: <TbZodiacVirgo size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "libra", id: "Libra", range: "September 23 - October 22", luckyColor: "Blush Pink", luckyNumber: "09", icon: <TbZodiacLibra size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "scorpio", id: "Scorpio", range: "October 23 - November 21", luckyColor: "Crimson", luckyNumber: "04", icon: <TbZodiacScorpio size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "sagittarius", id: "Sagittarius", range: "November 22 - December 21", luckyColor: "Royal Purple", luckyNumber: "03", icon: <TbZodiacSagittarius size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "capricorn", id: "Capricorn", range: "December 22 - January 19", luckyColor: "Steel Blue", luckyNumber: "10", icon: <TbZodiacCapricorn size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "aquarius", id: "Aquarius", range: "January 20 - February 18", luckyColor: "Electric Blue", luckyNumber: "11", icon: <TbZodiacAquarius size={28} strokeWidth={1.5} className="text-current" /> },
-  { sign: "pisces", id: "Pisces", range: "February 19 - March 20", luckyColor: "Sea Green", luckyNumber: "12", icon: <TbZodiacPisces size={28} strokeWidth={1.5} className="text-current" /> },
+  { sign: "aries", id: "Aries", range: "March 21 - April 19", luckyColor: "Gold", luckyNumber: "08" },
+  { sign: "taurus", id: "Taurus", range: "April 20 - May 20", luckyColor: "Forest Green", luckyNumber: "06" },
+  { sign: "gemini", id: "Gemini", range: "May 21 - June 20", luckyColor: "Sky Blue", luckyNumber: "05" },
+  { sign: "cancer", id: "Cancer", range: "June 21 - July 22", luckyColor: "Silver", luckyNumber: "02" },
+  { sign: "leo", id: "Leo", range: "July 23 - August 22", luckyColor: "Amber", luckyNumber: "01" },
+  { sign: "virgo", id: "Virgo", range: "August 23 - September 22", luckyColor: "Olive", luckyNumber: "07" },
+  { sign: "libra", id: "Libra", range: "September 23 - October 22", luckyColor: "Blush Pink", luckyNumber: "09" },
+  { sign: "scorpio", id: "Scorpio", range: "October 23 - November 21", luckyColor: "Crimson", luckyNumber: "04" },
+  { sign: "sagittarius", id: "Sagittarius", range: "November 22 - December 21", luckyColor: "Royal Purple", luckyNumber: "03" },
+  { sign: "capricorn", id: "Capricorn", range: "December 22 - January 19", luckyColor: "Steel Blue", luckyNumber: "10" },
+  { sign: "aquarius", id: "Aquarius", range: "January 20 - February 18", luckyColor: "Electric Blue", luckyNumber: "11" },
+  { sign: "pisces", id: "Pisces", range: "February 19 - March 20", luckyColor: "Sea Green", luckyNumber: "12" },
 ];
+
+const readableApiError = (value, fallback) => {
+  if (typeof value !== "string" || !value.trim() || value.trim().startsWith("{")) {
+    return fallback;
+  }
+  return value;
+};
+
+const readablePrediction = (value, fallback) =>
+  typeof value === "string" && value.trim() && !value.trim().startsWith("{")
+    ? value
+    : fallback;
 
 export default function Premium() {
   const { t } = useTranslation();
@@ -46,27 +44,14 @@ export default function Premium() {
 
   const premiumServices = useMemo(() => {
     const eligibleCategories = new Set(["Reports", "Calculators", "Marriage Matching"]);
-    const iconMap = {
-      Reports: <ScrollText size={22} strokeWidth={1.7} className="text-white" />,
-      Calculators: <Calculator size={22} strokeWidth={1.7} className="text-white" />,
-      "Marriage Matching": <HeartHandshake size={22} strokeWidth={1.7} className="text-white" />,
-    };
-    const priceMap = {
-      "Marriage Matching": "Rs 29.99",
-      Reports: "Rs 34.99",
-      Calculators: "Rs 24.99",
-    };
-
     return serviceCatalog
-      .filter((item) => eligibleCategories.has(item.category))
+      .filter((item) => eligibleCategories.has(item.category) && !["palm-reading", "premium-consultations"].includes(item.slug))
       .slice(0, 8)
       .map((item) => ({
         title: item.title,
         summary: item.summary,
         to: item.ctaTo,
-        price: priceMap[item.category] || "Rs 24.99",
-        icon: iconMap[item.category] || <Star size={22} strokeWidth={1.7} className="text-white" />,
-        badge: item.category,
+        icon: item.icon,
       }));
   }, []);
 
@@ -96,11 +81,11 @@ export default function Premium() {
           setHoroscope(response.data);
         } else {
           setHoroscope(null);
-          setHoroscopeError(response?.message || t("premium.loading_error"));
+          setHoroscopeError(readableApiError(response?.message, t("premium.loading_error")));
         }
       } catch (error) {
         setHoroscope(null);
-        setHoroscopeError(error?.response?.data?.message || t("premium.loading_error"));
+        setHoroscopeError(readableApiError(error?.response?.data?.message, t("premium.loading_error")));
       } finally {
         setLoadingHoroscope(false);
       }
@@ -119,9 +104,9 @@ export default function Premium() {
   };
 
   const scoreRows = [
-    { label: "Love & Relationship", value: horoscope?.scores?.love ?? 0 },
-    { label: "Career & Wealth", value: horoscope?.scores?.career ?? 0 },
-    { label: "Health & Wellness", value: horoscope?.scores?.health ?? 0 },
+    { label: t("premium.love_relationship"), value: horoscope?.scores?.love ?? 0 },
+    { label: t("premium.career_wealth"), value: horoscope?.scores?.career ?? 0 },
+    { label: t("premium.health_wellness"), value: horoscope?.scores?.health ?? 0 },
   ];
 
   return (
@@ -135,21 +120,21 @@ export default function Premium() {
       <div className="w-full max-w-[1200px] mx-auto">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-center text-[#2B2B2B] mb-2">
-            Astrology Forecast
+            {t("premium.forecast_title")}
           </h2>
           <div className="flex justify-center items-center gap-4 text-sm font-bold mb-8">
             <button
               onClick={() => setActivePeriod("daily")}
               className={`transition-colors ${activePeriod === "daily" ? "text-[#D4A73C] underline underline-offset-8" : "text-gray-400 hover:text-[#2B2B2B]"}`}
             >
-              Daily
+              {t("premium.daily")}
             </button>
             <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
             <button
               onClick={() => setActivePeriod("monthly")}
               className={`transition-colors ${activePeriod === "monthly" ? "text-[#D4A73C] underline underline-offset-8" : "text-gray-400 hover:text-[#2B2B2B]"}`}
             >
-              Monthly
+              {t("premium.monthly")}
             </button>
           </div>
 
@@ -167,12 +152,10 @@ export default function Premium() {
                       : "bg-white border border-gray-100 text-[#1E3557] group-hover:border-[#D4A73C]/50"
                   }`}
                 >
-                  <span className="text-[28px]">
-                    {activeSign === z.sign ? React.cloneElement(z.icon, { color: 'white' }) : z.icon}
-                  </span>
+                  <img src={getZodiacIcon(z.sign)} alt="" className="h-11 w-11 object-contain md:h-14 md:w-14" />
                 </div>
                 <p className={`mt-2 font-bold text-[11px] md:text-xs capitalize transition-colors ${activeSign === z.sign ? 'text-[#C05D17]' : 'text-[#2B2B2B]'}`}>
-                  {z.id}
+                  {t(`horoscope.signs.${z.sign}`)}
                 </p>
               </div>
             ))}
@@ -183,11 +166,11 @@ export default function Premium() {
             {/* Left Card */}
             <div className="bg-[#FCF9F2] rounded-2xl p-6 lg:p-8 w-full lg:w-[280px] text-center border border-[#F6EFE2] shrink-0">
               <div className="w-[100px] h-[100px] mx-auto bg-[#F1DEBE] rounded-full flex items-center justify-center text-[#B58C36] mb-5 border border-[#E9D1A7]">
-                {React.cloneElement(activeSignMeta.icon, { size: 50, strokeWidth: 1.5 })}
+                <img src={getZodiacIcon(activeSignMeta.sign)} alt="" className="h-20 w-20 object-contain" />
               </div>
 
               <h3 className="font-bold text-[#2B2B2B] text-xl mb-1 capitalize">
-                {activeSignMeta.id}
+                {t(`horoscope.signs.${activeSignMeta.sign}`)}
               </h3>
               <p className="text-[11px] text-gray-400 mb-8 font-medium">
                 {activeSignMeta.range}
@@ -195,21 +178,21 @@ export default function Premium() {
 
               <div className="grid gap-3 mb-8 text-xs">
                 <div className="flex justify-between items-center text-gray-500">
-                  <span>Lucky Color</span>
+                  <span>{t("premium.lucky_color")}</span>
                   <span className="font-bold text-[#2B2B2B]">{activeSignMeta.luckyColor}</span>
                 </div>
                 <div className="flex justify-between items-center text-gray-500">
-                  <span>Lucky Number</span>
+                  <span>{t("premium.lucky_number")}</span>
                   <span className="font-bold text-[#2B2B2B]">{activeSignMeta.luckyNumber}</span>
                 </div>
               </div>
 
               <div className="bg-white rounded-[1rem] px-4 py-3 text-left border border-[#F2EFE8]">
                 <p className="text-[9px] uppercase text-gray-300 font-bold tracking-widest mb-1.5">
-                  HOROSCOPE DATE
+                  {t("premium.horoscope_date")}
                 </p>
                 <p className="text-xs font-bold text-[#1E3557]">
-                  {loadingHoroscope ? "Loading..." : (horoscope?.display_date || "Today")}
+                  {loadingHoroscope ? t("premium.loading_short") : (horoscope?.display_date || t("horoscope.today"))}
                 </p>
               </div>
             </div>
@@ -218,10 +201,10 @@ export default function Premium() {
             <div className="flex-1 lg:py-6 relative">
               <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
                 <h3 className="text-lg font-bold text-[#2B2B2B]">
-                  Today's Forecast
+                  {t("premium.forecast")}
                 </h3>
                 <span className="bg-[#FAEED6] text-[#D4A73C] text-[11px] font-bold px-3 py-1.5 rounded-md">
-                  Daily Reading
+                  {activePeriod === "monthly" ? t("premium.monthly_reading") : t("premium.daily_reading")}
                 </span>
               </div>
 
@@ -235,7 +218,7 @@ export default function Premium() {
               ) : (
                 <>
                   <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-                    {horoscope?.daily_prediction?.personal || "Your cosmic path is aligning for a day of discovery. Use this positive energy to seek new opportunities."}
+                    {readablePrediction(horoscope?.daily_prediction?.personal, t("premium.default_personal"))}
                   </p>
 
                   <div className="grid gap-8">
@@ -265,7 +248,7 @@ export default function Premium() {
                         </p>
                       </div>
                       <p className="text-sm text-[#1E3557] leading-relaxed font-medium">
-                        {horoscope?.daily_prediction?.profession || "Dynamic shifts in work environment are expected."}
+                        {readablePrediction(horoscope?.daily_prediction?.profession, t("premium.default_profession"))}
                       </p>
                     </div>
 
@@ -277,7 +260,7 @@ export default function Premium() {
                         </p>
                       </div>
                       <p className="text-sm text-[#1E3557] leading-relaxed font-medium">
-                        {horoscope?.daily_prediction?.emotions || "A day to focus on inner peace and clarity."}
+                        {readablePrediction(horoscope?.daily_prediction?.emotions, t("premium.default_emotions"))}
                       </p>
                     </div>
                   </div>
@@ -287,64 +270,69 @@ export default function Premium() {
           </div>
         </div>
 
-        <div className="mt-14 md:mt-20">
+        <div className="mt-14 rounded-3xl bg-[#1E3557] px-4 py-10 sm:px-6 md:mt-20 md:px-8">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-[#1A1A1A] md:text-2xl">
-                Premium Services
+              <h2 className="text-xl font-bold text-white md:text-2xl">
+                {t("premium.home_title")}
               </h2>
-              <p className="mt-1 text-xs text-gray-400">
-                Explore paid-ready reports and calculators from Astro Zura's core service stack.
+              <p className="mt-1 text-xs text-white/65">
+                {t("premium.home_subtitle")}
               </p>
             </div>
 
             <button
               onClick={() => navigate("/services")}
-              className="text-xs font-semibold text-[#c7926a] hover:underline"
+              className="text-xs font-semibold text-white hover:underline"
             >
               {t("premium.view_all")}
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {premiumServices.map((item) => (
               <div
                 key={item.title}
-                className="rounded-xl border border-[#F3E7D3] bg-[#FFF8ED] p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-4"
+                className="group flex min-h-[260px] flex-col rounded-2xl border border-[#EEE7D6] bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#D4A73C]/45 hover:shadow-xl"
               >
-                <div className="mx-auto mb-3 inline-flex max-w-full rounded-full bg-[#F3E7D3] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.14em] text-[#B88332] sm:text-[9px]">
-                  <span className="truncate">{item.badge}</span>
+                <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-2xl bg-[#FBF7F0] p-3 ring-1 ring-[#EFE5D4] transition group-hover:scale-[1.03] sm:h-28 sm:w-28">
+                  {item.icon ? (
+                    <img src={item.icon} alt="" className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-xl font-black text-[#1E3557]">AZ</span>
+                  )}
                 </div>
 
-                <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#1E3557] shadow-sm sm:h-12 sm:w-12">
-                  {item.icon}
-                </div>
-
-                <h3 className="min-h-[40px] text-sm font-bold leading-5 text-[#1E3557] sm:text-base">
+                <h3 className="text-base font-black leading-6 text-[#1E3557]">
                   {item.title}
                 </h3>
 
-                <p className="mt-2 hidden min-h-[48px] text-[11px] leading-4 text-gray-500 sm:block">
+                <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-500">
                   {item.summary}
                 </p>
 
-                <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
-                  <p className="text-xs font-bold text-[#1E3557] sm:text-sm">
-                    {item.price}
-                  </p>
-
+                <div className="mt-auto flex justify-center pt-5">
                   <button
                     onClick={() => {
                       notify(`${item.title} selected`);
                       navigate(item.to);
                     }}
-                    className="w-full rounded-full border border-[#1E3557] px-3 py-1.5 text-[10px] font-medium text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white sm:w-auto sm:text-[11px]"
+                    className="w-full rounded-xl border border-[#1E3557] px-4 py-3 text-xs font-black text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white"
                   >
-                    {t("premium.book_now")}
+                    {t("premium.open")}
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6 flex justify-center md:hidden">
+            <button
+              onClick={() => navigate("/services")}
+              className="inline-flex items-center justify-center rounded-full border border-white/35 bg-transparent px-6 py-3 text-xs font-black uppercase tracking-[0.16em] text-white shadow-sm transition hover:bg-white hover:text-[#1E3557]"
+            >
+              {t("premium.view_all")}
+            </button>
           </div>
         </div>
       </div>

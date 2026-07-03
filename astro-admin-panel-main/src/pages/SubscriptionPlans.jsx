@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { PlusCircle, Trash2, Edit2, Save, X } from "lucide-react"
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api"
 
 function SubscriptionPlans() {
   const [plans, setPlans]       = useState([])

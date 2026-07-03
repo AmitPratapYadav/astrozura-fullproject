@@ -3,20 +3,46 @@ import { Link } from "react-router-dom";
 import vedic from "../assets/vedic-astrology.png";
 import youtube from "../assets/youtube.png";
 import instagram from "../assets/instagram.png";
-import earth from "../assets/earth.png";
-import phone from "../assets/phone-call.png";
+import facebook from "../assets/facebook.svg";
+import appStoreBadge from "../assets/app-store.png";
+import googlePlayBadge from "../assets/google-play.png";
+import ComingSoonPopover from "./ComingSoonPopover";
+import api from "../api/axios";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
   const currentYear = new Date().getFullYear();
+  const socialLinks = [
+    {
+      label: "Instagram",
+      href: "https://www.instagram.com/astrozura__?utm_source=qr",
+      icon: instagram,
+    },
+    {
+      label: "Facebook",
+      href: "https://www.facebook.com/share/1BE7DqPJb4/?mibextid=wwXIfr",
+      icon: facebook,
+    },
+    {
+      label: "YouTube",
+      href: "http://www.youtube.com/@AstroZura",
+      icon: youtube,
+    },
+  ];
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!email) {
       setMsg("Please enter email");
-    } else {
+      setTimeout(() => setMsg(""), 2000);
+      return;
+    }
+    try {
+      await api.post("/newsletter/subscribe", { email, source: "shop" });
       setMsg("Subscribed successfully!");
       setEmail("");
+    } catch (error) {
+      setMsg(error?.response?.data?.message || "Subscription could not be saved.");
     }
 
     setTimeout(() => setMsg(""), 2000);
@@ -41,15 +67,20 @@ export default function Footer() {
           </p>
 
           <div className="mt-5 flex justify-center gap-3 sm:justify-start">
-            {[earth, instagram, phone, youtube].map((icon, index) => (
-              <div
-                key={index}
+            {socialLinks.map(({ label, href, icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
                 className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#1E3557] transition hover:scale-110 hover:bg-[#D4A73C]"
               >
-                <img src={icon} alt="icon" className="h-5 w-5 object-contain" />
-              </div>
+                <img src={icon} alt="" className="h-5 w-5 object-contain" />
+              </a>
             ))}
           </div>
+
         </div>
 
         <div>
@@ -82,6 +113,21 @@ export default function Footer() {
           >
             Subscribe
           </button>
+        </div>
+
+        <div className="flex flex-col justify-start lg:items-end">
+          <h3 className="mb-4 text-lg font-semibold">Download App</h3>
+          <p className="mb-5 max-w-xs text-sm leading-relaxed text-gray-300 lg:text-right">
+            Keep AstroZura rituals, consultations, and shop updates close at hand.
+          </p>
+          <div className="flex flex-wrap gap-3 lg:flex-col lg:items-end">
+            <ComingSoonPopover>
+              <img src={appStoreBadge} alt="Download on the App Store" className="h-14 w-auto object-contain md:h-16" />
+            </ComingSoonPopover>
+            <ComingSoonPopover>
+              <img src={googlePlayBadge} alt="Get it on Google Play" className="h-14 w-auto object-contain md:h-16" />
+            </ComingSoonPopover>
+          </div>
         </div>
       </div>
 

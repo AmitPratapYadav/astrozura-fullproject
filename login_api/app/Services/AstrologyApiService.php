@@ -41,7 +41,7 @@ class AstrologyApiService
         $apiKey = (string) config('astrologyapi.api_key');
 
         if ($userId === '' || $apiKey === '') {
-            throw new \RuntimeException('Astrology API credentials are not configured. Set ASTROLOGY_API_USER_ID and ASTROLOGY_API_KEY.');
+            throw new \RuntimeException('Astrology service credentials are not configured.');
         }
 
         $headers = [

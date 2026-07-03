@@ -7,6 +7,7 @@ import { ReportPanel } from "../components/report/ReportTables";
 import { NumerologyReportLayout } from "../components/report/SpecializedVedicReports";
 import { getNumerologyReport } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
+import { getServiceIcon } from "../data/serviceIcons";
 
 const initialForm = {
   first_name: "",
@@ -30,6 +31,8 @@ const fullNameFromForm = (form) =>
     .map((value) => String(value || "").trim())
     .filter(Boolean)
     .join(" ");
+
+const pageIcon = getServiceIcon("detailed-numerology");
 
 export default function Numerology() {
   const { user } = useAuth();
@@ -119,15 +122,18 @@ export default function Numerology() {
 
       <section className="relative overflow-hidden bg-[#1E3557] pb-28 pt-20 text-white md:pb-32">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,167,60,0.18),transparent_24%),linear-gradient(135deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]"></div>
-        <div className="relative mx-auto max-w-7xl px-4 md:px-8">
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 md:grid-cols-[1fr_auto] md:items-center md:px-8">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full border border-[#D4A73C]/30 bg-[#D4A73C]/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A73C]">
               Detailed Numerology
             </span>
             <h1 className="mt-6 text-4xl font-black md:text-5xl">Detailed Numerology Report</h1>
             <p className="mt-5 text-sm leading-7 text-slate-200 md:text-base">
-              Generate every subscribed numerology module from Astrology API in one compact report.
+              Generate a complete numerology profile with core numbers, guidance, and daily insight in one compact report.
             </p>
+          </div>
+          <div className="flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-white p-3 shadow-2xl md:h-36 md:w-36">
+            <img src={pageIcon} alt="" className="h-full w-full object-contain" />
           </div>
         </div>
       </section>
@@ -138,7 +144,7 @@ export default function Numerology() {
             <div>
               <h2 className="text-2xl font-bold">Detailed Numerology Inputs</h2>
               <p className="mt-2 text-sm text-slate-500">
-                These fields match the Astrology API numerology parameter contract: day, month, year, and name.
+                Enter the name and birth date used for numerology calculations.
               </p>
             </div>
 
@@ -178,13 +184,14 @@ export default function Numerology() {
                   <span>Date of Birth</span>
                   <InlineInfoPopover
                     title="Numerology date"
-                    content="The subscribed numerology APIs accept date of birth as day, month, and year. Time and location are not required for these modules."
+                    content="Numerology reports use date of birth as day, month, and year. Time and location are not required for these modules."
                   />
                 </label>
                 <input
                   type="date"
                   name="date_of_birth"
                   value={form.date_of_birth}
+                  max={new Date().toISOString().slice(0, 10)}
                   onChange={handleChange}
                   className="w-full rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                 />

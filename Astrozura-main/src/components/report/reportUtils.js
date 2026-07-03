@@ -12,7 +12,10 @@ export const displayCell = (value) => {
   if (typeof value === "object") {
     if (value.name) return value.name;
     if (value.full_name) return value.full_name;
-    return JSON.stringify(value);
+    return Object.entries(value)
+      .filter(([, item]) => item !== null && item !== undefined && item !== "")
+      .map(([key, item]) => `${formatReportLabel(key)}: ${displayCell(item)}`)
+      .join(" | ") || "-";
   }
   return String(value);
 };

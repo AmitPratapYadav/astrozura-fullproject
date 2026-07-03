@@ -1,0 +1,488 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - navigation [ref=e5]:
+      - generic [ref=e6]:
+        - link "Astro Zura" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Astro Zura" [ref=e8]
+        - generic [ref=e9]:
+          - button "Panchang" [ref=e11] [cursor=pointer]:
+            - generic [ref=e12]: Panchang
+            - img [ref=e13]
+          - button "Consultations" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]: Consultations
+            - img [ref=e18]
+          - button "Calculators" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]: Calculators
+            - img [ref=e23]
+          - button "Pooja Anusthan" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: Pooja Anusthan
+            - img [ref=e28]
+          - button "Reports" [ref=e31] [cursor=pointer]:
+            - generic [ref=e32]: Reports
+            - img [ref=e33]
+          - link "Blogs" [ref=e36] [cursor=pointer]:
+            - /url: /blogs
+        - generic [ref=e37]:
+          - link "Live" [ref=e38] [cursor=pointer]:
+            - /url: /live
+          - generic [ref=e39]:
+            - button "EN" [active] [ref=e40] [cursor=pointer]:
+              - img [ref=e41]
+              - text: EN
+            - generic [ref=e551]:
+              - button "English" [ref=e552] [cursor=pointer]
+              - button "Hindi" [ref=e553] [cursor=pointer]
+          - link "Sign In" [ref=e46] [cursor=pointer]:
+            - /url: /login
+    - navigation [ref=e47]:
+      - generic [ref=e49]:
+        - link "Horoscope" [ref=e51] [cursor=pointer]:
+          - /url: /rashifal
+        - button "Kundali" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: Kundali
+          - img [ref=e55]
+        - link "Match Making" [ref=e58] [cursor=pointer]:
+          - /url: /services/detailed-matchmaking
+        - link "Numerology" [ref=e60] [cursor=pointer]:
+          - /url: /detailed-numerology
+        - link "Tarot" [ref=e62] [cursor=pointer]:
+          - /url: /services/tarot-reading
+        - link "Palm Reading" [ref=e64] [cursor=pointer]:
+          - /url: /services/palm-reading
+        - link "Shop" [ref=e66] [cursor=pointer]:
+          - /url: https://shop.astrozura.com
+  - generic [ref=e69]:
+    - generic [ref=e71]:
+      - img "Ananya Gupta" [ref=e367]
+      - generic [ref=e368]:
+        - generic [ref=e369]: 10+
+        - generic [ref=e370]:
+          - paragraph [ref=e371]: Years of
+          - paragraph [ref=e372]: Experience
+    - generic [ref=e373]:
+      - generic [ref=e374]: The Mastermind
+      - heading "Meet Our Visionary Founder" [level=2] [ref=e376]:
+        - text: Meet Our Visionary
+        - text: Founder
+      - paragraph [ref=e377]: Ananya Gupta
+      - paragraph [ref=e378]: 5.0 (2 reviews)
+      - paragraph [ref=e381]: "\"Welcome! I am Ananya Gupta, professionally known as AstroTarsh. My journey bridges two seemingly different worlds: data-driven engineering and ancient Vedic Astrology. As a Mechanical and AI/ML Engineer, I spent years analyzing complex data systems. Today, I apply that same rigorous analytical precision to decode the cosmic scripts written in the stars. Driven by a profound reverence for ancient Vedic culture, I transitioned from engineering algorithms to mastering the ultimate truth of Karma. Over the past 10 years, I have delivered more than 50,000 personalized consultations on prominent global platforms, earning a reputation for pinpoint accuracy and transformative guidance.\""
+      - generic [ref=e382]:
+        - generic [ref=e383]:
+          - generic [ref=e384]: "*"
+          - generic [ref=e385]: Vedic Astrology & Career Alignment Specialist
+        - generic [ref=e386]:
+          - generic [ref=e387]: O
+          - generic [ref=e388]: Hindi
+        - generic [ref=e389]:
+          - generic [ref=e390]: +
+          - generic [ref=e391]: English
+      - button "Book a Consultation ->" [ref=e393] [cursor=pointer]:
+        - text: Book a Consultation
+        - generic [ref=e394]: "->"
+  - generic [ref=e77]:
+    - generic [ref=e79]:
+      - generic [ref=e80]:
+        - paragraph [ref=e81]: AI POWERED ASTROLOGY
+        - heading "Unlock Your Cosmic Destiny Today" [level=1] [ref=e82]
+        - paragraph [ref=e83]: Discover the wisdom of the stars with personalized readings and expert consultations tailored to your journey.
+        - generic [ref=e84]:
+          - paragraph [ref=e85]: "Free Kundli Includes:"
+          - generic [ref=e86]:
+            - generic [ref=e87]: General Birth Details (D1)
+            - generic [ref=e89]: Basic Astrological Details
+            - generic [ref=e91]: Rashiphal
+            - generic [ref=e93]: Nakshatraphal
+            - generic [ref=e95]: Remedy (Past & Present)
+        - generic [ref=e97]:
+          - generic [ref=e98]:
+            - button "Get Your Free Kundli" [ref=e99] [cursor=pointer]: Get Your Free Kundli
+            - generic [ref=e101]:
+              - button "Download App" [ref=e102] [cursor=pointer]:
+                - generic [ref=e103]:
+                  - img [ref=e105]
+                  - text: Download App
+              - generic: Soon
+          - generic [ref=e108]:
+            - img "users" [ref=e109]
+            - paragraph [ref=e110]: +5000 active users
+      - generic [ref=e111]:
+        - heading "Free Kundli Details" [level=3] [ref=e112]
+        - textbox "Full Name" [ref=e113]
+        - generic [ref=e114]:
+          - combobox [ref=e115]:
+            - option "Gender" [selected]
+            - option "Male"
+            - option "Female"
+            - option "Other"
+          - textbox "Birth Date" [ref=e118]
+        - textbox [ref=e119]
+        - textbox "Place of Birth" [ref=e121]
+        - paragraph [ref=e122]: Search and select the birthplace to capture the correct latitude and longitude.
+        - button "Create Your Free Kundli" [ref=e123] [cursor=pointer]
+    - generic [ref=e126]:
+      - generic [ref=e127]:
+        - heading "25M+" [level=2] [ref=e128]
+        - paragraph [ref=e129]: HOROSCOPE READS
+      - generic [ref=e130]:
+        - heading "1.2k+" [level=2] [ref=e131]
+        - paragraph [ref=e132]: EXPERT ASTROLOGERS
+      - generic [ref=e133]:
+        - heading "4.9/5" [level=2] [ref=e134]
+        - paragraph [ref=e135]: USER RATINGS
+      - generic [ref=e136]:
+        - heading "150+" [level=2] [ref=e137]
+        - paragraph [ref=e138]: COUNTRIES SERVED
+  - generic [ref=e140]:
+    - generic [ref=e141]:
+      - heading "Daily horoscope and zodiac guidance" [level=2] [ref=e142]
+      - generic [ref=e143]:
+        - button "Daily" [ref=e144] [cursor=pointer]
+        - button "Monthly" [ref=e146] [cursor=pointer]
+      - generic [ref=e147]:
+        - paragraph [ref=e150] [cursor=pointer]: Aries
+        - paragraph [ref=e153] [cursor=pointer]: Taurus
+        - paragraph [ref=e156] [cursor=pointer]: Gemini
+        - paragraph [ref=e159] [cursor=pointer]: Cancer
+        - paragraph [ref=e162] [cursor=pointer]: Leo
+        - paragraph [ref=e165] [cursor=pointer]: Virgo
+        - paragraph [ref=e168] [cursor=pointer]: Libra
+        - paragraph [ref=e171] [cursor=pointer]: Scorpio
+        - paragraph [ref=e174] [cursor=pointer]: Sagittarius
+        - paragraph [ref=e177] [cursor=pointer]: Capricorn
+        - paragraph [ref=e180] [cursor=pointer]: Aquarius
+        - paragraph [ref=e183] [cursor=pointer]: Pisces
+      - generic [ref=e184]:
+        - generic [ref=e185]:
+          - heading "Aries" [level=3] [ref=e187]
+          - paragraph [ref=e188]: March 21 - April 19
+          - generic [ref=e189]:
+            - generic [ref=e190]:
+              - generic [ref=e191]: Lucky Color
+              - generic [ref=e192]: Gold
+            - generic [ref=e193]:
+              - generic [ref=e194]: Lucky Number
+              - generic [ref=e195]: "08"
+          - generic [ref=e196]:
+            - paragraph [ref=e197]: Horoscope Date
+            - paragraph [ref=e198]: Today
+        - generic [ref=e199]:
+          - generic [ref=e200]:
+            - heading "Forecast" [level=3] [ref=e201]
+            - generic [ref=e202]: Daily Reading
+          - paragraph [ref=e395]: Horoscope could not be loaded right now.
+    - generic [ref=e206]:
+      - generic [ref=e207]:
+        - generic [ref=e208]:
+          - heading "Premium cosmic reports and calculators" [level=2] [ref=e209]
+          - paragraph [ref=e210]: Explore deeper Vedic insights with focused reports and spiritual tools.
+        - button "View All Services" [ref=e211] [cursor=pointer]
+      - generic [ref=e212]:
+        - generic [ref=e213]:
+          - heading "Lal Kitab Reports" [level=3] [ref=e215]
+          - paragraph [ref=e216]: Actionable remedial guidance based on Lal Kitab principles and chart-derived observations.
+          - button "Open" [ref=e218] [cursor=pointer]
+        - generic [ref=e219]:
+          - heading "Detailed Kundali Analysis" [level=3] [ref=e221]
+          - paragraph [ref=e222]: A Premium digital dossier modeled after the 145+ page manual report. Includes extensive planet-house readings, divisional charts, dasha details, and remedies.
+          - button "Open" [ref=e224] [cursor=pointer]
+        - generic [ref=e225]:
+          - heading "Detailed Dosha Analysis" [level=3] [ref=e227]
+          - paragraph [ref=e228]: In-depth checks for Manglik, Kaalsarpa, Pitra doshas, and Sade Sati periods.
+          - button "Open" [ref=e230] [cursor=pointer]
+        - generic [ref=e231]:
+          - heading "Detailed Matchmaking Report" [level=3] [ref=e233]
+          - paragraph [ref=e234]: Deep marital compatibility report going beyond 36-point Guna Milan to analyze personality, emotional bond, chemistry, and Manglik cancels.
+          - button "Open" [ref=e236] [cursor=pointer]
+        - generic [ref=e237]:
+          - heading "Detailed Numerology" [level=3] [ref=e239]
+          - paragraph [ref=e240]: Numerology insights for destiny number, life path, strengths, and alignment patterns.
+          - button "Open" [ref=e242] [cursor=pointer]
+        - generic [ref=e243]:
+          - heading "Tarot Reading" [level=3] [ref=e245]
+          - paragraph [ref=e246]: Tarot readings for love, career, finance, and yes/no questions.
+          - button "Open" [ref=e248] [cursor=pointer]
+        - generic [ref=e249]:
+          - heading "Daily Nakshatra Predictions" [level=3] [ref=e251]
+          - paragraph [ref=e252]: Review previous, current, next and consolidated daily Nakshatra predictions.
+          - button "Open" [ref=e254] [cursor=pointer]
+        - generic [ref=e255]:
+          - heading "Mangal Dosha" [level=3] [ref=e257]
+          - paragraph [ref=e258]: Check manglik dosha, exceptions, and remedial notes from birth details.
+          - button "Open" [ref=e260] [cursor=pointer]
+  - generic [ref=e262]:
+    - generic [ref=e263]:
+      - generic [ref=e264]:
+        - paragraph [ref=e265]: Your cosmic path
+        - heading "From birth details to guided remedies" [level=2] [ref=e266]
+        - paragraph [ref=e267]: AstroZura brings kundali insights, calculators, rituals, and astrologer guidance into one simple spiritual journey.
+      - generic [ref=e268]:
+        - generic [ref=e270]:
+          - generic [ref=e271]: "1"
+          - heading "Share Birth Details" [level=3] [ref=e272]
+          - paragraph [ref=e273]: Enter accurate date, time, and place so every reading starts with the right foundation.
+        - generic [ref=e274]:
+          - generic [ref=e275]: "2"
+          - heading "Choose Guidance" [level=3] [ref=e276]
+          - paragraph [ref=e277]: Select reports, calculators, pooja anusthan, live sessions, or a direct astrologer consultation.
+        - generic [ref=e278]:
+          - generic [ref=e279]: "3"
+          - heading "Meet An Expert" [level=3] [ref=e280]
+          - paragraph [ref=e281]: Chat, call, or book a consultation with astrologers who can explain the reading clearly.
+        - generic [ref=e282]:
+          - generic [ref=e283]: "4"
+          - heading "Follow Remedies" [level=3] [ref=e284]
+          - paragraph [ref=e285]: Use practical remedies, timing, and rituals to move with more confidence.
+    - generic [ref=e396]:
+      - generic [ref=e397]:
+        - generic [ref=e398]:
+          - paragraph [ref=e399]: FROM THE ASTROZURA JOURNAL
+          - heading "Decode the stars before the moment passes." [level=2] [ref=e400]
+        - link "All blogs →" [ref=e401] [cursor=pointer]:
+          - /url: /blogs
+      - link "How to Read Your Daily Panchang Vedic Astrology How to Read Your Daily Panchang 139 views" [ref=e403] [cursor=pointer]:
+        - /url: /blogs/how-to-read-your-daily-panchang
+        - img "How to Read Your Daily Panchang" [ref=e405]
+        - generic [ref=e406]:
+          - paragraph [ref=e407]: Vedic Astrology
+          - heading "How to Read Your Daily Panchang" [level=3] [ref=e408]
+          - paragraph [ref=e409]: 139 views
+    - generic [ref=e410]:
+      - generic [ref=e411]:
+        - generic [ref=e412]:
+          - paragraph [ref=e413]: Sacred remedies
+          - heading "Pooja Anusthan for peace, prosperity, and remedies" [level=2] [ref=e414]
+          - paragraph [ref=e415]: Book traditional rituals for graha shanti, blessings, and life milestones with transparent details and guided support.
+        - link "View All" [ref=e416] [cursor=pointer]:
+          - /url: /rituals
+      - generic [ref=e417]:
+        - generic [ref=e418]:
+          - link "Baglamukhi Anusthan" [ref=e419] [cursor=pointer]:
+            - /url: /rituals/baglamukhi-anusthan
+            - img "Baglamukhi Anusthan" [ref=e420]
+          - generic [ref=e421]:
+            - generic [ref=e422]:
+              - paragraph [ref=e423]: Victory & Protection
+              - generic [ref=e424]: Popular
+            - link "Baglamukhi Anusthan" [ref=e425] [cursor=pointer]:
+              - /url: /rituals/baglamukhi-anusthan
+            - paragraph [ref=e426]: A focused ritual for victory in disputes, legal matters, enemy protection, and spiritual shielding.
+            - generic [ref=e427]:
+              - generic [ref=e428]: 3-5 Days
+              - generic [ref=e429]: Rs 7,200
+            - generic [ref=e430]:
+              - link "View Details" [ref=e431] [cursor=pointer]:
+                - /url: /rituals/baglamukhi-anusthan
+              - button "Book Now" [ref=e432] [cursor=pointer]
+        - generic [ref=e433]:
+          - link "Ganesh Chaturthi Maha Pooja" [ref=e434] [cursor=pointer]:
+            - /url: /rituals/ganesh-chaturthi-maha-pooja
+            - img "Ganesh Chaturthi Maha Pooja" [ref=e435]
+          - generic [ref=e436]:
+            - generic [ref=e437]:
+              - paragraph [ref=e438]: Vedic Rituals
+              - generic [ref=e439]: Popular
+            - link "Ganesh Chaturthi Maha Pooja" [ref=e440] [cursor=pointer]:
+              - /url: /rituals/ganesh-chaturthi-maha-pooja
+            - paragraph [ref=e441]: A comprehensive ritual to invoke the blessings of Lord Ganesha for new beginnings and obstacle removal.
+            - generic [ref=e442]:
+              - generic [ref=e443]: 120 Mins
+              - generic [ref=e444]: Rs 2,500
+            - generic [ref=e445]:
+              - link "View Details" [ref=e446] [cursor=pointer]:
+                - /url: /rituals/ganesh-chaturthi-maha-pooja
+              - button "Book Now" [ref=e447] [cursor=pointer]
+        - generic [ref=e448]:
+          - link "Griha Pravesh Shanti" [ref=e449] [cursor=pointer]:
+            - /url: /rituals/griha-pravesh-shanti
+            - img "Griha Pravesh Shanti" [ref=e450]
+          - generic [ref=e451]:
+            - generic [ref=e452]:
+              - paragraph [ref=e453]: New Beginnings
+              - generic [ref=e454]: Popular
+            - link "Griha Pravesh Shanti" [ref=e455] [cursor=pointer]:
+              - /url: /rituals/griha-pravesh-shanti
+            - paragraph [ref=e456]: House warming ceremony with purification rituals, vastu balancing, and blessings for the new home.
+            - generic [ref=e457]:
+              - generic [ref=e458]: 240 Mins
+              - generic [ref=e459]: Rs 5,100
+            - generic [ref=e460]:
+              - link "View Details" [ref=e461] [cursor=pointer]:
+                - /url: /rituals/griha-pravesh-shanti
+              - button "Book Now" [ref=e462] [cursor=pointer]
+        - generic [ref=e463]:
+          - link "Angarak Dosh Puja" [ref=e464] [cursor=pointer]:
+            - /url: /rituals/angarak-dosh-puja
+            - img "Angarak Dosh Puja" [ref=e465]
+          - generic [ref=e466]:
+            - paragraph [ref=e468]: Dosh Nivaran
+            - link "Angarak Dosh Puja" [ref=e469] [cursor=pointer]:
+              - /url: /rituals/angarak-dosh-puja
+            - paragraph [ref=e470]: Angarak Dosh Puja helps balance the combined influences of Mars and Rahu, minimizes astrological challenges, improves relationships and career growth, and attracts prosperity, harmony, and overall well-being.
+            - generic [ref=e471]:
+              - generic [ref=e472]: 1–3 Days
+              - generic [ref=e473]: Rs 0
+            - generic [ref=e474]:
+              - link "View Details" [ref=e475] [cursor=pointer]:
+                - /url: /rituals/angarak-dosh-puja
+              - button "Book Now" [ref=e476] [cursor=pointer]
+    - generic [ref=e287]:
+      - generic [ref=e288]:
+        - paragraph [ref=e289]: Live Sessions
+        - heading "Join the next live spiritual guidance session" [level=2] [ref=e291]
+        - paragraph [ref=e292]: Join live spiritual guidance sessions with featured astrologers. When no one is live, you can subscribe for notifications and return as soon as the next session starts.
+        - generic [ref=e293]:
+          - generic [ref=e294]: Featured astrologers only
+          - generic [ref=e295]: Push alerts coming next
+      - generic [ref=e296]:
+        - generic [ref=e297]:
+          - paragraph [ref=e298]: Stay Updated
+          - paragraph [ref=e299]: Get notified when the next session starts
+          - paragraph [ref=e300]: Subscribe to receive a browser alert when the next featured astrologer goes live.
+        - generic [ref=e301]:
+          - button "Open Live" [ref=e302] [cursor=pointer]
+          - button "Notify Me" [ref=e303] [cursor=pointer]
+        - paragraph [ref=e304]: This browser can subscribe to live-start alerts and open the live room directly from the notification.
+    - generic [ref=e305]:
+      - generic [ref=e306]:
+        - generic [ref=e479]:
+          - paragraph [ref=e480]: Trusted guidance
+          - heading "Top rated astrologers for your next cosmic question" [level=2] [ref=e481]
+        - button "Show All" [ref=e482] [cursor=pointer]
+      - generic [ref=e483]:
+        - generic [ref=e484]:
+          - generic [ref=e485]:
+            - img "Ananya Gupta" [ref=e486]
+            - generic [ref=e487]:
+              - heading "Ananya Gupta" [level=3] [ref=e488]
+              - paragraph [ref=e489]: Vedic Astrology & Career Alignment Specialist
+              - paragraph [ref=e490]: 10 Years Exp
+              - paragraph [ref=e491]: 5.0 (2 reviews)
+              - generic [ref=e492]: Available
+            - generic [ref=e494]: ★ 5.0
+          - generic [ref=e495]:
+            - generic [ref=e496]: Chat Price
+            - generic [ref=e497]: Call Price
+          - generic [ref=e498]:
+            - generic [ref=e499]: Rs 150.00/min
+            - generic [ref=e500]: Rs 300.00/min
+          - generic [ref=e501]:
+            - button "View Profile" [ref=e502] [cursor=pointer]
+            - button "Book a Consultation" [ref=e503] [cursor=pointer]
+        - generic [ref=e504]:
+          - generic [ref=e505]:
+            - img "Pandit Meera" [ref=e506]
+            - generic [ref=e507]:
+              - heading "Pandit Meera" [level=3] [ref=e508]
+              - paragraph [ref=e509]: Career & Vedic Astrology Expert
+              - paragraph [ref=e510]: 9 Years Exp
+              - paragraph [ref=e511]: Not Rated Yet
+              - generic [ref=e512]: Available
+            - generic [ref=e514]: Not Rated Yet
+          - generic [ref=e515]:
+            - generic [ref=e516]: Chat Price
+            - generic [ref=e517]: Call Price
+          - generic [ref=e518]:
+            - generic [ref=e519]: Rs 35.00/min
+            - generic [ref=e520]: Rs 22.00/min
+          - generic [ref=e521]:
+            - button "View Profile" [ref=e522] [cursor=pointer]
+            - button "Book a Consultation" [ref=e523] [cursor=pointer]
+        - generic [ref=e524]:
+          - generic [ref=e525]:
+            - img "Acharya Rahul" [ref=e526]
+            - generic [ref=e527]:
+              - heading "Acharya Rahul" [level=3] [ref=e528]
+              - paragraph [ref=e529]: Vedic Astrology & Love Specialist
+              - paragraph [ref=e530]: 12 Years Exp
+              - paragraph [ref=e531]: Not Rated Yet
+              - generic [ref=e532]: Available
+            - generic [ref=e534]: Not Rated Yet
+          - generic [ref=e535]:
+            - generic [ref=e536]: Chat Price
+            - generic [ref=e537]: Call Price
+          - generic [ref=e538]:
+            - generic [ref=e539]: Rs 20.00/min
+            - generic [ref=e540]: Rs 25.00/min
+          - generic [ref=e541]:
+            - button "View Profile" [ref=e542] [cursor=pointer]
+            - button "Book a Consultation" [ref=e543] [cursor=pointer]
+  - contentinfo [ref=e307]:
+    - generic [ref=e308]:
+      - generic [ref=e309]:
+        - img "AstroZura Logo" [ref=e311]
+        - paragraph [ref=e312]: Bringing celestial wisdom to your fingertips. AstroZura connects you with gifted astrologers and spiritual advisors.
+        - generic [ref=e313]:
+          - link "Instagram" [ref=e314] [cursor=pointer]:
+            - /url: https://www.instagram.com/astrozura__?utm_source=qr
+            - img [ref=e315]
+          - link "Facebook" [ref=e318] [cursor=pointer]:
+            - /url: https://www.facebook.com/share/1BE7DqPJb4/?mibextid=wwXIfr
+            - img [ref=e319]
+          - link "YouTube" [ref=e321] [cursor=pointer]:
+            - /url: http://www.youtube.com/@AstroZura
+            - img [ref=e322]
+        - generic [ref=e325]:
+          - generic [ref=e544]:
+            - button "Download on the App Store" [ref=e545] [cursor=pointer]:
+              - img "Download on the App Store" [ref=e546]
+            - generic: Soon
+          - generic [ref=e547]:
+            - button "Get it on Google Play" [ref=e548] [cursor=pointer]:
+              - img "Get it on Google Play" [ref=e549]
+            - generic: Soon
+      - generic [ref=e326]:
+        - heading "Services" [level=3] [ref=e327]
+        - list [ref=e328]:
+          - listitem [ref=e329]:
+            - link "View All Services" [ref=e330] [cursor=pointer]:
+              - /url: /services
+          - listitem [ref=e331]:
+            - link "Pooja Anusthan" [ref=e332] [cursor=pointer]:
+              - /url: /rituals
+          - listitem [ref=e333]:
+            - link "Horoscope" [ref=e334] [cursor=pointer]:
+              - /url: /rashifal
+          - listitem [ref=e335]:
+            - link "Matchmaking" [ref=e336] [cursor=pointer]:
+              - /url: /matching
+          - listitem [ref=e337]:
+            - link "Detailed Kundali Analysis" [ref=e338] [cursor=pointer]:
+              - /url: /services/detailed-kundali
+          - listitem [ref=e339]:
+            - link "Astrologers" [ref=e340] [cursor=pointer]:
+              - /url: /astrologers
+      - generic [ref=e341]:
+        - heading "Company" [level=3] [ref=e342]
+        - list [ref=e343]:
+          - listitem [ref=e344]:
+            - link "About Us" [ref=e345] [cursor=pointer]:
+              - /url: /about-us
+          - listitem [ref=e346]:
+            - link "Contact Support" [ref=e347] [cursor=pointer]:
+              - /url: /contact-support
+          - listitem [ref=e348]:
+            - link "Privacy Policy" [ref=e349] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=e350]:
+            - link "Terms & Conditions" [ref=e351] [cursor=pointer]:
+              - /url: /terms-and-conditions
+          - listitem [ref=e352]:
+            - link "Blog" [ref=e353] [cursor=pointer]:
+              - /url: /blogs
+      - generic [ref=e354]:
+        - heading "Newsletter" [level=3] [ref=e355]
+        - paragraph [ref=e356]: Get daily cosmic insights delivered to your inbox.
+        - textbox "Your email address" [ref=e357]
+        - button "Subscribe" [ref=e358] [cursor=pointer]
+        - img "Accepted payment methods" [ref=e550]
+    - generic [ref=e361]:
+      - paragraph [ref=e362]: (c) 2026 AstroZura Inc. All cosmic rights reserved.
+      - generic [ref=e363]:
+        - link "Astrologer Login" [ref=e364] [cursor=pointer]:
+          - /url: /astrologer/login
+        - link "Disclaimer" [ref=e365] [cursor=pointer]:
+          - /url: /terms-and-conditions
+        - link "Sitemap" [ref=e366] [cursor=pointer]:
+          - /url: /services

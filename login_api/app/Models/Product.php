@@ -19,6 +19,7 @@ class Product extends Model
         'specifications',
         'warnings_precautions',
         'image',
+        'translations',
         'bead_count',
         'bead_size',
         'seed_type',
@@ -34,6 +35,7 @@ class Product extends Model
         return [
             'price' => 'decimal:2',
             'option_names' => 'array',
+            'translations' => 'array',
             'is_trending' => 'boolean',
             'status' => 'boolean',
         ];
@@ -54,5 +56,10 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class)
             ->where('status', true)
             ->orderBy('position');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
     }
 }

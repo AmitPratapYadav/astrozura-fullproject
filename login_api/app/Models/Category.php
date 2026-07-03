@@ -12,8 +12,19 @@ class Category extends Model
     protected $fillable = [
         'name',
         'image',
+        'shipping_charge',
+        'translations',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'shipping_charge' => 'decimal:2',
+            'translations' => 'array',
+            'status' => 'boolean',
+        ];
+    }
 
     public function products()
     {

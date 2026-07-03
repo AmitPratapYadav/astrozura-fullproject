@@ -1,0 +1,6 @@
+[     640ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) @ https://admin.astrozura.com/login:0
+[  146967ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://admin.astrozura.com/astrologers:0
+[  268520ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://astrozura.com/apigateway/index.php/api/admin/notifications:0
+[  268522ms] [ERROR] Admin notification load failed Error: Server Error 500 Server Error
+    at qe (https://admin.astrozura.com/assets/index-DtpNPGNI.js:114:7595)
+    at async w (https://admin.astrozura.com/assets/index-DtpNPGNI.js:158:646) @ https://admin.astrozura.com/assets/index-DtpNPGNI.js:157

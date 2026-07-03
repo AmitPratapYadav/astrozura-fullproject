@@ -24,12 +24,14 @@ import { useAuth } from "../context/AuthContext";
 import {
   endBookingSession,
   extendBookingSession,
+  getBookingKundali,
   getBookingSession,
   pingBookingSession,
   startBookingSession,
 } from "../api/sessionApi";
+import { ReportDataBlock } from "../components/report/ReportDataRenderer";
 
-const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 const CLOSED_STATUSES = new Set(["completed", "cancelled", "declined"]);
 const IMAGE_MESSAGE_PREFIX = "[[image]]";
 const ZEGO_STANDARD_VIDEO_CALL_SCENARIO = 4;
@@ -188,6 +190,168 @@ const decodeTypingCommand = (message) => {
   }
 };
 
+const cleanKundaliLabel = (value) =>
+  String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const cleanKundaliValue = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "-";
+  if (typeof value === "string") {
+    return value.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "").trim() || "-";
+  }
+  if (Array.isArray(value)) {
+    return value.map(cleanKundaliValue).filter((item) => item && item !== "-").join(", ") || "-";
+  }
+  if (typeof value === "object") {
+    return cleanKundaliValue(value.name || value.title || value.value || value.report || value.description || "-");
+  }
+  return String(value);
+};
+
+const clientPlanetRows = (planets) => {
+  const rows = Array.isArray(planets) ? planets : Object.values(planets || {}).find(Array.isArray) || [];
+  return rows.map((planet) => ({
+    planet: cleanKundaliValue(planet?.name || planet?.planet || planet?.full_name),
+    sign: cleanKundaliValue(planet?.sign || planet?.zodiac || planet?.rasi),
+    degree: cleanKundaliValue(planet?.degree || planet?.norm_degree || planet?.full_degree),
+    nakshatra: cleanKundaliValue(planet?.nakshatra || planet?.nakshatra_name),
+    house: cleanKundaliValue(planet?.house || planet?.house_number),
+  }));
+};
+
+const doshaSummary = (label, payload) => {
+  if (!payload) return null;
+  const present =
+    payload.is_present !== undefined
+      ? payload.is_present
+      : payload.present !== undefined
+        ? payload.present
+        : payload.status || payload.manglik_status || payload.is_pitri_dosha_present || payload.is_kalsarpa_present;
+  const report = payload.report || payload.manglik_report || payload.conclusion || payload.one_line || payload.description;
+  return { label, present: cleanKundaliValue(present), report: cleanKundaliValue(report) };
+};
+
+function ClientKundaliPanel({ data, loading, error }) {
+  if (loading) {
+    return (
+      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-3 text-sm font-semibold text-[#1E3557]">
+          <FaSpinner className="animate-spin" />
+          Loading client Kundali...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-3xl border border-red-100 bg-red-50 p-6 text-sm font-semibold text-red-700 shadow-sm">
+        {error}
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const birthRows = Object.entries(data.birth_details || {})
+    .filter(([, value]) => value !== null && value !== undefined && value !== "")
+    .map(([key, value]) => [cleanKundaliLabel(key), cleanKundaliValue(value)]);
+  const planets = clientPlanetRows(data.planets);
+  const chartSvg = data.charts?.find((chart) => chart?.chart_svg)?.chart_svg;
+  const doshas = [
+    doshaSummary("Mangal Dosha", data.doshas?.mangal),
+    doshaSummary("Pitra Dosha", data.doshas?.pitra),
+    doshaSummary("Kaal Sarp Dosha", data.doshas?.kaal_sarp),
+  ].filter(Boolean);
+
+  return (
+    <div className="rounded-3xl border border-[#EFE3D1] bg-white p-6 shadow-sm">
+      <h3 className="text-lg font-black text-[#1E3557]">Client Kundali</h3>
+      <p className="mt-1 text-sm text-gray-500">Generated from the birth details saved with this booking.</p>
+
+      {birthRows.length > 0 && (
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {birthRows.slice(0, 8).map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-gray-100 bg-[#F8F9FC] px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-400">{label}</p>
+              <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {chartSvg && (
+        <div className="mt-5 rounded-2xl border border-gray-100 bg-[#FFF9EC] p-4">
+          <p className="mb-3 text-sm font-black text-[#1E3557]">D1 Rasi Chart</p>
+          <div
+            className="mx-auto max-w-[360px] overflow-hidden [&_svg]:h-auto [&_svg]:w-full"
+            dangerouslySetInnerHTML={{ __html: chartSvg }}
+          />
+        </div>
+      )}
+
+      {planets.length > 0 && (
+        <div className="mt-5 overflow-x-auto rounded-2xl border border-gray-100">
+          <table className="w-full min-w-[620px] text-left text-xs">
+            <thead className="bg-[#FFF7DF] text-[#7A4C00]">
+              <tr>
+                {["Planet", "Sign", "Degree", "Nakshatra", "House"].map((heading) => (
+                  <th key={heading} className="px-3 py-3 font-black">{heading}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {planets.map((planet, index) => (
+                <tr key={`${planet.planet}-${index}`} className="border-t border-gray-100 odd:bg-white even:bg-slate-50">
+                  <td className="px-3 py-3 font-bold text-[#1E3557]">{planet.planet}</td>
+                  <td className="px-3 py-3 text-slate-600">{planet.sign}</td>
+                  <td className="px-3 py-3 text-slate-600">{planet.degree}</td>
+                  <td className="px-3 py-3 text-slate-600">{planet.nakshatra}</td>
+                  <td className="px-3 py-3 text-slate-600">{planet.house}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {doshas.length > 0 && (
+        <div className="mt-5 grid gap-3">
+          {doshas.map((item) => (
+            <div key={item.label} className="rounded-2xl border border-gray-100 bg-[#F8F9FC] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-black text-[#1E3557]">{item.label}</p>
+                <span className="rounded-full bg-[#F6E8BF] px-3 py-1 text-xs font-black text-[#7A4C00]">{item.present}</span>
+              </div>
+              {item.report !== "-" && <p className="mt-2 text-sm leading-6 text-gray-600">{item.report}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {[
+        ["Dasha Timeline", data.dasha],
+        ["Predictions", data.predictions],
+        ["Gemstone Suggestions", data.gemstones],
+        ["Rudraksha Suggestions", data.rudraksha],
+        ["Puja Suggestions", data.puja_suggestions],
+      ].filter(([, value]) => value).map(([title, value]) => (
+        <section key={title} className="mt-5 overflow-hidden rounded-md border border-[#EAD79D] bg-white">
+          <h4 className="bg-[#FFF3C7] px-4 py-3 font-black text-[#6F4A04]">{title}</h4>
+          <div className="p-4">
+            <ReportDataBlock title={title} data={value} />
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export default function ChatPage() {
   const { bookingId: routeBookingId } = useParams();
   const location = useLocation();
@@ -219,6 +383,9 @@ export default function ChatPage() {
   const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
   const [serverClockOffsetMs, setServerClockOffsetMs] = useState(0);
+  const [clientKundali, setClientKundali] = useState(null);
+  const [clientKundaliLoading, setClientKundaliLoading] = useState(false);
+  const [clientKundaliError, setClientKundaliError] = useState("");
 
   const messageViewportRef = useRef(null);
   const zimRef = useRef(null);
@@ -283,6 +450,28 @@ export default function ChatPage() {
   const showLowTimeWarning = Boolean(session?.is_live && displayRemainingSeconds > 0 && displayRemainingSeconds <= 120);
   const extensionOptions = session?.extension?.options || [];
   const availableExtensionOptions = extensionOptions.filter((option) => option.is_available);
+
+  useEffect(() => {
+    setClientKundali(null);
+    setClientKundaliError("");
+    setClientKundaliLoading(false);
+  }, [booking?.id]);
+
+  const loadClientKundali = async () => {
+    if (!booking?.id || !isAstrologerViewer || clientKundaliLoading) return;
+    try {
+      setClientKundaliLoading(true);
+      setClientKundaliError("");
+      const response = await getBookingKundali(booking.id);
+      setClientKundali(response?.data || null);
+    } catch (error) {
+      setClientKundali(null);
+      setClientKundaliError(error?.response?.data?.message || "Client Kundali is unavailable for this booking.");
+    } finally {
+      setClientKundaliLoading(false);
+    }
+  };
+
   const sessionHeadline = useMemo(() => {
     if (isClosed) {
       return "This consultation has ended.";
@@ -1507,7 +1696,8 @@ export default function ChatPage() {
           </div>
         ) : (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-            <section className="flex min-h-[70vh] flex-col rounded-3xl border border-gray-200 bg-white shadow-sm xl:h-[calc(100vh-12.5rem)] xl:min-h-0 xl:max-h-[820px]">
+            <div className="min-w-0 space-y-6">
+              <section className="flex min-h-[70vh] flex-col rounded-3xl border border-gray-200 bg-white shadow-sm xl:h-[calc(100vh-12.5rem)] xl:min-h-0 xl:max-h-[820px]">
               <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F6E8BF] text-[#1E3557]">
@@ -1689,7 +1879,36 @@ export default function ChatPage() {
                   </button>
                 </div>
               </div>
-            </section>
+              </section>
+
+              {isAstrologerViewer && (
+                <section className="rounded-3xl border border-[#EAD79D] bg-[#FFF9EA] p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-xl font-black text-[#1E3557]">Detailed Client Kundali</h2>
+                      <p className="mt-1 text-sm text-gray-600">Generate the report from birth details supplied with this booking.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void loadClientKundali()}
+                      disabled={clientKundaliLoading}
+                      className="rounded-xl bg-[#1E3557] px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
+                    >
+                      {clientKundaliLoading
+                        ? "Generating..."
+                        : clientKundali
+                          ? "Refresh Detailed Kundali"
+                          : "Generate Detailed Kundali"}
+                    </button>
+                  </div>
+                  {(clientKundaliLoading || clientKundaliError || clientKundali) && (
+                    <div className="mt-5">
+                      <ClientKundaliPanel data={clientKundali} loading={clientKundaliLoading} error={clientKundaliError} />
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
 
             <aside className="space-y-6">
               <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -1765,34 +1984,6 @@ export default function ChatPage() {
                   </div>
                 )}
 
-                {isAstrologerViewer && (
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <a
-                      href="/kundli"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-2xl border border-gray-200 px-4 py-3 text-center text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
-                    >
-                      Kundali Report
-                    </a>
-                    <a
-                      href="/matching"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-2xl border border-gray-200 px-4 py-3 text-center text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
-                    >
-                      Matchmaking
-                    </a>
-                    <a
-                      href="/services/tarot-reading"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-2xl border border-gray-200 px-4 py-3 text-center text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
-                    >
-                      Tarot Reading
-                    </a>
-                  </div>
-                )}
               </div>
 
               <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">

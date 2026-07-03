@@ -1,66 +1,94 @@
+import { useEffect, useState } from "react";
+import { Bell, Clock3, Heart, Package } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 
 export default function DashboardHome() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ total_orders: 0, pending_orders: 0, wishlist_items: 0 });
+  const [notifications, setNotifications] = useState([]);
 
-  const stats = [
-    { label: "Total Orders", value: "0", icon: "🛒", color: "bg-blue-500" },
-    { label: "Pending Orders", value: "0", icon: "⏳", color: "bg-amber-500" },
-    { label: "Wishlist Items", value: "0", icon: "❤️", color: "bg-red-500" },
-    { label: "Loyalty Points", value: "150", icon: "✨", color: "bg-purple-500" },
+  const load = async () => {
+    const [statsResponse, notificationResponse] = await Promise.all([
+      api.get("/dashboard/stats"),
+      api.get("/notifications", { params: { surface: "shop", per_page: 5 } }),
+    ]);
+    setStats(statsResponse.data?.data || stats);
+    setNotifications(notificationResponse.data?.data?.data || []);
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const cards = [
+    { label: "Total Orders", value: stats.total_orders, icon: Package, color: "bg-blue-500" },
+    { label: "Pending Orders", value: stats.pending_orders, icon: Clock3, color: "bg-amber-500" },
+    { label: "Wishlist Items", value: stats.wishlist_items, icon: Heart, color: "bg-red-500" },
   ];
 
+  const openNotification = async (notification) => {
+    if (!notification.read_at) await api.post(`/notifications/${notification.id}/read`);
+    notification.action_url ? navigate(notification.action_url) : await load();
+  };
+
+  const markAllRead = async () => {
+    await api.post("/notifications/read-all", { surface: "shop" });
+    await load();
+  };
+
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* WELCOME HEADER */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-6">
-        <div className="w-20 h-20 bg-[#c9a227] rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-[#c9a227]/30">
-          👋
-        </div>
-        <div className="text-center md:text-left">
-          <h2 className="text-2xl font-bold text-gray-900">Hello, {user?.name || "User"}!</h2>
-          <p className="text-gray-500 mt-1">Manage your orders, profile, and wishlist from your personal dashboard.</p>
-        </div>
+    <div className="space-y-8">
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+        <h2 className="text-2xl font-bold text-gray-900">Hello, {user?.name || "User"}</h2>
+        <p className="mt-1 text-gray-500">Manage your orders, profile, wishlist, and updates.</p>
       </div>
 
-      {/* STATS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-default group">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`${stat.color} w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg shadow-inner`}>
-                {stat.icon}
-              </div>
-              <span className="text-2xl font-bold text-gray-900 group-hover:text-[#c9a227] transition-colors">{stat.value}</span>
+      <div className="grid gap-6 sm:grid-cols-3">
+        {cards.map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className={`flex h-10 w-10 items-center justify-center rounded-lg text-white ${color}`}>
+                <Icon size={19} />
+              </span>
+              <strong className="text-3xl text-gray-900">{value || 0}</strong>
             </div>
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{stat.label}</p>
+            <p className="mt-5 text-xs font-bold uppercase tracking-wider text-gray-500">{label}</p>
           </div>
         ))}
       </div>
 
-      {/* RECENT ACTIVITY MOCKUP */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="font-bold text-gray-900">Recent Notifications</h3>
-          <button className="text-xs text-[#c9a227] font-bold hover:underline">Mark all as read</button>
-        </div>
-        <div className="divide-y divide-gray-50">
-          <div className="p-6 flex gap-4 hover:bg-gray-50 transition">
-            <span className="text-xl">✅</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-800">Registration Successful</p>
-              <p className="text-xs text-gray-500 mt-0.5">Welcome to Astrozura! Your account is now active.</p>
-            </div>
+      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <div>
+            <h3 className="font-bold text-gray-900">Recent Notifications</h3>
+            <p className="mt-1 text-xs text-gray-500">Order and offer updates</p>
           </div>
-          <div className="p-6 flex gap-4 hover:bg-gray-50 transition">
-            <span className="text-xl">🛒</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-800">Explore Shop</p>
-              <p className="text-xs text-gray-500 mt-0.5">Check out our latest collection of sacred gems and yantras.</p>
-            </div>
-          </div>
+          <button type="button" onClick={() => void markAllRead()} className="text-xs font-bold text-[#c9a227] hover:underline">
+            Mark all as read
+          </button>
         </div>
-      </div>
+        {notifications.length ? notifications.map((notification) => (
+          <button
+            key={notification.id}
+            type="button"
+            onClick={() => void openNotification(notification)}
+            className={`flex w-full gap-4 border-b border-gray-50 p-5 text-left last:border-0 hover:bg-gray-50 ${
+              notification.read_at ? "bg-white" : "bg-[#FFF9EA]"
+            }`}
+          >
+            <Bell size={19} className="mt-0.5 shrink-0 text-[#c9a227]" />
+            <span>
+              <strong className="block text-sm text-gray-800">{notification.title}</strong>
+              <span className="mt-1 block text-xs leading-5 text-gray-500">{notification.message}</span>
+            </span>
+          </button>
+        )) : (
+          <p className="p-10 text-center text-sm text-gray-500">No notifications yet.</p>
+        )}
+      </section>
     </div>
   );
 }

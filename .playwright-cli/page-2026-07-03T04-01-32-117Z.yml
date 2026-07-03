@@ -1,0 +1,132 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - navigation [ref=e5]:
+      - generic [ref=e6]:
+        - link "Astro Zura" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Astro Zura" [ref=e8]
+        - generic [ref=e9]:
+          - button "Panchang" [ref=e11] [cursor=pointer]:
+            - generic [ref=e12]: Panchang
+            - img [ref=e13]
+          - button "Consultations" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]: Consultations
+            - img [ref=e18]
+          - button "Calculators" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]: Calculators
+            - img [ref=e23]
+          - button "Pooja Anusthan" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: Pooja Anusthan
+            - img [ref=e28]
+          - button "Reports" [ref=e31] [cursor=pointer]:
+            - generic [ref=e32]: Reports
+            - img [ref=e33]
+          - link "Blogs" [ref=e36] [cursor=pointer]:
+            - /url: /blogs
+        - generic [ref=e37]:
+          - link "Live" [ref=e38] [cursor=pointer]:
+            - /url: /live
+          - button "EN" [ref=e40] [cursor=pointer]:
+            - img [ref=e41]
+            - text: EN
+          - link "Sign In" [ref=e46] [cursor=pointer]:
+            - /url: /login
+    - navigation [ref=e47]:
+      - generic [ref=e49]:
+        - link "Horoscope" [ref=e51] [cursor=pointer]:
+          - /url: /rashifal
+        - button "Kundali" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: Kundali
+          - img [ref=e55]
+        - link "Match Making" [ref=e58] [cursor=pointer]:
+          - /url: /services/detailed-matchmaking
+        - link "Numerology" [ref=e60] [cursor=pointer]:
+          - /url: /detailed-numerology
+        - link "Tarot" [ref=e62] [cursor=pointer]:
+          - /url: /services/tarot-reading
+        - link "Palm Reading" [ref=e64] [cursor=pointer]:
+          - /url: /services/palm-reading
+        - link "Shop" [ref=e66] [cursor=pointer]:
+          - /url: https://shop.astrozura.com
+  - generic [ref=e68]:
+    - paragraph [ref=e69]: Our Experts
+    - heading "Consult With Expert Astrologers" [level=1] [ref=e70]
+    - paragraph [ref=e71]: Choose from experienced Vedic astrologers for personalized guidance.
+  - contentinfo [ref=e74]:
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - img "AstroZura Logo" [ref=e78]
+        - paragraph [ref=e79]: Bringing celestial wisdom to your fingertips. AstroZura connects you with gifted astrologers and spiritual advisors.
+        - generic [ref=e80]:
+          - link "Instagram" [ref=e81] [cursor=pointer]:
+            - /url: https://www.instagram.com/astrozura__?utm_source=qr
+            - img [ref=e82]
+          - link "Facebook" [ref=e85] [cursor=pointer]:
+            - /url: https://www.facebook.com/share/1BE7DqPJb4/?mibextid=wwXIfr
+            - img [ref=e86]
+          - link "YouTube" [ref=e88] [cursor=pointer]:
+            - /url: http://www.youtube.com/@AstroZura
+            - img [ref=e89]
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - button "Download on the App Store" [ref=e94] [cursor=pointer]:
+              - img "Download on the App Store" [ref=e95]
+            - generic: Soon
+          - generic [ref=e96]:
+            - button "Get it on Google Play" [ref=e97] [cursor=pointer]:
+              - img "Get it on Google Play" [ref=e98]
+            - generic: Soon
+      - generic [ref=e99]:
+        - heading "Services" [level=3] [ref=e100]
+        - list [ref=e101]:
+          - listitem [ref=e102]:
+            - link "View All Services" [ref=e103] [cursor=pointer]:
+              - /url: /services
+          - listitem [ref=e104]:
+            - link "Pooja Anusthan" [ref=e105] [cursor=pointer]:
+              - /url: /rituals
+          - listitem [ref=e106]:
+            - link "Horoscope" [ref=e107] [cursor=pointer]:
+              - /url: /rashifal
+          - listitem [ref=e108]:
+            - link "Matchmaking" [ref=e109] [cursor=pointer]:
+              - /url: /matching
+          - listitem [ref=e110]:
+            - link "Detailed Kundali Analysis" [ref=e111] [cursor=pointer]:
+              - /url: /services/detailed-kundali
+          - listitem [ref=e112]:
+            - link "Astrologers" [ref=e113] [cursor=pointer]:
+              - /url: /astrologers
+      - generic [ref=e114]:
+        - heading "Company" [level=3] [ref=e115]
+        - list [ref=e116]:
+          - listitem [ref=e117]:
+            - link "About Us" [ref=e118] [cursor=pointer]:
+              - /url: /about-us
+          - listitem [ref=e119]:
+            - link "Contact Support" [ref=e120] [cursor=pointer]:
+              - /url: /contact-support
+          - listitem [ref=e121]:
+            - link "Privacy Policy" [ref=e122] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=e123]:
+            - link "Terms & Conditions" [ref=e124] [cursor=pointer]:
+              - /url: /terms-and-conditions
+          - listitem [ref=e125]:
+            - link "Blog" [ref=e126] [cursor=pointer]:
+              - /url: /blogs
+      - generic [ref=e127]:
+        - heading "Newsletter" [level=3] [ref=e128]
+        - paragraph [ref=e129]: Get daily cosmic insights delivered to your inbox.
+        - textbox "Your email address" [ref=e130]
+        - button "Subscribe" [ref=e131] [cursor=pointer]
+        - img "Accepted payment methods" [ref=e133]
+    - generic [ref=e135]:
+      - paragraph [ref=e136]: (c) 2026 AstroZura Inc. All cosmic rights reserved.
+      - generic [ref=e137]:
+        - link "Astrologer Login" [ref=e138] [cursor=pointer]:
+          - /url: /astrologer/login
+        - link "Disclaimer" [ref=e139] [cursor=pointer]:
+          - /url: /terms-and-conditions
+        - link "Sitemap" [ref=e140] [cursor=pointer]:
+          - /url: /services

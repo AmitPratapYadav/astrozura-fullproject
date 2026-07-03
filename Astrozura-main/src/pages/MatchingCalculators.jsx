@@ -241,7 +241,7 @@ export default function MatchingCalculators() {
         <div className="grid gap-8 xl:grid-cols-[440px_minmax(0,1fr)]">
           <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-bold">Matching Inputs</h2>
-            <p className="mt-2 text-sm text-slate-500">Use the exact input pattern required by the selected Astrology API matching service.</p>
+            <p className="mt-2 text-sm text-slate-500">Enter both birth profiles carefully so the compatibility report can be calculated accurately.</p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-6">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -350,6 +350,7 @@ export default function MatchingCalculators() {
                         <input
                           type="date"
                           value={section.person.dob}
+                          max={new Date().toISOString().slice(0, 10)}
                           onChange={(event) => section.setPerson((current) => ({ ...current, dob: event.target.value }))}
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                         />
@@ -411,7 +412,7 @@ export default function MatchingCalculators() {
               <div className="rounded-3xl border border-slate-100 bg-white p-10 shadow-sm">
                 <h2 className="text-2xl font-bold">Ready to Match</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-                  This page runs the dedicated Astrology API matching calculator selected from the Reports menu or All Services page.
+                  This page generates the selected compatibility report from both birth profiles.
                 </p>
               </div>
             ) : (

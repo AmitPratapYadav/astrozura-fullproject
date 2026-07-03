@@ -25,6 +25,7 @@ import s5 from "../assets/s5.jpeg";
 import s6 from "../assets/s6.jpeg";
 import s7 from "../assets/s7.jpeg";
 import { useNavigate } from "react-router-dom";
+import CatalogImage from "../components/CatalogImage";
 export default function Category() {
   const [activeBtn, setActiveBtn] = useState("shop");
   const [activeCategory, setActiveCategory] = useState(null);
@@ -36,8 +37,7 @@ const [activeFeature, setActiveFeature] = useState(null);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
   
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
 
   useEffect(() => {
     fetchCategories();
@@ -161,14 +161,11 @@ const [activeFeature, setActiveFeature] = useState(null);
                     : "hover:shadow-xl"
                 }`} >
                 <div className="relative overflow-hidden group">
-                  {item.image ? (
-                    <img src={`${backendUrl}/${item.image}`}
-                        className="w-full h-[230px] object-cover transition-transform duration-500 group-hover:scale-110" />
-                  ) : (
-                    <div className="w-full h-[230px] bg-gray-200 flex items-center justify-center text-gray-400">
-                      No Image
-                    </div>
-                  )}
+                  <CatalogImage
+                    src={item.image}
+                    alt={item.name}
+                    className="h-[230px] w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
                   </div>
                 <div className="bg-white p-4 text-left">
@@ -234,13 +231,11 @@ const [activeFeature, setActiveFeature] = useState(null);
               featuredProducts.map((item, i) => (
               <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm hover:shadow-lg">
                 <div className="relative">
-                  {item.image ? (
-                    <img src={`${backendUrl}/${item.image}`} className="h-[180px] w-full object-cover rounded-lg" />
-                  ) : (
-                    <div className="h-[180px] w-full bg-gray-200 border border-gray-100 flex items-center justify-center text-sm text-gray-400 rounded-lg">
-                      No Image
-                    </div>
-                  )}
+                  <CatalogImage
+                    src={item.image}
+                    alt={item.name}
+                    className="h-[180px] w-full rounded-lg object-cover"
+                  />
                   {item.tag && (
                     <span className="absolute top-2 left-2 bg- text-[#4974a4] text-xs px-2 py-1 rounded-full">
                       {item.tag}
@@ -248,10 +243,10 @@ const [activeFeature, setActiveFeature] = useState(null);
                 </div>
                 <div className="flex items-center gap-1 mt-3">
                   {[...Array(5)].map((_, i) => (
-                    <img key={i} src={icon4} className="w-3" />
+                    <img key={i} src={icon4} className={`w-3 ${i < Math.round(Number(item.reviews_avg_rating || 0)) ? "" : "grayscale opacity-20"}`} />
                   ))}
                   <span className="text-xs text-gray-400">
-                    ({item.reviews || Math.floor(Math.random() * 100) + 10})
+                    {item.reviews_count ? `(${item.reviews_count})` : "Not Rated Yet"}
                   </span>
                 </div>
                 <h3 className="text-sm font-semibold mt-2 truncate">
@@ -297,15 +292,11 @@ const [activeFeature, setActiveFeature] = useState(null);
           className="bg-[#f8f9fc] p-4 rounded-xl hover:shadow-lg transition cursor-pointer"
           onClick={() => alert(`${item.name} clicked!`)}>
           <div className="relative">
-           {item.image ? (
-            <img
-              src={`${backendUrl}/${item.image}`}
-              className="w-full h-[170px] object-cover rounded-lg" />
-           ) : (
-             <div className="w-full h-[170px] bg-gray-200 border border-gray-100 flex items-center justify-center text-sm text-gray-400 rounded-lg">
-               No Image
-             </div>
-           )}
+            <CatalogImage
+              src={item.image}
+              alt={item.name}
+              className="h-[170px] w-full rounded-lg object-cover"
+            />
             {item.is_trending && (
               <span className="absolute top-2 left-2 bg-blue-100 text-[#4974a4] text-xs px-2 py-1 rounded-full">
                 Trending
@@ -314,10 +305,10 @@ const [activeFeature, setActiveFeature] = useState(null);
           {/* RATING */}
           <div className="flex items-center gap-1 mt-3">
             {[...Array(5)].map((_, i) => (
-              <img key={i} src={icon4} className="w-3" />
+              <img key={i} src={icon4} className={`w-3 ${i < Math.round(Number(item.reviews_avg_rating || 0)) ? "" : "grayscale opacity-20"}`} />
             ))}
             <span className="text-xs text-gray-400">
-              ({Math.floor(Math.random() * 200) + 20})
+              {item.reviews_count ? `(${item.reviews_count})` : "Not Rated Yet"}
             </span>
           </div>
           {/* TITLE */}

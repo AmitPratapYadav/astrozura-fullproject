@@ -8,16 +8,15 @@ import secure from "../assets/icon3.png";
 import undo from "../assets/undo.png";
 import arrow from "../assets/right-arrow.png";
 import Footer from "../components/Footer";
+import { useShippingQuote } from "../hooks/useShippingQuote";
 
 export default function Cart() {
   const { cartItems, increaseQty, decreaseQty, removeFromCart } = useCart();
-  const subtotal = cartItems.reduce(
-    (acc, item) => acc + (Number(item.price) || 0) * (Number(item.qty) || 1),
-    0
-  );
-  const shipping = subtotal > 500 ? 0 : 40;
-  const tax = subtotal * 0.12; // Adjusted to 12% GST standard
-  const total = subtotal + shipping + tax;
+  const { quote, loading: quoteLoading } = useShippingQuote(cartItems);
+  const subtotal = Number(quote.subtotal_amount || 0);
+  const shipping = Number(quote.shipping_amount || 0);
+  const tax = Number(quote.tax_amount || 0);
+  const total = Number(quote.total_amount || 0);
   const navigate = useNavigate();
 
   return (
@@ -172,22 +171,21 @@ export default function Cart() {
                     <span className="font-bold">₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-white/60 text-sm font-medium">Logistic Charges</span>
+                    <span className="text-white/60 text-sm font-medium">Category Shipping</span>
                     <span className={shipping === 0 ? "text-green-400 font-bold" : "font-bold"}>
-                      {shipping === 0 ? "FREE" : `₹${shipping.toFixed(2)}`}
+                      {quoteLoading ? "Calculating..." : shipping === 0 ? "FREE" : `₹${shipping.toFixed(2)}`}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/60 text-sm font-medium">Estimated Taxes</span>
                     <span className="font-bold">₹{tax.toFixed(2)}</span>
                   </div>
-                  {shipping !== 0 && (
-                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                      <p className="text-[10px] text-white/40 leading-tight">
-                        Add <span className="text-[#C5A021] font-bold">₹{(500 - subtotal).toFixed(0)}</span> more to your cart to unlock <span className="text-white font-bold">Free Shipping</span>.
-                      </p>
+                  {(quote.shipping_breakdown || []).map((item) => (
+                    <div key={item.category_id} className="flex justify-between rounded-xl bg-white/5 px-3 py-2 text-[10px]">
+                      <span className="text-white/50">{item.category_name}</span>
+                      <span>{Number(item.amount) === 0 ? "Free" : `₹${Number(item.amount).toFixed(2)}`}</span>
                     </div>
-                  )}
+                  ))}
                 </div>
 
                 <div className="pt-6 mb-8 border-t border-white/10">

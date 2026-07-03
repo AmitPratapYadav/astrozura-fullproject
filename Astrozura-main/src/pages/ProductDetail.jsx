@@ -3,9 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-const SHOP_BASE = import.meta.env.VITE_SHOP_URL || "http://127.0.0.1:5175";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
+const SHOP_BASE = import.meta.env.VITE_SHOP_URL || "https://shop.astrozura.com";
 
 const imageUrl = (path) => {
   if (!path) return "https://placehold.co/700x700?text=AstroZura";

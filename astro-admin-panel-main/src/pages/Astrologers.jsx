@@ -17,6 +17,16 @@ const initialForm = {
   about_bio: "",
   profile_image: null,
   is_featured: false,
+  supports_chat: true,
+  supports_call: true,
+  is_online: true,
+  chat_commission_percentage: "20",
+  call_commission_percentage: "20",
+  chat_price_10: "", chat_price_15: "", chat_price_20: "", chat_price_30: "",
+  call_price_10: "", call_price_15: "", call_price_20: "", call_price_30: "",
+  languages_hi: "",
+  specialities_hi: "",
+  about_bio_hi: "",
 };
 
 function splitName(name = "") {
@@ -41,7 +51,7 @@ export default function Astrologers() {
   const loadAstrologers = async () => {
     try {
       setLoading(true);
-      const response = await apiRequest("/admin/astrologers", { requiresAuth: false });
+      const response = await apiRequest("/admin/astrologers");
       if (response.success) {
         setAstrologersData(response.astrologers || []);
       }
@@ -80,7 +90,7 @@ export default function Astrologers() {
 
   const openEditModal = async (astrologerId) => {
     try {
-      const response = await apiRequest(`/admin/astrologers/${astrologerId}`, { requiresAuth: false });
+      const response = await apiRequest(`/admin/astrologers/${astrologerId}`);
       const astrologer = response.astrologer;
       const name = splitName(astrologer.name);
 
@@ -98,6 +108,18 @@ export default function Astrologers() {
         about_bio: astrologer.astrologer_detail?.about_bio || "",
         profile_image: null,
         is_featured: Boolean(astrologer.astrologer_detail?.is_featured),
+        supports_chat: Boolean(astrologer.astrologer_detail?.supports_chat),
+        supports_call: Boolean(astrologer.astrologer_detail?.supports_call),
+        is_online: Boolean(astrologer.astrologer_detail?.is_online),
+        chat_commission_percentage: astrologer.astrologer_detail?.chat_commission_percentage ?? "20",
+        call_commission_percentage: astrologer.astrologer_detail?.call_commission_percentage ?? "20",
+        ...Object.fromEntries([10, 15, 20, 30].flatMap((duration) => [
+          [`chat_price_${duration}`, astrologer.astrologer_detail?.chat_duration_prices?.[duration] ?? ""],
+          [`call_price_${duration}`, astrologer.astrologer_detail?.call_duration_prices?.[duration] ?? ""],
+        ])),
+        languages_hi: astrologer.astrologer_detail?.translations?.hi?.languages || "",
+        specialities_hi: astrologer.astrologer_detail?.translations?.hi?.specialities || "",
+        about_bio_hi: astrologer.astrologer_detail?.translations?.hi?.about_bio || "",
       });
     } catch (error) {
       setMessage(error.message || "Unable to load astrologer details.");
@@ -132,6 +154,9 @@ export default function Astrologers() {
       const payload = new FormData();
 
       Object.entries(form).forEach(([key, value]) => {
+        if (["languages_hi", "specialities_hi", "about_bio_hi"].includes(key) || /^(chat|call)_price_(10|15|20|30)$/.test(key)) {
+          return;
+        }
         if (key === "profile_image") {
           if (value) payload.append(key, value);
           return;
@@ -148,11 +173,19 @@ export default function Astrologers() {
 
         payload.append(key, value ?? "");
       });
+      payload.append("translations", JSON.stringify({
+        hi: {
+          languages: form.languages_hi,
+          specialities: form.specialities_hi,
+          about_bio: form.about_bio_hi,
+        },
+      }));
+      payload.append("chat_duration_prices", JSON.stringify(Object.fromEntries([10, 15, 20, 30].map((duration) => [duration, form[`chat_price_${duration}`]]).filter(([, value]) => value !== ""))));
+      payload.append("call_duration_prices", JSON.stringify(Object.fromEntries([10, 15, 20, 30].map((duration) => [duration, form[`call_price_${duration}`]]).filter(([, value]) => value !== ""))));
 
       const response = await apiRequest(`/admin/astrologers/${editingAstrologer.id}`, {
         method: "POST",
         body: payload,
-        requiresAuth: false,
       });
 
       if (response.success) {
@@ -175,7 +208,6 @@ export default function Astrologers() {
     try {
       await apiRequest(`/admin/astrologers/${astrologerId}`, {
         method: "DELETE",
-        requiresAuth: false,
       });
       setMessage("Astrologer deleted successfully.");
       await loadAstrologers();
@@ -280,7 +312,7 @@ export default function Astrologers() {
                   <td className="p-3">
                     <div className="flex items-center gap-3">
                       <img
-                        src={assetUrl(item.astrologer_detail?.profile_image)}
+                        src={assetUrl(item.profile_image || item.astrologer_detail?.profile_image)}
                         alt={item.name}
                         className="h-12 w-12 rounded-full bg-gray-100 object-cover"
                       />
@@ -297,19 +329,17 @@ export default function Astrologers() {
                   <td className="p-3">{item.astrologer_detail?.experience_years ? `${item.astrologer_detail.experience_years} Years` : "N/A"}</td>
                   <td className="p-3 max-w-[240px] text-gray-600">{item.astrologer_detail?.specialities || "-"}</td>
                   <td className="p-3">
-                    <p>Chat: ₹{item.astrologer_detail?.chat_price || 0}/min</p>
-                    <p className="text-xs text-gray-500">Call: ₹{item.astrologer_detail?.call_price || 0}/min</p>
+                    <p>Chat: ₹{item.astrologer_detail?.chat_price || 0}/min ({item.astrologer_detail?.chat_commission_percentage || 0}%)</p>
+                    <p className="text-xs text-gray-500">Call: ₹{item.astrologer_detail?.call_price || 0}/min ({item.astrologer_detail?.call_commission_percentage || 0}%)</p>
                   </td>
                   <td className="p-3">
-                    {item.astrologer_detail?.is_featured ? (
-                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
-                        Featured
+                    <div className="flex flex-wrap gap-1">
+                      <span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.astrologer_detail?.is_online ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {item.astrologer_detail?.is_online ? "Online" : "Unavailable"}
                       </span>
-                    ) : (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-                        Standard
-                      </span>
-                    )}
+                      {item.astrologer_detail?.supports_chat && <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">Chat</span>}
+                      {item.astrologer_detail?.supports_call && <span className="rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-700">Call</span>}
+                    </div>
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
@@ -368,12 +398,33 @@ export default function Astrologers() {
                     <input type="number" name="chat_price" value={form.chat_price} onChange={handleChange} placeholder="Chat price" required className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
                     <input type="number" name="call_price" value={form.call_price} onChange={handleChange} placeholder="Call price" required className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input type="number" min="0" max="100" step="0.01" name="chat_commission_percentage" value={form.chat_commission_percentage} onChange={handleChange} placeholder="Chat commission %" className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
+                    <input type="number" min="0" max="100" step="0.01" name="call_commission_percentage" value={form.call_commission_percentage} onChange={handleChange} placeholder="Call commission %" className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <label className="flex items-center gap-2"><input type="checkbox" name="supports_chat" checked={form.supports_chat} onChange={handleChange} /> Chat</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" name="supports_call" checked={form.supports_call} onChange={handleChange} /> Call</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" name="is_online" checked={form.is_online} onChange={handleChange} /> Online</label>
+                  </div>
+                  <div className="rounded-xl border bg-gray-50 p-3">
+                    <p className="mb-1 text-sm font-semibold">Duration Pricing</p>
+                    <p className="mb-3 text-xs text-gray-500">Optional total session prices; blank values use per-minute pricing.</p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {["chat", "call"].map((mode) => <div key={mode}><p className="mb-2 text-xs font-bold uppercase text-gray-500">{mode}</p><div className="grid grid-cols-2 gap-2">{[10, 15, 20, 30].map((duration) => <label key={duration} className="text-xs text-gray-500">{duration} min<input type="number" min="0" step="0.01" name={`${mode}_price_${duration}`} value={form[`${mode}_price_${duration}`]} onChange={handleChange} className="mt-1 w-full rounded-lg border bg-white px-3 py-2" /></label>)}</div></div>)}
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4 border-t pt-4">
                 <input type="file" name="profile_image" accept="image/*" onChange={handleChange} className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
                 <textarea name="about_bio" value={form.about_bio} onChange={handleChange} rows="4" placeholder="About / Bio" className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <input name="languages_hi" value={form.languages_hi} onChange={handleChange} placeholder="Languages in Hindi" className="w-full rounded-lg border px-4 py-2" />
+                  <input name="specialities_hi" value={form.specialities_hi} onChange={handleChange} placeholder="Specialities in Hindi" className="w-full rounded-lg border px-4 py-2" />
+                </div>
+                <textarea name="about_bio_hi" value={form.about_bio_hi} onChange={handleChange} rows="3" placeholder="Bio in Hindi" className="w-full rounded-lg border px-4 py-2" />
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                   <input type="checkbox" name="is_featured" checked={form.is_featured} onChange={handleChange} />
                   Mark as featured astrologer

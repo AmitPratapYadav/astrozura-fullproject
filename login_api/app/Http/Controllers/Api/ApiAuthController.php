@@ -7,9 +7,13 @@ use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\UltronSmsService;
+use App\Services\UserNotificationService;
 use App\Support\MediaStorage;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -53,6 +57,7 @@ class ApiAuthController extends Controller
                     'provider_id' => $googleUser->id,
                     'provider_token' => $googleUser->token,
                 ]);
+                $this->notifyNewUser($user);
             } else {
                 $user->update([
                     'provider' => 'google',
@@ -72,7 +77,82 @@ class ApiAuthController extends Controller
         }
     }
 
-    public function sendOtp(Request $request)
+    public function mobileGoogleLogin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id_token' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $response = Http::acceptJson()
+            ->timeout(10)
+            ->get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $request->id_token,
+            ]);
+
+        if (!$response->successful()) {
+            return response()->json(['success' => false, 'message' => 'Google token could not be verified.'], 401);
+        }
+
+        $payload = $response->json();
+        $audience = (string) ($payload['aud'] ?? '');
+        $email = (string) ($payload['email'] ?? '');
+        $googleId = (string) ($payload['sub'] ?? '');
+
+        $allowedAudiences = array_values(array_filter(array_unique(array_merge(
+            [
+                config('services.google.android_client_id'),
+                config('services.google.client_id'),
+            ],
+            config('services.google.mobile_client_ids', [])
+        ))));
+
+        if ($audience === '' || !in_array($audience, $allowedAudiences, true)) {
+            return response()->json(['success' => false, 'message' => 'Google token audience is not allowed.'], 401);
+        }
+
+        $emailVerified = filter_var($payload['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if ($email === '' || !$emailVerified) {
+            return response()->json(['success' => false, 'message' => 'Google account email is not verified.'], 401);
+        }
+
+        $user = User::where('email', $email)->first();
+        $isNewUser = false;
+
+        if (!$user) {
+            $user = User::create([
+                'name' => (string) ($payload['name'] ?? strtok($email, '@')),
+                'email' => $email,
+                'role' => 'user',
+                'is_profile_complete' => false,
+                'provider' => 'google',
+                'provider_id' => $googleId,
+            ]);
+            $isNewUser = true;
+            $this->notifyNewUser($user);
+        } else {
+            $user->update([
+                'provider' => 'google',
+                'provider_id' => $googleId,
+            ]);
+            $isNewUser = !$user->is_profile_complete;
+        }
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged in successfully',
+            'token' => $token,
+            'user' => $user,
+            'is_new_user' => $isNewUser,
+        ]);
+    }
+
+    public function sendOtp(Request $request, UltronSmsService $sms)
     {
         $validator = Validator::make($request->all(), [
             'identifier' => 'required|string',
@@ -89,18 +169,38 @@ class ApiAuthController extends Controller
             [$isEmail ? 'email' : 'phone' => $identifier],
             ['name' => 'User ' . Str::random(5), 'role' => 'user']
         );
+        if ($user->wasRecentlyCreated) {
+            $this->notifyNewUser($user);
+        }
 
         $otp = rand(100000, 999999);
         $user->otp = $otp;
-        $user->otp_expires_at = now()->addMinutes(60);
+        $user->otp_expires_at = now()->addMinutes(10);
         $user->save();
 
-        return response()->json([
+        $smsSent = false;
+        if (!$isEmail) {
+            $smsSent = $sms->sendOtp($identifier, (string) $otp);
+        }
+
+        if (!$isEmail && !$smsSent && app()->environment('production')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP SMS could not be sent. Please try again shortly.',
+            ], 503);
+        }
+
+        $payload = [
             'success' => true,
-            'message' => 'OTP generated successfully (Dev OTP)',
-            'dev_otp' => $otp,
+            'message' => $isEmail ? 'OTP generated successfully.' : ($smsSent ? 'OTP sent successfully.' : 'OTP generated successfully. SMS is not configured in this environment.'),
             'identifier' => $identifier,
-        ]);
+        ];
+
+        if (config('app.debug')) {
+            $payload['dev_otp'] = $otp;
+        }
+
+        return response()->json($payload);
     }
 
     public function login(Request $request)
@@ -157,6 +257,7 @@ class ApiAuthController extends Controller
             'role' => 'user',
             'is_profile_complete' => false,
         ]);
+        $this->notifyNewUser($user);
 
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -280,8 +381,9 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function getAllUsers()
+    public function getAllUsers(Request $request)
     {
+        $this->ensureAdmin($request);
         $users = User::where('role', 'user')->orderBy('created_at', 'desc')->get();
 
         return response()->json([
@@ -290,8 +392,31 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function getAdminDashboardStats()
+    public function getAdminUser(Request $request, User $user)
     {
+        $this->ensureAdmin($request);
+        abort_unless($user->role === 'user', 404);
+
+        return response()->json([
+            'success' => true,
+            'user' => $user->load([
+                'orders' => fn ($query) => $query->with('items.product')->latest(),
+                'bookings' => fn ($query) => $query->with('astrologer:id,name')->latest(),
+                'ritualBookings' => fn ($query) => $query->with('ritual:id,name')->latest(),
+            ]),
+            'summary' => [
+                'orders' => $user->orders()->count(),
+                'consultations' => $user->bookings()->count(),
+                'rituals' => $user->ritualBookings()->count(),
+                'order_spend' => (float) $user->orders()->where('payment_status', 'paid')->sum('total_amount'),
+                'consultation_spend' => (float) $user->bookings()->where('payment_status', 'paid')->sum('amount'),
+            ],
+        ]);
+    }
+
+    public function getAdminDashboardStats(Request $request)
+    {
+        $this->ensureAdmin($request);
         $totalUsers = User::where('role', 'user')->count();
         $totalAstrologers = User::where('role', 'astrologer')->count();
         $totalBookings = Booking::count();
@@ -336,7 +461,7 @@ class ApiAuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)],
             'password' => 'nullable|string|min:6',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -366,6 +491,7 @@ class ApiAuthController extends Controller
 
     public function adminSearch(Request $request)
     {
+        $this->ensureAdmin($request);
         $term = trim((string) $request->query('q', ''));
 
         if ($term === '') {
@@ -446,8 +572,13 @@ class ApiAuthController extends Controller
 
     public function createAstrologer(Request $request)
     {
+        $this->ensureAdmin($request);
+        $this->normalizeTranslations($request);
         $request->merge([
             'is_featured' => filter_var($request->input('is_featured', false), FILTER_VALIDATE_BOOLEAN),
+            'supports_chat' => filter_var($request->input('supports_chat', true), FILTER_VALIDATE_BOOLEAN),
+            'supports_call' => filter_var($request->input('supports_call', true), FILTER_VALIDATE_BOOLEAN),
+            'is_online' => filter_var($request->input('is_online', true), FILTER_VALIDATE_BOOLEAN),
         ]);
 
         $validator = Validator::make($request->all(), [
@@ -460,6 +591,16 @@ class ApiAuthController extends Controller
             'specialities' => 'nullable|string',
             'chat_price' => 'required|numeric',
             'call_price' => 'required|numeric',
+            'chat_duration_prices' => 'nullable|array',
+            'chat_duration_prices.*' => 'nullable|numeric|min:0',
+            'call_duration_prices' => 'nullable|array',
+            'call_duration_prices.*' => 'nullable|numeric|min:0',
+            'supports_chat' => 'nullable|boolean',
+            'supports_call' => 'nullable|boolean',
+            'is_online' => 'nullable|boolean',
+            'chat_commission_percentage' => 'nullable|numeric|between:0,100',
+            'call_commission_percentage' => 'nullable|numeric|between:0,100',
+            'translations' => 'nullable|array',
             'about_bio' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'is_featured' => 'nullable|boolean',
@@ -480,6 +621,7 @@ class ApiAuthController extends Controller
         $profileImagePath = null;
         if ($request->hasFile('profile_image')) {
             $profileImagePath = MediaStorage::store($request->file('profile_image'), 'astrologers');
+            $user->update(['profile_image' => $profileImagePath]);
         }
 
         $user->astrologerDetail()->create([
@@ -488,6 +630,14 @@ class ApiAuthController extends Controller
             'specialities' => $request->specialities,
             'chat_price' => $request->chat_price,
             'call_price' => $request->call_price,
+            'chat_duration_prices' => $request->input('chat_duration_prices'),
+            'call_duration_prices' => $request->input('call_duration_prices'),
+            'supports_chat' => $request->boolean('supports_chat', true),
+            'supports_call' => $request->boolean('supports_call', true),
+            'is_online' => $request->boolean('is_online', true),
+            'chat_commission_percentage' => $request->input('chat_commission_percentage', 20),
+            'call_commission_percentage' => $request->input('call_commission_percentage', 20),
+            'translations' => $request->input('translations'),
             'about_bio' => $request->about_bio,
             'profile_image' => $profileImagePath,
             'is_featured' => $request->boolean('is_featured'),
@@ -500,12 +650,15 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function getAstrologers()
+    public function getAstrologers(Request $request)
     {
-        $term = trim((string) request()->query('q', ''));
+        $term = trim((string) $request->query('q', ''));
+        $type = $request->query('type');
 
         $astrologers = User::with('astrologerDetail')
             ->where('role', 'astrologer')
+            ->when($type === 'chat', fn ($query) => $query->whereHas('astrologerDetail', fn ($detail) => $detail->where('supports_chat', true)))
+            ->when($type === 'call', fn ($query) => $query->whereHas('astrologerDetail', fn ($detail) => $detail->where('supports_call', true)))
             ->when($term !== '', function ($query) use ($term) {
                 $query->where(function ($builder) use ($term) {
                     $builder->where('name', 'like', '%' . $term . '%')
@@ -520,13 +673,16 @@ class ApiAuthController extends Controller
             ->sortByDesc(fn ($astrologer) => (int) ($astrologer->astrologerDetail->is_featured ?? false) * 100 + (float) ($astrologer->astrologerDetail->rating ?? 0))
             ->values();
 
+        $this->appendAvailabilityStatuses($astrologers);
+        $this->localizeAstrologers($astrologers, $request->query('la'));
+
         return response()->json([
             'success' => true,
             'astrologers' => $astrologers,
         ]);
     }
 
-    public function getAstrologerProfile($id)
+    public function getAstrologerProfile(Request $request, $id)
     {
         $astrologer = User::with([
                 'astrologerDetail',
@@ -542,14 +698,18 @@ class ApiAuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Astrologer not found'], 404);
         }
 
+        $this->appendAvailabilityStatuses(collect([$astrologer]));
+        $this->localizeAstrologers(collect([$astrologer]), $request->query('la'));
+
         return response()->json([
             'success' => true,
             'astrologer' => $astrologer,
         ]);
     }
 
-    public function getAdminAstrologer(int $id)
+    public function getAdminAstrologer(Request $request, int $id)
     {
+        $this->ensureAdmin($request);
         $astrologer = User::with('astrologerDetail')
             ->where('role', 'astrologer')
             ->find($id);
@@ -564,8 +724,42 @@ class ApiAuthController extends Controller
         ]);
     }
 
+    private function appendAvailabilityStatuses($astrologers): void
+    {
+        $ids = $astrologers->pluck('id')->filter()->values();
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $now = Carbon::now('UTC');
+        $activeBookings = Booking::query()
+            ->whereIn('astrologer_id', $ids)
+            ->whereIn('status', ['confirmed', 'in_progress'])
+            ->where('payment_status', 'paid')
+            ->where('scheduled_at', '<=', $now)
+            ->where('ends_at', '>=', $now)
+            ->orderByRaw("CASE WHEN status = 'in_progress' THEN 0 ELSE 1 END")
+            ->get()
+            ->groupBy('astrologer_id');
+
+        $astrologers->each(function (User $astrologer) use ($activeBookings): void {
+            $booking = $activeBookings->get($astrologer->id)?->first();
+            $status = !$astrologer->astrologerDetail?->is_online
+                ? 'unavailable'
+                : match ($booking?->consultation_type) {
+                    'call' => 'on_call',
+                    'chat' => 'on_chat',
+                    default => 'available',
+                };
+
+            $astrologer->setAttribute('availability_status', $status);
+        });
+    }
+
     public function updateAdminAstrologer(Request $request, int $id)
     {
+        $this->ensureAdmin($request);
+        $this->normalizeTranslations($request);
         $user = User::with('astrologerDetail')
             ->where('role', 'astrologer')
             ->find($id);
@@ -576,6 +770,9 @@ class ApiAuthController extends Controller
 
         $request->merge([
             'is_featured' => filter_var($request->input('is_featured', false), FILTER_VALIDATE_BOOLEAN),
+            'supports_chat' => filter_var($request->input('supports_chat', true), FILTER_VALIDATE_BOOLEAN),
+            'supports_call' => filter_var($request->input('supports_call', true), FILTER_VALIDATE_BOOLEAN),
+            'is_online' => filter_var($request->input('is_online', true), FILTER_VALIDATE_BOOLEAN),
         ]);
 
         $validator = Validator::make($request->all(), [
@@ -588,6 +785,16 @@ class ApiAuthController extends Controller
             'specialities' => 'nullable|string',
             'chat_price' => 'required|numeric',
             'call_price' => 'required|numeric',
+            'chat_duration_prices' => 'nullable|array',
+            'chat_duration_prices.*' => 'nullable|numeric|min:0',
+            'call_duration_prices' => 'nullable|array',
+            'call_duration_prices.*' => 'nullable|numeric|min:0',
+            'supports_chat' => 'nullable|boolean',
+            'supports_call' => 'nullable|boolean',
+            'is_online' => 'nullable|boolean',
+            'chat_commission_percentage' => 'nullable|numeric|between:0,100',
+            'call_commission_percentage' => 'nullable|numeric|between:0,100',
+            'translations' => 'nullable|array',
             'about_bio' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'is_featured' => 'nullable|boolean',
@@ -609,6 +816,8 @@ class ApiAuthController extends Controller
         $profileImagePath = $user->astrologerDetail?->profile_image;
         if ($request->hasFile('profile_image')) {
             $profileImagePath = MediaStorage::store($request->file('profile_image'), 'astrologers');
+            $user->profile_image = $profileImagePath;
+            $user->save();
         }
 
         $user->astrologerDetail()->updateOrCreate(
@@ -619,6 +828,14 @@ class ApiAuthController extends Controller
                 'specialities' => $request->specialities,
                 'chat_price' => $request->chat_price,
                 'call_price' => $request->call_price,
+                'chat_duration_prices' => $request->input('chat_duration_prices'),
+                'call_duration_prices' => $request->input('call_duration_prices'),
+                'supports_chat' => $request->boolean('supports_chat', true),
+                'supports_call' => $request->boolean('supports_call', true),
+                'is_online' => $request->boolean('is_online', true),
+                'chat_commission_percentage' => $request->input('chat_commission_percentage', 20),
+                'call_commission_percentage' => $request->input('call_commission_percentage', 20),
+                'translations' => $request->input('translations'),
                 'about_bio' => $request->about_bio,
                 'profile_image' => $profileImagePath,
                 'is_featured' => $request->boolean('is_featured'),
@@ -632,8 +849,9 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function deleteAdminAstrologer(int $id)
+    public function deleteAdminAstrologer(Request $request, int $id)
     {
+        $this->ensureAdmin($request);
         $user = User::with('astrologerDetail')
             ->where('role', 'astrologer')
             ->find($id);
@@ -654,6 +872,7 @@ class ApiAuthController extends Controller
 
     public function updateAstrologerProfile(Request $request)
     {
+        $this->normalizeTranslations($request);
         $user = $request->user();
 
         if ($user->role !== 'astrologer') {
@@ -674,6 +893,7 @@ class ApiAuthController extends Controller
             'specialities' => 'nullable|string',
             'chat_price' => 'required|numeric',
             'call_price' => 'required|numeric',
+            'translations' => 'nullable|array',
             'about_bio' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'is_featured' => 'nullable|boolean',
@@ -695,6 +915,8 @@ class ApiAuthController extends Controller
         $profileImagePath = $user->astrologerDetail?->profile_image;
         if ($request->hasFile('profile_image')) {
             $profileImagePath = MediaStorage::store($request->file('profile_image'), 'astrologers');
+            $user->profile_image = $profileImagePath;
+            $user->save();
         }
 
         $user->astrologerDetail()->updateOrCreate(
@@ -705,6 +927,7 @@ class ApiAuthController extends Controller
                 'specialities' => $request->specialities,
                 'chat_price' => $request->chat_price,
                 'call_price' => $request->call_price,
+                'translations' => $request->input('translations', $user->astrologerDetail?->translations),
                 'about_bio' => $request->about_bio,
                 'profile_image' => $profileImagePath,
                 'is_featured' => $request->boolean('is_featured'),
@@ -716,6 +939,51 @@ class ApiAuthController extends Controller
             'message' => 'Profile updated successfully',
             'user' => $user->fresh()->load('astrologerDetail'),
         ]);
+    }
+
+    public function updateAstrologerAvailability(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user?->role === 'astrologer', 403);
+        $validated = $request->validate(['is_online' => 'required|boolean']);
+
+        $detail = $user->astrologerDetail()->updateOrCreate(
+            ['user_id' => $user->id],
+            ['is_online' => $validated['is_online']]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => $detail->is_online ? 'You are now available.' : 'You are now offline.',
+            'user' => $user->fresh()->load('astrologerDetail'),
+        ]);
+    }
+
+    private function localizeAstrologers($astrologers, ?string $language): void
+    {
+        if ($language !== 'hi') {
+            return;
+        }
+
+        foreach ($astrologers as $astrologer) {
+            $translations = $astrologer->astrologerDetail?->translations['hi'] ?? [];
+            foreach ($translations as $field => $value) {
+                if ($value !== null && $value !== '') {
+                    $astrologer->astrologerDetail->setAttribute($field, $value);
+                }
+            }
+        }
+    }
+
+    private function normalizeTranslations(Request $request): void
+    {
+        foreach (['translations', 'chat_duration_prices', 'call_duration_prices'] as $field) {
+            $value = $request->input($field);
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                $request->merge([$field => is_array($decoded) ? $decoded : null]);
+            }
+        }
     }
 
     private function ensureAdminAccount(): void
@@ -731,12 +999,36 @@ class ApiAuthController extends Controller
         );
     }
 
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+    }
+
+    private function notifyNewUser(User $user): void
+    {
+        app(UserNotificationService::class)->send(
+            $user,
+            'main',
+            'account_created',
+            'Welcome to AstroZura',
+            'Your AstroZura account has been created successfully.',
+            '/dashboard'
+        );
+    }
+
     private function resolveFrontendUrl(string $frontend): string
     {
-        return match ($frontend) {
-            'ecomm' => env('FRONTEND_ECOMM_URL', 'http://127.0.0.1:5174'),
-            default => env('FRONTEND_MAIN_URL', 'http://127.0.0.1:5173'),
-        };
+        $productionUrl = $frontend === 'ecomm' ? 'https://shop.astrozura.com' : 'https://astrozura.com';
+        $configuredUrl = $frontend === 'ecomm'
+            ? env('FRONTEND_ECOMM_URL', $productionUrl)
+            : env('FRONTEND_MAIN_URL', $productionUrl);
+        $configuredHost = parse_url((string) $configuredUrl, PHP_URL_HOST);
+
+        if (app()->environment('production') && in_array($configuredHost, ['localhost', '127.0.0.1', '::1'], true)) {
+            return $productionUrl;
+        }
+
+        return rtrim((string) $configuredUrl, '/');
     }
 
     private function sanitizeFrontendUrl(?string $frontendUrl): ?string

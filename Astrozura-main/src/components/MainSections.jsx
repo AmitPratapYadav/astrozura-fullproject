@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import poojaRitual from "../assets/pooja ritual.png";
@@ -9,18 +9,20 @@ import astro2 from "../assets/astro2.png";
 import astro3 from "../assets/astro3.png";
 import { usePushNotifications } from "../context/PushNotificationsContext";
 import { subscribeToLiveStatusChanges } from "../lib/liveStatusBroadcast";
+import { API_BASE_URL } from "../utils/apiBase";
+import AstrologerStatusBadge from "./AstrologerStatusBadge";
 
 export default function MainSections() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const [msg, setMsg] = useState("");
   const [activeBtn, setActiveBtn] = useState({});
   const [astrologers, setAstrologers] = useState([]);
-  const [featured, setFeatured] = useState(null);
   const [loading, setLoading] = useState(true);
   const [liveSession, setLiveSession] = useState(null);
   const [rituals, setRituals] = useState([]);
+  const [blogPosts, setBlogPosts] = useState([]);
   const {
     isSupported: pushSupported,
     isSubscribed: pushSubscribed,
@@ -32,16 +34,18 @@ export default function MainSections() {
 
   useEffect(() => {
     const fetchAstrologers = async () => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-        const response = await fetch(`${apiUrl}/astrologers`);
+        const response = await fetch(`${API_BASE_URL}/astrologers?la=${i18n.language === "hi" ? "hi" : "en"}`, { signal: controller.signal });
         const data = await response.json();
 
-        if (!data.success) {
+        const list = data.astrologers || data.data?.data || data.data || [];
+        if (!Array.isArray(list)) {
           return;
         }
 
-        const list = data.astrologers || [];
         const sorted = [...list].sort(
           (left, right) =>
             parseFloat(right.astrologer_detail?.rating || 0) -
@@ -49,23 +53,24 @@ export default function MainSections() {
         );
 
         setAstrologers(sorted.slice(0, 3));
-        setFeatured(list.find((item) => item.astrologer_detail?.is_featured) || sorted[0] || null);
       } catch (error) {
-        console.error("Failed to load top astrologers", error);
+        if (error?.name !== "AbortError") {
+          console.error("Failed to load top astrologers", error);
+        }
       } finally {
+        window.clearTimeout(timeoutId);
         setLoading(false);
       }
     };
 
     void fetchAstrologers();
-  }, []);
+  }, [i18n.language]);
 
   useEffect(() => {
     const fetchRituals = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-        const params = new URLSearchParams({ per_page: "4", page: "1" });
-        const response = await fetch(`${apiUrl}/rituals?${params.toString()}`);
+        const params = new URLSearchParams({ per_page: "4", page: "1", la: i18n.language === "hi" ? "hi" : "en" });
+        const response = await fetch(`${API_BASE_URL}/rituals?${params.toString()}`);
         const data = await response.json();
 
         if (data.success) {
@@ -77,15 +82,30 @@ export default function MainSections() {
     };
 
     void fetchRituals();
-  }, []);
+  }, [i18n.language]);
+
+  useEffect(() => {
+    const fetchBlogPosts = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/blogs?per_page=4&la=${i18n.language === "hi" ? "hi" : "en"}`);
+        const data = await response.json();
+        if (data?.status === "success") {
+          setBlogPosts(data.data?.data || data.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to load homepage blogs", error);
+      }
+    };
+
+    void fetchBlogPosts();
+  }, [i18n.language]);
 
   useEffect(() => {
     let cancelled = false;
 
     const fetchLiveSession = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-        const response = await fetch(`${apiUrl}/live-sessions/current`);
+        const response = await fetch(`${API_BASE_URL}/live-sessions/current`);
         const data = await response.json();
         if (!cancelled && data?.success) {
           setLiveSession(data.session || null);
@@ -137,7 +157,7 @@ export default function MainSections() {
   const getImageUrl = (path, fallback) => {
     if (!path) return fallback;
     if (path.startsWith("http")) return path;
-    const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
     return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
   };
 
@@ -181,16 +201,6 @@ export default function MainSections() {
     return `★ ${ratingValue.toFixed(1)}`;
   };
 
-  const featuredDetails = featured?.astrologer_detail || {};
-  const featuredHighlights = useMemo(() => {
-    const merged = [
-      ...(featuredDetails.specialities?.split(",").map((item) => item.trim()).filter(Boolean) || []),
-      ...(featuredDetails.languages?.split(",").map((item) => item.trim()).filter(Boolean) || []),
-    ];
-
-    return merged.slice(0, 4);
-  }, [featuredDetails.languages, featuredDetails.specialities]);
-
   return (
     <section className="bg-gradient-to-b from-[#FAF7F2] via-[#F8F5EF] to-[#F8F5EF] px-4 py-14 md:px-10 sm:py-20">
       {msg && (
@@ -200,92 +210,90 @@ export default function MainSections() {
       )}
 
       <div className="mx-auto w-full max-w-[1200px] space-y-20">
-        <div className="group relative grid items-center gap-10 overflow-hidden rounded-[2rem] border border-[#EEE7D6] bg-gradient-to-r from-[#FDFCFB] via-[#F9F6F0] to-[#FDFCFB] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.04)] md:grid-cols-2 md:gap-16 md:p-12 lg:p-14">
-          <div className="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-[#D4A73C]/5 blur-3xl" />
-
-          <div className="relative">
-            <img
-              src={getImageUrl(featuredDetails.profile_image, astro1)}
-              className="h-[300px] w-full rounded-3xl border-2 border-white bg-white object-cover object-top shadow-2xl ring-1 ring-[#D4A73C]/20 transition-transform duration-500 group-hover:scale-[1.02] sm:h-[350px] md:h-[450px]"
-              alt={featured?.name || "Featured astrologer"}
-            />
-            <div className="absolute -bottom-6 -right-6 hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-xl sm:block">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E3557] font-bold text-white">
-                  {featuredDetails.experience_years || "5"}+
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase leading-none tracking-wider text-gray-400">Years of</p>
-                  <p className="mt-1 text-xs font-bold text-[#1E3557]">Experience</p>
-                </div>
-              </div>
-            </div>
+        <div className="rounded-[2rem] border border-[#EEE7D6] bg-white p-7 shadow-sm md:p-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#D4A73C]">{t("home_sections.how_eyebrow")}</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[#1E3557] md:text-4xl">
+              {t("home_sections.how_title")}
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-gray-500">
+              {t("home_sections.how_subtitle")}
+            </p>
           </div>
 
-          <div className="relative">
-            <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#f3d38d]/50 bg-[#fdf2d9] px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#b8860b] shadow-sm">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#D4A73C]" />
-              {t("main.the_mastermind")}
-            </span>
-
-            <h2 className="mb-2 text-3xl font-black leading-[1.1] text-[#1E3557] md:text-5xl">
-              {t("main.founder_title_start")} <br />
-              <span className="text-[#D4A73C] drop-shadow-sm">{t("main.founder_title_end")}</span>
-            </h2>
-
-            <p className="mb-3 text-lg font-bold text-[#b8860b]">{featured?.name || "Featured Astrologer"}</p>
-            <p className="mb-6 text-sm font-semibold text-gray-500">{formatRatingText(featuredDetails)}</p>
-
-            <div className="relative">
-              <div className="absolute bottom-0 left-0 top-0 w-1 rounded-full bg-[#D4A73C]" />
-              <p className="pl-6 text-sm font-medium italic leading-loose text-gray-500 md:text-base">
-                "{featuredDetails.about_bio || t("main.founder_quote")}"
-              </p>
-            </div>
-
-            <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6">
-              {(featuredHighlights.length
-                ? featuredHighlights
-                : [t("main.vedic_astrology"), t("main.lal_kitab_rem"), t("main.numerology"), t("main.palmistry")]
-              ).map((label, index) => (
-                <div key={`${label}-${index}`} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EEE7D6] bg-[#FAF7F2] text-sm shadow-sm">
-                    {["*", "O", "+", "~"][index % 4]}
-                  </div>
-                  <span className="text-xs font-bold text-[#1E3557] opacity-80">{label}</span>
+          <div className="relative mt-10 grid gap-6 md:grid-cols-4">
+            <div className="absolute left-[12%] right-[12%] top-10 hidden border-t border-dashed border-[#D4A73C]/40 md:block" />
+            {[
+              ["1", t("home_sections.steps.birth_title"), t("home_sections.steps.birth_copy")],
+              ["2", t("home_sections.steps.service_title"), t("home_sections.steps.service_copy")],
+              ["3", t("home_sections.steps.connect_title"), t("home_sections.steps.connect_copy")],
+              ["4", t("home_sections.steps.guidance_title"), t("home_sections.steps.guidance_copy")],
+            ].map(([number, title, copy]) => (
+              <div key={number} className="relative rounded-2xl border border-[#F0E5D2] bg-[#FBF7F0] p-5 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-[#D4A73C] text-2xl font-black text-[#1E3557] shadow-lg">
+                  {number}
                 </div>
-              ))}
-            </div>
-
-            <div className="mt-10">
-              <button
-                type="button"
-                onClick={() => {
-                  notify(t("main.notif_booking"));
-                  if (featured?.id) {
-                    navigate(`/consultation/${featured.id}`, { state: { astrologer: featured } });
-                    return;
-                  }
-
-                  navigate("/astrologers");
-                }}
-                className="flex items-center gap-3 rounded-2xl bg-[#1E3557] px-10 py-4 text-sm font-black text-white shadow-2xl shadow-[#1E3557]/20 transition-all hover:-translate-y-1 hover:bg-[#162a45] active:scale-95"
-              >
-                Book a Consultation
-                <span className="text-xs opacity-50">-&gt;</span>
-              </button>
-            </div>
+                <h3 className="mt-5 text-base font-black text-[#1E3557]">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-gray-500">{copy}</p>
+              </div>
+            ))}
           </div>
         </div>
+
+        {blogPosts.length > 0 && (
+          <div className="overflow-hidden rounded-[2rem] bg-[#101722] p-7 text-white shadow-xl md:p-10">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#D4A73C]">{t("home_sections.blog_eyebrow")}</p>
+                <h2 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">{t("home_sections.blog_title")}</h2>
+              </div>
+              <Link
+                to="/blogs"
+                className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-black text-white transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
+              >
+                {t("home_sections.all_blogs")} &rarr;
+              </Link>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {blogPosts.slice(0, 4).map((blog) => (
+                <Link
+                  key={blog.id}
+                  to={`/blogs/${blog.slug}`}
+                  className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-[#D4A73C]/60"
+                >
+                  <div className="aspect-[16/11] bg-[#1E3557]">
+                    {blog.cover_image ? (
+                      <img
+                        src={getImageUrl(blog.cover_image, "")}
+                        alt={blog.title}
+                        className="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03] group-hover:opacity-100"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-5xl font-black text-[#D4A73C]">AZ</div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#D4A73C]">
+                      {blog.category?.name || t("main.astrology")}
+                    </p>
+                    <h3 className="mt-3 line-clamp-2 text-lg font-black leading-snug text-white">{blog.title}</h3>
+                    <p className="mt-3 text-sm font-semibold text-white/55">{Number(blog.views_count || 0).toLocaleString("en-IN")} views</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {rituals.length > 0 && (
           <div>
             <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#D4A73C]">Sacred Rituals</p>
-                <h2 className="mt-2 text-3xl font-black tracking-tight text-[#1E3557]">Pooja Anusthan</h2>
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#D4A73C]">{t("home_sections.ritual_eyebrow")}</p>
+                <h2 className="mt-2 text-3xl font-black tracking-tight text-[#1E3557]">{t("home_sections.ritual_title")}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-                  Book priest-guided pooja and anusthan services for remedies, family wellbeing, and auspicious occasions.
+                  {t("home_sections.ritual_subtitle")}
                 </p>
               </div>
 
@@ -293,7 +301,7 @@ export default function MainSections() {
                 to="/rituals"
                 className="inline-flex items-center justify-center rounded-xl border border-[#D4A73C]/25 px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-[#D4A73C] transition hover:bg-[#D4A73C]/10 hover:text-[#b8860b]"
               >
-                View All
+                {t("home_sections.view_all")}
               </Link>
             </div>
 
@@ -312,7 +320,7 @@ export default function MainSections() {
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#D4A73C]">{ritual.category}</p>
                       {ritual.is_popular && (
                         <span className="rounded-full bg-[#fff3da] px-2.5 py-1 text-[10px] font-bold uppercase text-[#c38a11]">
-                          Popular
+                          {t("home_sections.popular")}
                         </span>
                       )}
                     </div>
@@ -329,19 +337,28 @@ export default function MainSections() {
                         to={`/rituals/${ritual.slug}`}
                         className="rounded-xl border border-[#1E3557] px-3 py-2.5 text-center text-xs font-bold text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white"
                       >
-                        View Details
+                        {t("home_sections.view_details")}
                       </Link>
                       <button
                         type="button"
                         onClick={() => navigate(`/rituals/${ritual.slug}/book`)}
                         className="rounded-xl bg-[#1E3557] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[#162a45]"
                       >
-                        Book Now
+                        {t("premium.book_now")}
                       </button>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6 flex justify-center sm:hidden">
+              <Link
+                to="/rituals"
+                className="inline-flex items-center justify-center rounded-xl border border-[#D4A73C]/25 bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-[#D4A73C] shadow-sm transition hover:bg-[#D4A73C]/10 hover:text-[#b8860b]"
+              >
+                {t("home_sections.view_all")}
+              </Link>
             </div>
           </div>
         )}
@@ -351,10 +368,10 @@ export default function MainSections() {
             <div className="bg-gradient-to-br from-[#162744] via-[#1E3557] to-[#223C63] p-8 text-white md:p-10">
               <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
                 <span className={`h-2 w-2 rounded-full ${liveSession ? "animate-pulse bg-red-400" : "bg-[#D4A73C]"}`} />
-                {liveSession ? "Astro Zura Live" : "Live Sessions"}
+                {liveSession ? t("home_sections.live_now") : t("home_sections.live_sessions")}
               </p>
               <h2 className="mt-5 text-3xl font-black md:text-4xl">
-                {liveSession ? liveSession.title : "No astrologer is live right now"}
+                {liveSession ? liveSession.title : t("home_sections.no_live_title")}
               </h2>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200">
                 {liveSession
@@ -381,8 +398,8 @@ export default function MainSections() {
                 </p>
                 <p className="mt-3 text-sm leading-7 text-gray-600">
                   {liveSession
-                    ? "Open the live room to watch, comment, and interact in real time."
-                    : "We will connect this block to Firebase web push notifications so visitors can subscribe and receive live-start alerts directly in the browser."}
+                    ? t("home_sections.live_open_copy")
+                    : t("home_sections.live_notify_copy")}
                 </p>
               </div>
 
@@ -392,7 +409,7 @@ export default function MainSections() {
                   onClick={() => navigate("/live")}
                   className="inline-flex items-center justify-center rounded-2xl bg-[#1E3557] px-8 py-4 text-sm font-black text-white shadow-xl shadow-[#1E3557]/20 transition hover:-translate-y-1 hover:bg-[#162a45]"
                 >
-                  {liveSession ? "Join Live Session" : "Open Live Page"}
+                  {liveSession ? t("home_sections.join_live") : t("home_sections.open_live")}
                 </button>
                 <button
                   type="button"
@@ -401,12 +418,12 @@ export default function MainSections() {
                   className="inline-flex items-center justify-center rounded-2xl border border-[#D4A73C]/30 px-8 py-4 text-sm font-bold text-[#D4A73C] transition hover:bg-[#FFF7E5] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {!pushSupported
-                    ? "Notifications Unsupported"
+                    ? t("home_sections.notifications_unsupported")
                     : pushLoading
-                      ? "Please Wait..."
+                      ? t("home_sections.please_wait")
                       : pushSubscribed
-                        ? "Disable Alerts"
-                        : "Notify Me"}
+                        ? t("home_sections.disable_alerts")
+                        : t("home_sections.notify_me")}
                 </button>
               </div>
               {pushSupported && !liveSession && (
@@ -429,7 +446,10 @@ export default function MainSections() {
             <div className="mb-10 mt-10 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="h-8 w-1 rounded-full bg-[#D4A73C]" />
-                <h2 className="text-2xl font-black tracking-tight text-[#1E3557]">{t("main.top_rated")}</h2>
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#D4A73C]">{t("home_sections.astrologer_eyebrow")}</p>
+                  <h2 className="mt-2 text-2xl font-black tracking-tight text-[#1E3557]">{t("home_sections.astrologer_title")}</h2>
+                </div>
               </div>
 
               <button
@@ -474,6 +494,7 @@ export default function MainSections() {
                           {details.experience_years || 0} {t("main.years_exp")}
                         </p>
                         <p className="mt-1 text-[11px] text-[#9A9A9A]">{formatRatingText(details)}</p>
+                        <AstrologerStatusBadge status={astro.availability_status} className="mt-2" />
                       </div>
 
                       <span className={`ml-auto flex-shrink-0 text-xs font-medium ${hasRealRating(details) ? "text-[#D4A73C]" : "text-gray-400"}`}>

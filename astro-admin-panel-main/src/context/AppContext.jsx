@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../lib/api";
 
 const AppContext = createContext(null);
@@ -43,7 +43,7 @@ export function AppProvider({ children }) {
     void init();
   }, [token]);
 
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     const response = await apiRequest("/admin/login", {
       method: "POST",
       body: credentials,
@@ -58,24 +58,24 @@ export function AppProvider({ children }) {
     }
 
     return response;
-  };
+  }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     const response = await apiRequest("/admin/profile");
     if (response?.success) {
       setAdminUser(response.user);
       localStorage.setItem("admin_user", JSON.stringify(response.user));
     }
     return response;
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
     setToken(null);
     setAdminUser(null);
     window.location.href = "/login";
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -87,7 +87,7 @@ export function AppProvider({ children }) {
       refreshProfile,
       setAdminUser,
     }),
-    [adminUser, token, loading]
+    [adminUser, token, loading, login, logout, refreshProfile]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

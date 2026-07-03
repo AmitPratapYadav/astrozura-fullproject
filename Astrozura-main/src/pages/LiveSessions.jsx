@@ -10,7 +10,7 @@ import { usePushNotifications } from "../context/PushNotificationsContext";
 import { publishLiveStatusChange, subscribeToLiveStatusChanges } from "../lib/liveStatusBroadcast";
 
 const ZEGO_BROADCAST_SCENARIO = 8;
-const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 let zegoExpressEnginePromise = null;
 
 const getZegoExpressEngineClass = async () => {

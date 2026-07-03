@@ -58,7 +58,7 @@ class AstrologyController extends Controller
             if (!$response->successful()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => $this->extractAstrologyApiError($response, 'Failed to fetch horoscope data from Astrology API.'),
+                    'message' => $this->extractAstrologyApiError($response, 'Failed to fetch horoscope data.'),
                 ], 200);
             }
 
@@ -105,7 +105,7 @@ class AstrologyController extends Controller
     {
         return response()->json([
             'status' => 'error',
-            'message' => 'Astrology API does not expose a weekly horoscope endpoint in the current plan. Daily and monthly horoscope routes are available.',
+            'message' => 'Weekly horoscope is not available in the current plan. Daily and monthly horoscope routes are available.',
         ], 200);
     }
 
@@ -207,9 +207,9 @@ class AstrologyController extends Controller
             $dashaAll = $this->requestOrFail('current_vdasha_all', $birthPayload, $language);
             $manglik = null;
             try {
-                $manglik = $this->requestOrFail('simple_manglik', $birthPayload, $language);
+                $manglik = $this->requestOrFail('manglik', $birthPayload, $language);
             } catch (\Throwable $exception) {
-                $warnings[] = 'Manglik analysis is not available on the current Astrology API plan, so the chart was generated without that module.';
+                $warnings[] = 'Mangal Dosha analysis is not available right now, so the chart was generated without that module.';
             }
 
             $chartTypes = $request->input('chart_types');
@@ -236,7 +236,7 @@ class AstrologyController extends Controller
                 'astro_details' => $astroDetails,
                 'planets' => $planets,
                 'current_vdasha_all' => $dashaAll,
-                'simple_manglik' => $manglik,
+                'manglik' => $manglik,
             ]);
 
             $kundli = [
@@ -275,7 +275,7 @@ class AstrologyController extends Controller
                 'mangal_dosha' => [
                     'has_dosha' => (bool) ($manglik['is_present'] ?? false),
                     'type' => ($manglik['is_present'] ?? false) ? 'Manglik' : null,
-                    'description' => $manglik['msg'] ?? ($manglik === null ? 'Manglik analysis is unavailable on the current Astrology API plan.' : null),
+                    'description' => $manglik['msg'] ?? ($manglik === null ? 'Mangal Dosha analysis is unavailable right now.' : null),
                     'exceptions' => !empty($manglik['is_cancelled']) ? ['Manglik Dosha cancellation conditions are present in the chart.'] : [],
                     'remedies' => [],
                 ],
@@ -313,7 +313,7 @@ class AstrologyController extends Controller
                         'astro_details' => $astroDetails,
                         'planets' => $planets,
                         'current_vdasha_all' => $dashaAll,
-                        'simple_manglik' => $manglik,
+                        'manglik' => $manglik,
                     ],
                 ],
             ]);
@@ -378,7 +378,7 @@ class AstrologyController extends Controller
             if (!$pdfUrl) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Astrology API did not return a downloadable PDF URL.',
+                    'message' => 'A downloadable PDF URL was not returned.',
                 ], 200);
             }
 
@@ -488,7 +488,7 @@ class AstrologyController extends Controller
                     ],
                     'message' => [
                         'type' => $this->resolveCompatibilityType($receivedPoints, $maximumPoints),
-                        'description' => $messageText ?: 'Compatibility analysis generated from Astrology API.',
+                        'description' => $messageText ?: 'Compatibility analysis generated successfully.',
                     ],
                     'exceptions' => array_values(array_filter([
                         (($report['rajju_dosha']['status'] ?? true) === false) ? 'Rajju dosha check returned a negative compatibility signal.' : null,
@@ -499,7 +499,7 @@ class AstrologyController extends Controller
                         [
                             'id' => 'match-basic',
                             'title' => 'Match Birth and Astro Details',
-                            'summary' => 'Birth, astro and planet details returned by Astrology API.',
+                            'summary' => 'Birth, astro and planet details generated successfully.',
                             'items' => [
                                 'match_birth_details' => ['status' => 'success', 'endpoint' => 'match_birth_details', 'data' => $birth],
                                 'match_astro_details' => ['status' => 'success', 'endpoint' => 'match_astro_details', 'data' => $astro],
@@ -599,7 +599,7 @@ class AstrologyController extends Controller
             if (!$pdfUrl) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => $providerPayload['msg'] ?? 'Astrology API did not return a downloadable PDF URL.',
+                    'message' => $providerPayload['msg'] ?? 'A downloadable PDF URL was not returned.',
                     'provider_response' => $providerPayload,
                 ], 200);
             }
@@ -772,6 +772,55 @@ class AstrologyController extends Controller
         }
     }
 
+    public function getPanchangExtras(Request $request)
+    {
+        $request->validate([
+            'datetime' => 'required|string',
+            'coordinates' => 'required|string',
+            'ayanamsa' => 'nullable',
+            'la' => 'nullable|string',
+            'extras' => 'nullable|array',
+            'extras.*' => 'string',
+        ]);
+
+        try {
+            $language = $this->resolveRequestedLanguage($request, ['en', 'hi', 'ma', 'bn', 'ta', 'te', 'ml', 'kn'], 'en');
+            $payload = $this->buildBirthPayload($request->input('datetime'), $request->input('coordinates'), $request->input('ayanamsa'));
+            $allowed = [
+                'planetary_positions' => 'planet_panchang',
+                'sunrise_planetary_positions' => 'planet_panchang/sunrise',
+                'panchang_chart' => 'panchang_chart/sunrise',
+            ];
+
+            $requested = $request->input('extras', array_keys($allowed));
+            $requested = array_values(array_intersect($requested, array_keys($allowed)));
+            if (empty($requested)) {
+                $requested = array_keys($allowed);
+            }
+
+            $providerItems = [];
+            foreach ($requested as $key) {
+                $providerItems[$key] = $this->safeAstrologyRequest($allowed[$key], $payload, $language);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'planetary_positions' => $providerItems['planetary_positions']['data'] ?? null,
+                    'sunrise_planetary_positions' => $providerItems['sunrise_planetary_positions']['data'] ?? null,
+                    'panchang_chart' => $providerItems['panchang_chart']['data'] ?? null,
+                    'provider_payload' => collect($providerItems)->map(fn ($item) => $item['data'] ?? null)->all(),
+                    'provider_status' => collect($providerItems)->map(fn ($item) => [
+                        'status' => $item['status'] ?? 'error',
+                        'message' => $item['message'] ?? null,
+                    ])->all(),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 200);
+        }
+    }
+
     public function getDivisionalCharts(Request $request)
     {
         $request->validate([
@@ -911,9 +960,8 @@ class AstrologyController extends Controller
                 'mangal-dosha' => [[
                     'id' => 'mangal-dosha',
                     'title' => 'Mangal Dosha',
-                    'summary' => 'Simple and detailed Manglik calculations from Astrology API.',
+                    'summary' => 'Mangal Dosha status and cancellation details from the birth chart.',
                     'items' => [
-                        'simple_manglik' => $this->safeAstrologyRequest('simple_manglik', $payload, $language),
                         'manglik' => $this->safeAstrologyRequest('manglik', $payload, $language),
                     ],
                 ]],
@@ -938,7 +986,7 @@ class AstrologyController extends Controller
                 'pitra-dosha' => [[
                     'id' => 'pitra-dosha',
                     'title' => 'Pitra Dosha',
-                    'summary' => 'Pitra dosha report from the subscribed Vedic API.',
+                    'summary' => 'Pitra Dosha status, effects and recommended remedies.',
                     'items' => [
                         'pitra_dosha_report' => $this->safeAstrologyRequest('pitra_dosha_report', $payload, $language),
                     ],
@@ -1076,7 +1124,7 @@ class AstrologyController extends Controller
                         'chaughadiya_muhurta' => $this->safeAstrologyRequest('chaughadiya_muhurta', $payload, $language),
                     ],
                 ]],
-                'papasamyam', 'yoga', 'gowri-nalla-neram', 'sudarshana-chakra', 'chandrashtama-periods' => throw new \RuntimeException('This calculator does not have a direct Astrology API equivalent in the current integration.'),
+                'papasamyam', 'yoga', 'gowri-nalla-neram', 'sudarshana-chakra', 'chandrashtama-periods' => throw new \RuntimeException('This calculator is not available in the current integration.'),
                 default => throw new \RuntimeException('Unsupported Vedic calculator.'),
             };
 
@@ -1204,7 +1252,7 @@ class AstrologyController extends Controller
             $language = $this->resolveRequestedLanguage($request, ['en'], 'en');
             $dateOfBirth = $request->input('date_of_birth');
             if (!$dateOfBirth) {
-                throw new \InvalidArgumentException('Date of birth is required for the current Astrology API numerology integration.');
+                throw new \InvalidArgumentException('Date of birth is required for numerology calculations.');
             }
 
             $name = trim((string) ($request->input('name')
@@ -1290,7 +1338,7 @@ class AstrologyController extends Controller
                 'status' => 'success',
                 'data' => [
                     'is_sadesati_active' => (bool) ($status['is_sadhesati'] ?? $status['status'] ?? false),
-                    'description' => $status['bot_response'] ?? $status['status_text'] ?? 'Sade Sati details generated from Astrology API.',
+                    'description' => $status['bot_response'] ?? $status['status_text'] ?? 'Sade Sati details generated successfully.',
                     'transits' => collect($details)->map(function ($entry) {
                         return [
                             'phase' => $entry['type'] ?? null,
@@ -1322,7 +1370,7 @@ class AstrologyController extends Controller
             $sections = [[
                 'id' => 'lalkitab',
                 'title' => 'Lal Kitab',
-                'summary' => 'Horoscope, debts, houses, planets and planet-wise remedies from Astrology API.',
+                'summary' => 'Horoscope, debts, houses, planets and planet-wise remedies generated successfully.',
                 'items' => array_merge(
                     [
                         'lalkitab_horoscope' => $this->safeAstrologyRequest('lalkitab_horoscope', $payload, $language),
@@ -1360,7 +1408,7 @@ class AstrologyController extends Controller
     {
         $response = $this->astrologyApi->json($path, $payload, $language);
         if (!$response->successful()) {
-            throw new \RuntimeException($this->extractAstrologyApiError($response, "Astrology API request failed for {$path}."));
+            throw new \RuntimeException($this->extractAstrologyApiError($response, "Calculation request failed for {$path}."));
         }
 
         return $response->json();
@@ -1506,10 +1554,9 @@ class AstrologyController extends Controller
             'dosha' => [
                 'id' => 'dosha',
                 'title' => 'Dosha Analysis',
-                'summary' => 'Manglik, Kalsarpa, Sadesati and Pitra Dosha modules.',
+                'summary' => 'Mangal, Kaal Sarp, Sade Sati and Pitra Dosha modules.',
                 'items' => [
-                    'simple_manglik' => $preloadedItem('simple_manglik', 'simple_manglik'),
-                    'manglik' => $request('manglik'),
+                    'manglik' => $preloadedItem('manglik', 'manglik'),
                     'kalsarpa_details' => $request('kalsarpa_details'),
                     'sadhesati_current_status' => $request('sadhesati_current_status'),
                     'sadhesati_life_details' => $request('sadhesati_life_details'),
@@ -1680,9 +1727,8 @@ class AstrologyController extends Controller
             [
                 'id' => 'dosha',
                 'title' => 'Dosha Analysis',
-                'summary' => 'Manglik, Kalsarpa, Sadesati and Pitra Dosha modules.',
+                'summary' => 'Mangal, Kaal Sarp, Sade Sati and Pitra Dosha modules.',
                 'items' => [
-                    'simple_manglik' => $this->safeAstrologyRequest('simple_manglik', $payload, $language),
                     'manglik' => $this->safeAstrologyRequest('manglik', $payload, $language),
                     'kalsarpa_details' => $this->safeAstrologyRequest('kalsarpa_details', $payload, $language),
                     'sadhesati_current_status' => $this->safeAstrologyRequest('sadhesati_current_status', $payload, $language),

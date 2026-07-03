@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { useAuth } from "../../context/AuthContext";
+import UserDashboardSidebar from "../../components/UserDashboardSidebar";
 import { getMyBookings, getMyRitualBookings, submitBookingReview } from "../../api/bookingApi";
 
 const formatSchedule = (value) =>
@@ -35,7 +35,6 @@ const formatBirthDetails = (birthDetails) => {
 };
 
 export default function MyBookings() {
-  const { user } = useAuth();
   const location = useLocation();
   const [bookings, setBookings] = useState({ upcoming: [], history: [] });
   const [ritualBookings, setRitualBookings] = useState({ upcoming: [], history: [] });
@@ -74,11 +73,6 @@ export default function MyBookings() {
 
     void loadBookings();
   }, [message]);
-
-  const getTabClass = (path) =>
-    location.pathname === path
-      ? "bg-gradient-to-r from-[#1E3557] to-[#2c4b7c] text-white shadow-md border-l-4 border-[#D4A73C]"
-      : "bg-transparent text-gray-600 hover:bg-gray-50 hover:text-[#1E3557] border-l-4 border-transparent";
 
   const updateReviewForm = (bookingId, patch) => {
     setReviewForms((current) => ({
@@ -380,25 +374,7 @@ export default function MyBookings() {
       {message && <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">{message}</div>}
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-8">
-        <aside className="w-full lg:w-[280px] flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
-            <div className="relative pt-8 pb-6 px-6 text-center">
-              <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-[#1E3557] to-[#0D1B3E] opacity-90 rounded-b-3xl"></div>
-              <div className="relative w-20 h-20 mx-auto bg-gradient-to-br from-[#D4A73C] to-[#b88c29] text-white text-3xl font-bold rounded-2xl flex items-center justify-center shadow-lg border-4 border-white rotate-3">
-                <span className="-rotate-3">{user?.name ? user.name.charAt(0).toUpperCase() : "U"}</span>
-              </div>
-              <div className="mt-4">
-                <h3 className="font-bold text-[#1E3557] text-lg">{user?.name || "Celestial User"}</h3>
-                <p className="text-xs font-medium text-gray-500 mt-0.5">{user?.email || user?.phone || "Free Member"}</p>
-              </div>
-            </div>
-            <nav className="flex flex-col p-3 space-y-1 bg-white">
-              <Link to="/dashboard" className={`px-5 py-3.5 rounded-xl transition-all duration-200 font-medium text-sm ${getTabClass("/dashboard")}`}>Dashboard Overview</Link>
-              <Link to="/user-profile" className={`px-5 py-3.5 rounded-xl transition-all duration-200 font-medium text-sm ${getTabClass("/user-profile")}`}>My Profile</Link>
-              <Link to="/my-bookings" className={`px-5 py-3.5 rounded-xl transition-all duration-200 font-medium text-sm ${getTabClass("/my-bookings")}`}>My Bookings</Link>
-            </nav>
-          </div>
-        </aside>
+        <UserDashboardSidebar />
 
         <main className="flex-1 flex flex-col gap-6">
           <div>

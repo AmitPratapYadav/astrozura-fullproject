@@ -4,8 +4,8 @@ import { PackageSearch, SlidersHorizontal } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 
 const imageUrl = (path) => {
   if (!path) return "https://placehold.co/600x600?text=AstroZura";

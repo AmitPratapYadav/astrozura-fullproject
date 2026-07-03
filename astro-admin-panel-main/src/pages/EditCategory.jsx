@@ -12,6 +12,8 @@ export default function EditCategory() {
   const [formData, setFormData] = useState({
     name: "",
     status: true,
+    shipping_charge: "0",
+    hindi_name: "",
   });
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -25,6 +27,8 @@ export default function EditCategory() {
           setFormData({
             name: category.name,
             status: Boolean(category.status),
+            shipping_charge: category.shipping_charge || "0",
+            hindi_name: category.translations?.hi?.name || "",
           });
           if (category.image) {
             setPreview(assetUrl(category.image));
@@ -74,6 +78,8 @@ export default function EditCategory() {
       const data = new FormData();
       data.append("name", formData.name);
       data.append("status", formData.status ? 1 : 0);
+      data.append("shipping_charge", formData.shipping_charge || 0);
+      data.append("translations", JSON.stringify({ hi: { name: formData.hindi_name } }));
       
       if (imageFile) {
         data.append("image", imageFile);
@@ -125,6 +131,10 @@ export default function EditCategory() {
             placeholder="Enter category name"
             required
           />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div><label className="mb-1 block text-sm font-medium text-gray-700">Hindi Name</label><input name="hindi_name" value={formData.hindi_name} onChange={handleInputChange} className="w-full rounded-lg border p-3" /></div>
+          <div><label className="mb-1 block text-sm font-medium text-gray-700">Shipping Charge (₹)</label><input type="number" min="0" step="0.01" name="shipping_charge" value={formData.shipping_charge} onChange={handleInputChange} className="w-full rounded-lg border p-3" /></div>
         </div>
 
         {/* Category Image Upload */}

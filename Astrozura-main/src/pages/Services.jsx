@@ -12,18 +12,21 @@ const sections = [
         summary: "Browse priest-coordinated rituals and book auspicious services.",
         to: "/rituals",
         accent: "from-[#C8842D] to-[#E1B04E]",
+        icon: null,
       },
       {
         title: "Matchmaking",
         summary: "Review compatibility, guna scoring, and chart-aligned relationship insights.",
         to: "/matching",
         accent: "from-[#A24563] to-[#D87C93]",
+        icon: serviceCatalog.find((service) => service.slug === "kundli-matching")?.icon,
       },
       {
-        title: "Kundali Report",
-        summary: "Generate and explore your kundali, divisional charts, and chart-based insights.",
-        to: "/services/kundali-report",
+        title: "Detailed Kundali Analysis",
+        summary: "Generate and explore premium kundali modules, divisional charts, doshas, and remedies.",
+        to: "/services/detailed-kundali",
         accent: "from-[#254F7A] to-[#5A8EC9]",
+        icon: serviceCatalog.find((service) => service.slug === "detailed-kundali")?.icon,
       },
     ],
   },
@@ -39,16 +42,20 @@ const sections = [
         "from-[#7A3425] to-[#BA7042]",
         "from-[#5C3A6E] to-[#9E6AC0]",
       ][index],
+      icon: serviceCatalog.find((service) => service.ctaTo === item.to || service.title === item.label)?.icon,
     })),
   },
   {
     title: "Reports & Calculators",
-    items: serviceCatalog.map((item) => ({
-      title: item.title,
-      summary: item.summary,
-      to: item.ctaTo === "/services" ? `/services/${item.slug}` : `/services/${item.slug}`,
-      accent: item.accent,
-    })),
+    items: serviceCatalog
+      .filter((item) => !["palm-reading", "premium-consultations"].includes(item.slug))
+      .map((item) => ({
+        title: item.title,
+        summary: item.summary,
+        to: item.ctaTo === "/services" ? `/services/${item.slug}` : `/services/${item.slug}`,
+        accent: item.accent,
+        icon: item.icon,
+      })),
   },
 ];
 
@@ -94,7 +101,14 @@ export default function Services() {
                     <div className={`inline-flex rounded-2xl bg-gradient-to-r px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white ${item.accent}`}>
                       {section.title}
                     </div>
-                    <h3 className="mt-6 text-2xl font-black text-[#1E3557]">{item.title}</h3>
+                    <div className="mt-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#FBF7F0] p-2 ring-1 ring-[#EFE3D1]">
+                      {item.icon ? (
+                        <img src={item.icon} alt="" className="h-full w-full object-contain" />
+                      ) : (
+                        <span className="text-xl font-black text-[#D4A73C]">AZ</span>
+                      )}
+                    </div>
+                    <h3 className="mt-5 text-2xl font-black text-[#1E3557]">{item.title}</h3>
                     <p className="mt-4 text-sm leading-7 text-gray-600">{item.summary}</p>
                     <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-5 text-sm font-semibold text-[#1E3557]">
                       <span>Open Service</span>

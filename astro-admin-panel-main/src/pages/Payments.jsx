@@ -1,199 +1,54 @@
-import { Search, Filter, Download } from "lucide-react"
-import { exportToExcel } from "../utils/exportExcel"
-import { useState } from "react"
+import { useEffect, useState } from "react";
+import { apiRequest } from "../lib/api";
 
-const paymentsData = [
+const tabs = [
+  ["consultations", "Consultations"],
+  ["astrologers", "Astrologer Earnings"],
+  ["orders", "Shop Orders"],
+  ["rituals", "Pooja Anusthan"],
+];
 
-{
-id:"PAY101",
-user:"Rahul Sharma",
-astrologer:"Pandit Dev",
-amount:"₹500",
-status:"Paid",
-date:"12 Mar 2026"
-},
+export default function Payments() {
+  const [active, setActive] = useState("consultations");
+  const [period, setPeriod] = useState("month");
+  const [data, setData] = useState({ consultations: [], astrologers: [], orders: [], rituals: [] });
+  const [loading, setLoading] = useState(true);
 
-{
-id:"PAY102",
-user:"Anjali Verma",
-astrologer:"Guru Ji",
-amount:"₹700",
-status:"Pending",
-date:"13 Mar 2026"
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [payments, astrologers] = await Promise.all([
+        apiRequest(`/admin/payments?period=${period}`),
+        apiRequest(`/admin/payments/astrologers?period=${period}`),
+      ]);
+      setData({
+        consultations: payments.consultations?.data || [],
+        orders: payments.orders?.data || [],
+        rituals: payments.rituals?.data || [],
+        astrologers: astrologers.data || [],
+      });
+    } finally { setLoading(false); }
+  };
+  useEffect(() => { void load(); }, [period]);
+
+  const rows = data[active] || [];
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">Payments</h1><p className="text-sm text-gray-500">Revenue, commission, and payout records.</p></div><select value={period} onChange={(e) => setPeriod(e.target.value)} className="rounded-lg border bg-white px-4 py-2"><option value="week">This week</option><option value="month">This month</option><option value="year">This year</option></select></div>
+      <div className="flex gap-2 overflow-x-auto">{tabs.map(([key, label]) => <button key={key} onClick={() => setActive(key)} className={`whitespace-nowrap rounded-lg px-4 py-2 font-semibold ${active === key ? "bg-yellow-500 text-black" : "bg-white text-gray-600"}`}>{label}</button>)}</div>
+      <div className="overflow-x-auto rounded-xl bg-white shadow">
+        <table className="w-full min-w-[850px] text-sm">
+          <thead className="bg-gray-100"><tr>{active === "astrologers" ? <><th className="p-3 text-left">Astrologer</th><th className="p-3 text-left">Paid bookings</th><th className="p-3 text-left">Gross</th><th className="p-3 text-left">Platform commission</th><th className="p-3 text-left">Earnings</th><th className="p-3 text-left">Rating</th></> : <><th className="p-3 text-left">Reference</th><th className="p-3 text-left">Customer</th><th className="p-3 text-left">Description</th><th className="p-3 text-left">Amount</th><th className="p-3 text-left">Date</th></>}</tr></thead>
+          <tbody>
+            {loading ? <tr><td colSpan="6" className="p-8 text-center">Loading payments...</td></tr> : rows.map((row) => active === "astrologers" ? (
+              <tr key={row.id} className="border-b"><td className="p-3 font-semibold">{row.name}</td><td className="p-3">{row.paid_bookings_count || 0}</td><td className="p-3">₹{Number(row.gross_income || 0).toLocaleString("en-IN")}</td><td className="p-3">₹{Number(row.platform_commission || 0).toLocaleString("en-IN")}</td><td className="p-3 font-semibold text-green-700">₹{Number(row.astrologer_earnings || 0).toLocaleString("en-IN")}</td><td className="p-3">{row.average_rating || "-"}</td></tr>
+            ) : (
+              <tr key={row.id} className="border-b"><td className="p-3 font-semibold">#{row.order_number || row.id}</td><td className="p-3">{row.user?.name || row.user_name || "-"}</td><td className="p-3">{row.astrologer?.name || row.ritual?.name || active.slice(0, -1)}</td><td className="p-3 font-semibold">₹{Number(row.total_amount || row.amount || 0).toLocaleString("en-IN")}</td><td className="p-3">{new Date(row.created_at).toLocaleDateString()}</td></tr>
+            ))}
+            {!loading && !rows.length && <tr><td colSpan="6" className="p-8 text-center text-gray-500">No paid records in this period.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
-
-]
-
-function Payments(){
-
-const [search,setSearch] = useState("")
-const [showFilter,setShowFilter] = useState(false)
-const [activeBtn,setActiveBtn] = useState("")
-
-const filtered = paymentsData.filter(item =>
-Object.values(item).join(" ").toLowerCase().includes(search.toLowerCase())
-)
-
-const handleClick=(type)=>{
-
-setActiveBtn(type)
-
-if(type==="filter"){
-setShowFilter(!showFilter)
-}
-
-if(type==="status"){
-alert("Status Filter Selected")
-}
-
-if(type==="apply"){
-alert("Filters Applied")
-}
-
-}
-
-return(
-
-<div className="space-y-6">
-
-<h1 className="text-2xl font-bold">
-Payments
-</h1>
-
-{/* ACTION BAR */}
-
-<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-
-<div className="flex items-center bg-gray-100 px-3 py-2 rounded-lg w-full md:w-80">
-
-<Search size={18}/>
-
-<input
-type="text"
-placeholder="Search payment..."
-value={search}
-onChange={(e)=>setSearch(e.target.value)}
-className="bg-transparent outline-none ml-2 w-full"
-/>
-
-</div>
-
-<div className="flex gap-2">
-
-<button
-onClick={()=>handleClick("filter")}
-className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition
-${activeBtn==="filter"
-? "bg-yellow-500 text-black border-yellow-500"
-: "bg-white hover:bg-yellow-500 hover:text-black"}
-`}
->
-<Filter size={16}/> Filter
-</button>
-
-<button
-onClick={()=>{
-setActiveBtn("export")
-exportToExcel(filtered,"payments")
-}}
-className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition
-${activeBtn==="export"
-? "bg-yellow-500 text-black border-yellow-500"
-: "bg-white hover:bg-yellow-500 hover:text-black"}
-`}
->
-<Download size={16}/> Export Excel
-</button>
-
-</div>
-
-</div>
-
-{/* FILTER PANEL */}
-
-{showFilter && (
-
-<div className="bg-white p-4 rounded-xl shadow flex gap-3">
-
-<button
-onClick={()=>handleClick("status")}
-className="px-4 py-2 border rounded-lg hover:bg-yellow-500 hover:text-black"
->
-Status
-</button>
-
-<button
-onClick={()=>handleClick("apply")}
-className="px-4 py-2 border rounded-lg hover:bg-yellow-500 hover:text-black"
->
-Apply
-</button>
-
-</div>
-
-)}
-
-{/* TABLE */}
-
-<div className="bg-white rounded-xl shadow overflow-x-auto">
-
-<table className="w-full text-sm">
-
-<thead className="bg-gray-100">
-
-<tr>
-
-<th className="p-3 text-left">Payment ID</th>
-<th className="p-3 text-left">User</th>
-<th className="p-3 text-left">Astrologer</th>
-<th className="p-3 text-left">Amount</th>
-<th className="p-3 text-left">Status</th>
-<th className="p-3 text-left">Date</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-{filtered.map((item,index)=>(
-
-<tr key={index} className="border-b hover:bg-gray-50">
-
-<td className="p-3">{item.id}</td>
-<td className="p-3">{item.user}</td>
-<td className="p-3">{item.astrologer}</td>
-<td className="p-3">{item.amount}</td>
-
-<td className="p-3">
-
-<span className={`px-2 py-1 text-xs rounded
-${item.status==="Paid"
-? "bg-green-100 text-green-700"
-: "bg-yellow-100 text-yellow-700"}`}>
-
-{item.status}
-
-</span>
-
-</td>
-
-<td className="p-3">{item.date}</td>
-
-</tr>
-
-))}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-)
-
-}
-
-export default Payments

@@ -1,8 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Eye, EyeOff, Upload } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { apiRequest, assetUrl } from "../lib/api";
 
 const createPreview = (value) => (value ? URL.createObjectURL(value) : "");
+const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024;
+const SUPPORTED_PROFILE_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
 
 export default function Profile() {
   const { adminUser, refreshProfile, setAdminUser } = useAppContext();
@@ -17,6 +25,8 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const hydrate = async () => {
@@ -57,6 +67,18 @@ export default function Profile() {
     const { name, value, files } = event.target;
     if (name === "profile_image") {
       const file = files?.[0] || null;
+      if (file && !SUPPORTED_PROFILE_IMAGE_TYPES.has(file.type)) {
+        setMessage("Please select a JPG, PNG, GIF, or WebP image.");
+        event.target.value = "";
+        return;
+      }
+      if (file && file.size > MAX_PROFILE_IMAGE_SIZE) {
+        setMessage("Profile pictures must be 5 MB or smaller.");
+        event.target.value = "";
+        return;
+      }
+
+      setMessage("");
       setForm((current) => ({ ...current, profile_image: file }));
       setPreview(file ? createPreview(file) : assetUrl(adminUser?.profile_image));
       return;
@@ -93,6 +115,10 @@ export default function Profile() {
         setMessage("Admin profile updated successfully.");
         setForm((current) => ({ ...current, password: "", profile_image: null }));
         setPreview(response.user?.profile_image ? assetUrl(response.user.profile_image) : "");
+        setShowPassword(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       } else {
         setMessage(response?.message || "Unable to update the profile.");
       }
@@ -183,25 +209,46 @@ export default function Profile() {
 
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">New Password</label>
-              <input
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Leave blank to keep the current password"
-                className="w-full rounded-xl border px-4 py-3 outline-none focus:border-yellow-500"
-              />
+              <div className="relative">
+                <input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  minLength={6}
+                  placeholder="Leave blank to keep the current password"
+                  className="w-full rounded-xl border px-4 py-3 pr-12 outline-none focus:border-yellow-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 hover:text-gray-900"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">Use at least 6 characters.</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">Profile Picture</label>
-              <input
-                name="profile_image"
-                type="file"
-                accept="image/*"
-                onChange={handleChange}
-                className="w-full rounded-xl border px-4 py-3 outline-none file:mr-4 file:rounded-full file:border-0 file:bg-yellow-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black"
-              />
+              <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition hover:border-yellow-500">
+                <Upload size={18} className="shrink-0 text-yellow-600" />
+                <span className="min-w-0 truncate text-sm text-gray-600">
+                  {form.profile_image?.name || "Choose a profile picture"}
+                </span>
+                <input
+                  ref={fileInputRef}
+                  name="profile_image"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleChange}
+                  className="sr-only"
+                />
+              </label>
+              <p className="mt-1 text-xs text-gray-400">JPG, PNG, GIF, or WebP up to 5 MB.</p>
             </div>
           </div>
 

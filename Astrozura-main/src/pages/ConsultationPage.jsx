@@ -8,6 +8,7 @@ import avatar from "../assets/astrologer-avatar.jpg";
 import api from "../api/axios";
 import { createBooking, getBookingAvailability } from "../api/bookingApi";
 import { searchLocation } from "../api/prokeralaApi";
+import { ensureRazorpayConfigured, payWithRazorpay } from "../api/paymentApi";
 
 const formatDateValue = (date) => {
   if (!date) return "";
@@ -25,7 +26,7 @@ const formatDisplayDate = (date) =>
 const getImageUrl = (path) => {
   if (!path) return avatar;
   if (path.startsWith("http")) return path;
-  const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const baseUrl = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
   return `${baseUrl}${path}`;
 };
 
@@ -55,7 +56,6 @@ export default function ConsultationPage() {
   const [loadingBirthPlaces, setLoadingBirthPlaces] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [step, setStep] = useState("details");
-  const [paymentMethod, setPaymentMethod] = useState("upi");
   const [submitting, setSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
 
@@ -199,6 +199,7 @@ export default function ConsultationPage() {
     }
     try {
       setSubmitting(true);
+      await ensureRazorpayConfigured();
       const response = await createBooking({
         astrologer_id: astrologer.id,
         consultation_type: consultationType,
@@ -209,7 +210,15 @@ export default function ConsultationPage() {
         birth_details: birthDetails,
       });
       if (!response?.success) throw new Error(response?.message || "Booking failed.");
-      setConfirmedBooking(response.booking);
+      await payWithRazorpay({
+        purpose: "consultation",
+        recordId: response.booking.id,
+        name: response.booking.user_name,
+        email: response.booking.user_email,
+        contact: JSON.parse(localStorage.getItem("user") || "{}")?.phone || "",
+        description: `${consultationType === "chat" ? "Chat" : "Call"} consultation with ${astrologer.name}`,
+      });
+      setConfirmedBooking({ ...response.booking, status: "confirmed", payment_status: "paid" });
       setStep("success");
       showToast("Booking confirmed successfully.");
       window.setTimeout(() => navigate("/my-bookings", { state: { message: "Booking confirmed successfully." } }), 1800);
@@ -241,7 +250,7 @@ export default function ConsultationPage() {
       <div className="min-h-screen bg-[#FFFBF3] px-4 py-8 md:px-10">
         <div className="mx-auto max-w-[1100px]">
           <h1 className="text-3xl font-bold text-[#1E3557]">Book Your Consultation</h1>
-          <p className="mt-2 text-sm text-gray-500">{step === "details" ? "Step 1 of 3: Personalize your session and share birth details." : step === "payment" ? "Step 2 of 3: Mock payment." : "Step 3 of 3: Booking confirmed."}</p>
+          <p className="mt-2 text-sm text-gray-500">{step === "details" ? "Step 1 of 3: Personalize your session and share birth details." : step === "payment" ? "Step 2 of 3: Secure Razorpay payment." : "Step 3 of 3: Booking confirmed."}</p>
           <div className="mt-4 h-2 rounded-full bg-[#F3E4BF]"><div className={`h-2 rounded-full bg-[#D4A73C] ${step === "details" ? "w-1/3" : step === "payment" ? "w-2/3" : "w-full"}`}></div></div>
 
           {step === "details" && (
@@ -287,6 +296,7 @@ export default function ConsultationPage() {
                           type="date"
                           name="date_of_birth"
                           value={birthDetails.date_of_birth}
+                          max={new Date().toISOString().slice(0, 10)}
                           onChange={handleBirthDetailChange}
                           className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                         />
@@ -391,8 +401,7 @@ export default function ConsultationPage() {
           {step === "payment" && (
             <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_0.9fr]">
               <section className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
-                <div className="flex items-center justify-between gap-4"><div><h2 className="text-2xl font-bold text-[#1E3557]">Mock Payment Gateway</h2><p className="mt-2 text-sm text-gray-500">This phase always succeeds and creates a paid booking immediately.</p></div><span className="rounded-full bg-[#FFF7E8] px-4 py-1.5 text-xs font-semibold uppercase text-[#D4A73C]">Always Success</span></div>
-                <div className="mt-8 grid gap-4 md:grid-cols-3">{["upi", "card", "wallet"].map((method) => <button key={method} type="button" onClick={() => setPaymentMethod(method)} className={`rounded-2xl border p-5 text-left ${paymentMethod === method ? "border-[#D4A73C] bg-[#FFF7E8]" : "border-gray-200 bg-white"}`}><p className="font-semibold text-[#1E3557]">{method.toUpperCase()}</p><p className="mt-1 text-sm text-gray-500">Mock authorization</p></button>)}</div>
+                <div className="flex items-center justify-between gap-4"><div><h2 className="text-2xl font-bold text-[#1E3557]">Secure Payment</h2><p className="mt-2 text-sm text-gray-500">Razorpay supports UPI, cards, net banking, and supported wallets in its secure checkout.</p></div><span className="rounded-full bg-[#FFF7E8] px-4 py-1.5 text-xs font-semibold uppercase text-[#D4A73C]">Razorpay</span></div>
                 <div className="mt-8 rounded-3xl bg-[#F8F9FC] p-6">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div><p className="text-xs uppercase text-gray-400">Astrologer</p><p className="mt-1 font-semibold text-[#1E3557]">{astrologer.name}</p></div>
@@ -406,7 +415,7 @@ export default function ConsultationPage() {
               <aside className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
                 <h2 className="text-lg font-semibold text-[#1E3557]">Order Snapshot</h2>
                 <div className="mt-6 flex items-center gap-4"><img src={getImageUrl(details.profile_image)} alt={astrologer.name} className="h-16 w-16 rounded-full object-cover bg-gray-50" /><div><p className="font-bold text-[#1E3557]">{astrologer.name}</p><p className="text-sm text-gray-500">{details.languages || "English, Hindi"}</p></div></div>
-                <div className="mt-6 space-y-4 text-sm"><div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-semibold text-[#1E3557]">{formatDisplayDate(selectedDate)}</span></div><div className="flex justify-between"><span className="text-gray-500">Time</span><span className="font-semibold text-[#1E3557]">{selectedSlot}</span></div><div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="font-semibold text-[#1E3557]">{duration} min</span></div><div className="flex justify-between"><span className="text-gray-500">Method</span><span className="font-semibold uppercase text-[#1E3557]">{paymentMethod}</span></div></div>
+                <div className="mt-6 space-y-4 text-sm"><div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-semibold text-[#1E3557]">{formatDisplayDate(selectedDate)}</span></div><div className="flex justify-between"><span className="text-gray-500">Time</span><span className="font-semibold text-[#1E3557]">{selectedSlot}</span></div><div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="font-semibold text-[#1E3557]">{duration} min</span></div><div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="font-semibold text-[#1E3557]">Razorpay Checkout</span></div></div>
                 {notes && <div className="mt-6 rounded-2xl border border-gray-200 bg-[#F8F9FC] p-4"><p className="text-xs uppercase text-gray-400">Notes</p><p className="mt-2 text-sm text-gray-600">{notes}</p></div>}
               </aside>
             </div>

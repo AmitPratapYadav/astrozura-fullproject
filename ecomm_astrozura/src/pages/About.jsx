@@ -214,10 +214,10 @@ export default function AboutAstrozura() {
         </h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
           {[ 
-            { name: "Seraphina Moon" },
-            { name: "Caelum Thorne" },
-            { name: "Lyra Vance" },
-            { name: "Orion Frost" }
+            { name: "Kavya Sharma" },
+            { name: "Arjun Mehta" },
+            { name: "Ishita Verma" },
+            { name: "Aditya Rao" }
           ].map((item, i) => (
             <div key={i} className="bg-white p-6 rounded-xl shadow-sm">
               <div className="w-16 h-16 mx-auto rounded-full mb-3 bg-[#c7926a] flex items-center justify-center text-white text-2xl font-bold">

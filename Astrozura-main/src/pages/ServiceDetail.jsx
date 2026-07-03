@@ -16,11 +16,20 @@ export default function ServiceDetail() {
       <Navbar />
 
       <section className="px-4 py-16 md:px-10">
-        <div className={`mx-auto max-w-7xl overflow-hidden rounded-[2.4rem] bg-gradient-to-r px-8 py-14 text-white shadow-xl ${service.accent}`}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] opacity-85">{service.category}</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight md:text-6xl">{service.title}</h1>
-          <p className="mt-6 max-w-2xl text-sm leading-7 text-white/85 md:text-base">{service.description}</p>
-          <div className="mt-8 flex flex-wrap gap-4">
+        <div className={`mx-auto grid max-w-7xl gap-8 overflow-hidden rounded-[2.4rem] bg-gradient-to-r px-8 py-14 text-white shadow-xl md:grid-cols-[1fr_auto] md:items-center ${service.accent}`}>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] opacity-85">{service.category}</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight md:text-6xl">{service.title}</h1>
+            <p className="mt-6 max-w-2xl text-sm leading-7 text-white/85 md:text-base">{service.description}</p>
+          </div>
+          <div className="flex h-32 w-32 items-center justify-center rounded-[2rem] bg-white/95 p-4 shadow-2xl md:h-40 md:w-40">
+            {service.icon ? (
+              <img src={service.icon} alt="" className="h-full w-full object-contain" />
+            ) : (
+              <span className="text-4xl font-black text-[#1E3557]">AZ</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-4 md:col-span-2">
             <Link
               to={service.ctaTo}
               className="rounded-2xl bg-white px-6 py-3 text-sm font-bold text-[#1E3557] shadow"

@@ -2,31 +2,71 @@ import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import vedic from "../assets/vedic-astrology.png";
-import menuIcon from "../assets/menu-icon.png";
 import cart from "../assets/carts.png";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { assetUrl } from "../utils/assetUrl";
+import api from "../api/axios";
+import { Heart, MoreVertical, Search, X } from "lucide-react";
+import CatalogImage from "./CatalogImage";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
   const navigate = useNavigate();
+  const avatarImage = assetUrl(user?.profile_image);
 
   const [categories, setCategories] = useState([]);
   const [catMenuOpen, setCatMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   const menuItems = [
-    { path: "/allproduct", name: "Allproduct" },
+    { path: "/allproduct", name: "View All Products" },
+    { path: "https://astrozura.com", name: "Follow Your Stars", external: true },
     { path: "/Contact", name: "Contact us" },
     { path: "/About", name: "About us" }
   ];
 
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
 
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setWishlistCount(0);
+      return;
+    }
+    api.get("/dashboard/wishlist")
+      .then((response) => setWishlistCount(response.data?.data?.length || 0))
+      .catch(() => setWishlistCount(0));
+  }, [user]);
+
+  useEffect(() => {
+    if (!searchOpen || searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(async () => {
+      try {
+        setSearching(true);
+        const response = await axios.get(`${apiUrl}/ecomm/products`, {
+          params: { q: searchQuery.trim() },
+        });
+        setSearchResults((response.data?.data || []).slice(0, 8));
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [searchOpen, searchQuery, apiUrl]);
 
   const fetchCategories = async () => {
     try {
@@ -46,12 +86,12 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white shadow-sm px-4 md:px-10 py-6.5 sticky top-0 z-50">
+      <nav className="relative sticky top-0 z-50 bg-white px-3 py-3 shadow-sm md:px-10 md:py-6">
         <div className="flex justify-between items-center">
 
           {/* LOGO */}
           <NavLink to="/">
-            <img src={vedic} alt="logo" className="h-12 md:h-16 object-contain cursor-pointer" />
+            <img src={vedic} alt="logo" className="h-10 w-auto max-w-[128px] cursor-pointer object-contain md:h-16 md:max-w-none" />
           </NavLink>
 
           {/* DESKTOP MENU */}
@@ -91,7 +131,14 @@ export default function Navbar() {
 
             {menuItems.map((item, i) => (
               <li key={i}>
-                <NavLink
+                {item.external ? (
+                  <a
+                    href={item.path}
+                    className="rounded-md px-3 py-1.5 text-gray-700 transition hover:bg-[#D4A73C]"
+                  >
+                    {item.name}
+                  </a>
+                ) : <NavLink
                   to={item.path}
                   className={({ isActive }) =>
                     `px-3 py-1.5 rounded-md transition ${isActive
@@ -100,13 +147,32 @@ export default function Navbar() {
                     }`
                   }>
                   {item.name}
-                </NavLink>
+                </NavLink>}
               </li>
             ))}
           </ul>
 
           {/* RIGHT SIDE */}
-          <div className="flex items-center gap-6">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-2 md:gap-5">
+            <button
+              type="button"
+              onClick={() => setSearchOpen((current) => !current)}
+              className="rounded-full p-2 text-[#1E3557] transition hover:bg-[#FFF6D8]"
+              aria-label="Search products"
+            >
+              {searchOpen ? <X size={21} /> : <Search size={21} />}
+            </button>
+
+            {user && (
+              <NavLink to="/dashboard/wishlist" className="relative rounded-full p-2 text-[#1E3557] transition hover:bg-[#FFF6D8]" aria-label="Wishlist">
+                <Heart size={21} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                  </span>
+                )}
+              </NavLink>
+            )}
 
             {/* CART */}
             <NavLink to="/cart" className="relative flex items-center group">
@@ -126,12 +192,13 @@ export default function Navbar() {
             {user ? (
               <div className="relative group pl-2 border-l border-gray-200">
                 {/* Profile Toggle */}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100 cursor-pointer transition hover:bg-gray-100">
-                  <span className="text-sm font-semibold text-gray-700">
-                    {user.name?.split(" ")[0] || "User"}
-                  </span>
-                  <div className="w-6 h-6 bg-[#d8b14a] rounded-full flex items-center justify-center text-[10px] text-white font-bold">
-                    {user.name ? user.name[0].toUpperCase() : "U"}
+                <div className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-gray-50 transition hover:bg-gray-100">
+                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#d8b14a] text-xs font-bold text-white">
+                    {avatarImage ? (
+                      <img src={avatarImage} alt={user.name || "User"} className="h-full w-full object-cover" />
+                    ) : (
+                      user.name ? user.name[0].toUpperCase() : "U"
+                    )}
                   </div>
                 </div>
 
@@ -153,7 +220,7 @@ export default function Navbar() {
               </div>
             ) : (
               <NavLink to="/login">
-                <button className="bg-[#1E3557] text-white px-5 py-1.5 rounded-full text-sm font-bold hover:bg-[#162744] shadow-sm hover:shadow-md transition-all duration-200">
+                <button className="whitespace-nowrap rounded-full bg-[#1E3557] px-3 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#162744] hover:shadow-md sm:px-5 sm:text-sm">
                   Sign In
                 </button>
               </NavLink>
@@ -163,10 +230,51 @@ export default function Navbar() {
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="md:hidden">
-              <img src={menuIcon} alt="menu" className="h-7 w-7" />
+              <MoreVertical className="h-7 w-7 text-[#D4A73C]" aria-label="menu" />
             </button>
           </div>
         </div>
+
+        {searchOpen && (
+          <div className="absolute left-1/2 top-full z-[70] w-[min(94vw,680px)] -translate-x-1/2 rounded-b-2xl border border-gray-100 bg-white p-4 shadow-2xl">
+            <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3">
+              <Search size={18} className="text-gray-400" />
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search products..."
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+              />
+            </div>
+            <div className="mt-3 max-h-[55vh] overflow-y-auto">
+              {searching ? (
+                <p className="px-3 py-6 text-center text-sm text-gray-500">Searching...</p>
+              ) : searchQuery.trim().length >= 2 && !searchResults.length ? (
+                <p className="px-3 py-6 text-center text-sm text-gray-500">No products found.</p>
+              ) : (
+                searchResults.map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => {
+                      setSearchOpen(false);
+                      setSearchQuery("");
+                      navigate(`/product/${product.id}`);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition hover:bg-gray-50"
+                  >
+                    <CatalogImage src={product.image} alt={product.name} className="h-12 w-12 rounded-lg object-cover" />
+                    <span className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm text-[#1E3557]">{product.name}</strong>
+                      <span className="text-xs text-gray-500">Rs {product.price}</span>
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* MOBILE MENU DRAWER */}
         <div className={`fixed inset-0 z-[60] md:hidden transition-all duration-300 ${menuOpen ? "visible" : "invisible"}`}>
@@ -221,7 +329,15 @@ export default function Navbar() {
 
                 {menuItems.map((item, i) => (
                   <li key={i}>
-                    <NavLink
+                    {item.external ? (
+                      <a
+                        href={item.path}
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center rounded-xl px-4 py-3 font-semibold text-gray-600 transition hover:bg-gray-50"
+                      >
+                        {item.name}
+                      </a>
+                    ) : <NavLink
                       to={item.path}
                       onClick={() => setMenuOpen(false)}
                       className={({ isActive }) =>
@@ -231,7 +347,7 @@ export default function Navbar() {
                         }`
                       }>
                       {item.name}
-                    </NavLink>
+                    </NavLink>}
                   </li>
                 ))}
 
@@ -254,6 +370,15 @@ export default function Navbar() {
 
                 {user ? (
                   <>
+                    <li>
+                      <NavLink
+                        to="/dashboard/wishlist"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-gray-600 hover:bg-gray-50"
+                      >
+                        <Heart size={18} /> Wishlist ({wishlistCount})
+                      </NavLink>
+                    </li>
                     <li className="mt-1">
                       <NavLink
                         to="/dashboard"
@@ -291,4 +416,4 @@ export default function Navbar() {
       </nav>
     </>
   );
-}
+}

@@ -53,18 +53,17 @@ export default function ContactSupport() {
               </p>
               <div className="mt-5 rounded-2xl bg-[#fffaf0] p-4 text-sm text-gray-600">
                 <p className="font-semibold text-[#1E3557]">Astro Zura Support Desk</p>
-                <p className="mt-2">Gandhinagar, Gujarat, India</p>
-                <p className="mt-1">Email: help@astrozura.com</p>
-                <p className="mt-1">Call: +91 9555 123 456</p>
+                <p className="mt-2">AstroZura Tarsh Astrology Solutions Ujhani 243639 Division Bareilly Uttar Pradesh, India.</p>
+                <p className="mt-1">Email: support@astrozura.com</p>
+                <p className="mt-1">Call: +91 95480 46986</p>
               </div>
             </div>
 
             <div className="rounded-3xl bg-white p-6 shadow-sm border border-[#efe4d2]">
               <h2 className="text-2xl font-bold">Support Hours</h2>
               <div className="mt-5 space-y-3 text-sm text-gray-600">
-                <div className="flex justify-between"><span>Monday - Friday</span><span>09:00 AM - 08:00 PM</span></div>
-                <div className="flex justify-between"><span>Saturday</span><span>10:00 AM - 06:00 PM</span></div>
-                <div className="flex justify-between"><span>Sunday & Festivals</span><span>10:00 AM - 04:00 PM</span></div>
+                <div className="flex justify-between gap-4"><span>Monday - Saturday</span><span>10:00 AM - 06:00 PM</span></div>
+                <div className="flex justify-between gap-4"><span>Sunday</span><span>Closed</span></div>
               </div>
             </div>
           </div>
@@ -76,7 +75,7 @@ export default function ContactSupport() {
             <h2 className="mt-2 text-3xl font-black">Have an Urgent Need?</h2>
             <p className="mt-3 text-sm text-slate-200">For time-sensitive ritual arrangements, call our priority line.</p>
           </div>
-          <a href="tel:+919555123456" className="rounded-xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557]">Call Now</a>
+          <a href="tel:+919548046986" className="rounded-xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557]">Call Now</a>
         </section>
       </section>
 

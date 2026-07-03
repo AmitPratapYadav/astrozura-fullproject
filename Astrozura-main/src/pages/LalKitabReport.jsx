@@ -4,6 +4,7 @@ import Footer from "../components/Footer";
 import { ProviderSections } from "../components/report/ReportDataRenderer";
 import { getLalKitabReport, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
+import { getServiceIcon } from "../data/serviceIcons";
 
 const initialForm = {
   date_of_birth: "",
@@ -24,6 +25,8 @@ const formatDateTime = (value) => {
     return value;
   }
 };
+
+const pageIcon = getServiceIcon("lal-kitab-report");
 
 export default function LalKitabReport() {
   const { user } = useAuth();
@@ -145,16 +148,21 @@ export default function LalKitabReport() {
       <Navbar />
 
       <section className="bg-gradient-to-r from-[#8C3B3B] to-[#C86B3C] px-4 py-20 text-white md:px-10">
-        <div className="mx-auto max-w-7xl">
-          <span className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
-            Lal Kitab Reports
-          </span>
-          <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
-            Generate Your Lal Kitab Guidance
-          </h1>
-          <p className="mt-6 max-w-3xl text-sm leading-7 text-white/85 md:text-base">
-            Review planetary tendencies, house-level observations, and practical Lal Kitab-style remedial guidance from your birth details.
-          </p>
+        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <span className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]">
+              Lal Kitab Reports
+            </span>
+            <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
+              Generate Your Lal Kitab Guidance
+            </h1>
+            <p className="mt-6 max-w-3xl text-sm leading-7 text-white/85 md:text-base">
+              Review planetary tendencies, house-level observations, and practical Lal Kitab-style remedial guidance from your birth details.
+            </p>
+          </div>
+          <div className="flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-white p-3 shadow-2xl md:h-36 md:w-36">
+            <img src={pageIcon} alt="" className="h-full w-full object-contain" />
+          </div>
         </div>
       </section>
 
@@ -173,6 +181,7 @@ export default function LalKitabReport() {
                   type="date"
                   name="date_of_birth"
                   value={form.date_of_birth}
+                  max={new Date().toISOString().slice(0, 10)}
                   onChange={handleChange}
                   className="w-full rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                 />
@@ -236,7 +245,7 @@ export default function LalKitabReport() {
               <div className="rounded-[2rem] border border-[#EFE3D1] bg-white p-10 shadow-sm">
                 <h2 className="text-2xl font-bold">Ready to Generate</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-                  This standalone Lal Kitab page uses the working Astrology API route directly. Submit birth details to view remedies, planet observations, house patterns, and sign occupancy.
+                  Submit birth details to view Lal Kitab remedies, planet observations, house patterns, and sign occupancy.
                 </p>
               </div>
             ) : (

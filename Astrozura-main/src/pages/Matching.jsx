@@ -3,9 +3,10 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { FaExclamationTriangle, FaFilePdf, FaHeart, FaPen, FaShieldAlt, FaStar } from "react-icons/fa";
 import { downloadMatchMakingPdf, getDivisionalCharts, getMarriageMatching, searchLocation } from "../api/prokeralaApi";
-import { ReportDataBlock } from "../components/report/ReportDataRenderer";
+import { getServiceIcon } from "../data/serviceIcons";
 
 const emptyPerson = { name: "", dob: "", time: "", place: "", coordinates: "" };
+const pageIcon = getServiceIcon("premium-matchmaking-report");
 
 const verdictStyles = {
   good: { color: "bg-emerald-600", text: "text-emerald-700", label: "Auspicious" },
@@ -326,10 +327,15 @@ export default function Matching() {
 
       <section className="relative bg-[#1E3557] text-white overflow-hidden py-24 md:py-32">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#D4A73C 1px, transparent 1px)", backgroundSize: "30px 30px" }}></div>
-        <div className="relative max-w-7xl mx-auto px-4 md:px-8 text-center">
-          <span className="inline-block text-xs bg-[#D4A73C]/20 text-[#D4A73C] border border-[#D4A73C]/30 px-4 py-1.5 rounded-full font-bold tracking-widest uppercase mb-6 shadow-sm">Horoscope Milan</span>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">Premium <span className="text-[#D4A73C]">Matchmaking Report</span></h1>
-          <p className="text-gray-300 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">Advanced compatibility now includes per-guna scoring, mangal details, and exception notes.</p>
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 text-center md:grid-cols-[1fr_auto] md:items-center md:px-8 md:text-left">
+          <div>
+            <span className="inline-block text-xs bg-[#D4A73C]/20 text-[#D4A73C] border border-[#D4A73C]/30 px-4 py-1.5 rounded-full font-bold tracking-widest uppercase mb-6 shadow-sm">Horoscope Milan</span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">Premium <span className="text-[#D4A73C]">Matchmaking Report</span></h1>
+            <p className="text-gray-300 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed md:mx-0">Advanced compatibility now includes per-guna scoring, mangal details, and exception notes.</p>
+          </div>
+          <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-white p-3 shadow-2xl md:h-36 md:w-36">
+            <img src={pageIcon} alt="" className="h-full w-full object-contain" />
+          </div>
         </div>
       </section>
 
@@ -345,7 +351,7 @@ export default function Matching() {
                 <div className="flex items-center gap-3 border-b-2 border-gray-100 pb-3 mb-6"><div className={`w-8 h-8 rounded-full ${section.accent} text-white flex items-center justify-center font-bold`}>{section.title.charAt(0)}</div><h3 className="text-xl font-bold text-[#1E3557]">{section.title}</h3></div>
                 <input required type="text" value={section.state.name} onChange={(e) => section.setState((prev) => ({ ...prev, name: e.target.value }))} placeholder={`Enter ${section.title.toLowerCase().replace(" details", "")}`} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input required type="date" value={section.state.dob} onChange={(e) => section.setState((prev) => ({ ...prev, dob: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl" />
+                  <input required type="date" value={section.state.dob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => section.setState((prev) => ({ ...prev, dob: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl" />
                   <input required type="time" value={section.state.time} onChange={(e) => section.setState((prev) => ({ ...prev, time: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl" />
                 </div>
                 <div className="relative">
@@ -550,38 +556,14 @@ export default function Matching() {
                 </section>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <a href="/kundli" className="rounded-md bg-[#1E3557] px-6 py-4 text-center font-black text-white transition hover:bg-[#162744]">
+                  <a href="/services/detailed-kundali" className="rounded-md bg-[#1E3557] px-6 py-4 text-center font-black text-white transition hover:bg-[#162744]">
                     See {boyDetails.name || "Boy"} Detailed Kundli
                   </a>
-                  <a href="/kundli" className="rounded-md bg-[#D4A73C] px-6 py-4 text-center font-black text-[#1E3557] transition hover:bg-[#c5982d]">
+                  <a href="/services/detailed-kundali" className="rounded-md bg-[#D4A73C] px-6 py-4 text-center font-black text-[#1E3557] transition hover:bg-[#c5982d]">
                     See {girlDetails.name || "Girl"} Detailed Kundli
                   </a>
                 </div>
 
-                <details className="rounded-sm border border-slate-200 bg-white">
-                  <summary className="cursor-pointer bg-slate-100 px-4 py-4 text-sm font-black text-slate-700">
-                    Additional API Details
-                  </summary>
-                  <div className="space-y-4 p-4">
-                    {(result?.provider_sections || []).map((section) => (
-                      <details key={section.id} className="rounded-sm border border-slate-200 bg-white">
-                        <summary className="cursor-pointer border-b border-slate-200 px-4 py-3 font-black text-[#1E3557]">
-                          {section.title}
-                        </summary>
-                        <div className="space-y-4 p-4">
-                          {Object.entries(section.items || {}).map(([key, item]) => (
-                            <details key={key} className="rounded-sm border border-slate-200 bg-white">
-                              <summary className="cursor-pointer bg-[#fff8df] px-4 py-3 text-sm font-bold text-[#7a5205]">{key}</summary>
-                              <div className="p-4">
-                                <ReportDataBlock title={key} data={item?.data ?? item} />
-                              </div>
-                            </details>
-                          ))}
-                        </div>
-                      </details>
-                    ))}
-                  </div>
-                </details>
               </main>
             </div>
           </div>

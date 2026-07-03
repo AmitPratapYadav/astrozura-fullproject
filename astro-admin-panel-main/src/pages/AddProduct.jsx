@@ -23,6 +23,7 @@ export default function AddProduct() {
     isTrending: false,
     status: true
   });
+  const [hindi, setHindi] = useState({ name: "", description: "", benefits: "" });
   const [image, setImage] = useState(null);
   const [optionNames, setOptionNames] = useState([]);
   const [variants, setVariants] = useState([]);
@@ -66,6 +67,7 @@ export default function AddProduct() {
     payload.append("status", formData.status ? 1 : 0);
     payload.append("option_names", JSON.stringify(optionNames));
     payload.append("variants", JSON.stringify(variants));
+    payload.append("translations", JSON.stringify({ hi: hindi }));
     if (image) {
       payload.append("image", image);
     }
@@ -147,6 +149,10 @@ export default function AddProduct() {
               onChange={(e) => setFormData({...formData, unit: e.target.value})}
             />
           </div>
+        </div>
+        <div className="rounded-xl border bg-gray-50 p-4">
+          <h2 className="mb-3 font-semibold">Hindi Content</h2>
+          <div className="grid gap-4 md:grid-cols-2"><input value={hindi.name} onChange={(e) => setHindi({ ...hindi, name: e.target.value })} placeholder="Product name in Hindi" className="rounded-lg border px-4 py-2" /><textarea value={hindi.description} onChange={(e) => setHindi({ ...hindi, description: e.target.value })} placeholder="Description in Hindi" className="rounded-lg border px-4 py-2" /><textarea value={hindi.benefits} onChange={(e) => setHindi({ ...hindi, benefits: e.target.value })} placeholder="Benefits in Hindi" className="rounded-lg border px-4 py-2 md:col-span-2" /></div>
         </div>
 
         <div>

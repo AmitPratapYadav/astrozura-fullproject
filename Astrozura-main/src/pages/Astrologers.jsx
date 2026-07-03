@@ -10,11 +10,15 @@ import img4 from "../assets/img4.png";
 import img6 from "../assets/imge6.png";
 import img7 from "../assets/img7.png";
 import avatar from "../assets/astrologer-avatar.jpg";
+import AstrologerStatusBadge from "../components/AstrologerStatusBadge";
+import { API_BASE_URL } from "../utils/apiBase";
+import { useTranslation } from "react-i18next";
 
 export default function Astrologers() {
 
 const location = useLocation();
 const navigate = useNavigate();
+const { i18n } = useTranslation();
 
 const [open, setOpen] = useState(null);
 const [language, setLanguage] = useState("Language");
@@ -41,20 +45,31 @@ useEffect(() => {
   }
 }, [location]);
 
+useEffect(() => {
+  const queryType = new URLSearchParams(location.search).get("type");
+  if (queryType === "call") {
+    setType("Call");
+  } else if (queryType === "chat") {
+    setType("Chat");
+  }
+}, [location.search]);
+
 const [astrologersList, setAstrologersList] = useState([]);
 const [loading, setLoading] = useState(true);
 
 useEffect(() => {
   const timeoutId = window.setTimeout(async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
       setSearching(true);
       const params = new URLSearchParams();
       if (search.trim()) params.set("q", search.trim());
-      const response = await fetch(`${apiUrl}/astrologers?${params.toString()}`);
+      if (type === "Chat" || type === "Call") params.set("type", type.toLowerCase());
+      params.set("la", i18n.language === "hi" ? "hi" : "en");
+      const response = await fetch(`${API_BASE_URL}/astrologers?${params.toString()}`);
       const data = await response.json();
-      if (data.success) {
-        setAstrologersList(data.astrologers);
+      const list = data.astrologers || data.data?.data || data.data || [];
+      if (Array.isArray(list)) {
+        setAstrologersList(list);
       }
     } catch (error) {
       console.error("Failed to fetch astrologers", error);
@@ -65,7 +80,7 @@ useEffect(() => {
   }, 250);
 
   return () => window.clearTimeout(timeoutId);
-}, [search]);
+}, [search, type, i18n.language]);
 
 useEffect(() => {
   setActivePage(1);
@@ -73,6 +88,7 @@ useEffect(() => {
 
 const featuredExpert = astrologersList.find(a => a.astrologer_detail?.is_featured) || astrologersList[0];
 const featuredDetails = featuredExpert?.astrologer_detail || {};
+const selectedConsultationType = type === "Call" ? "call" : "chat";
 const totalPages = Math.max(1, Math.ceil(astrologersList.length / pageSize));
 const currentPage = Math.min(activePage, totalPages);
 const paginatedAstrologers = astrologersList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -102,7 +118,7 @@ const hasRealRating = (details) => {
 const getImageUrl = (path) => {
   if (!path) return avatar;
   if (path.startsWith('http')) return path;
-  const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://astrozura.com';
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
@@ -114,7 +130,7 @@ const filters = [
 ];
 
 return (
-  <div className="bg-[#f8f9fa] min-h-screen flex flex-col font-sans">
+  <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#f8f9fa] font-sans">
 
     {/* Notification Toast */}
     {showMsg && (
@@ -236,10 +252,11 @@ return (
                 </button>
               </Link>
               <button
-                onClick={() => navigate(`/consultation/${featuredExpert.id}`, { state: { type: "chat", astrologer: featuredExpert } })}
-                className="bg-[#1E3557] text-white px-8 py-3.5 rounded-xl font-black text-sm hover:bg-[#162744] hover:shadow-xl hover:-translate-y-1 transition-all w-full sm:w-auto"
+                disabled={featuredExpert.availability_status === "unavailable"}
+                onClick={() => navigate(`/consultation/${featuredExpert.id}`, { state: { type: selectedConsultationType, astrologer: featuredExpert } })}
+                className="bg-[#1E3557] text-white px-8 py-3.5 rounded-xl font-black text-sm hover:bg-[#162744] hover:shadow-xl hover:-translate-y-1 transition-all w-full sm:w-auto disabled:cursor-not-allowed disabled:bg-red-600 disabled:hover:translate-y-0"
               >
-                Book a Session
+                {featuredExpert.availability_status === "unavailable" ? "Unavailable" : "Book a Session"}
               </button>
             </div>
           </div>
@@ -255,25 +272,29 @@ return (
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {paginatedAstrologers.map((astro) => {
             const details = astro.astrologer_detail || {};
+            const unavailable = astro.availability_status === "unavailable";
 
             return (
-              <div key={astro.id} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:-translate-y-1 transition duration-300 flex flex-col">
+              <div key={astro.id} className="flex min-w-0 max-w-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 transition duration-300 hover:-translate-y-1 hover:shadow-md sm:p-5">
 
-                <div className="flex items-center gap-4 mb-5">
+                <div className="mb-5 flex min-w-0 flex-wrap items-start gap-3">
                   <img src={getImageUrl(details.profile_image)} className="w-14 h-14 rounded-2xl object-cover shadow-sm flex-shrink-0" alt={astro.name} />
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-[#1E3557] text-base truncate">{astro.name}</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">{details.experience_years || 0} Exp | {details.languages || 'N/A'}</p>
+                    <p className="mt-0.5 break-words text-xs text-gray-500">{details.experience_years || 0} Exp | {details.languages || 'N/A'}</p>
                     <span className="inline-block text-[10px] font-semibold text-[#D4A73C] bg-[#FFF8ED] border border-[#F3E7D3] px-2 py-0.5 rounded-md mt-1 truncate max-w-full">
                       {details.specialities || 'Astrology'}
                     </span>
+                    <div className="mt-2">
+                      <AstrologerStatusBadge status={astro.availability_status} />
+                    </div>
                   </div>
 
-                  <div className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold flex-shrink-0 ${hasRealRating(details) ? "bg-[#1E3557] text-white" : "bg-gray-100 text-gray-500"}`}>
+                  <div className={`max-w-full flex-shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${hasRealRating(details) ? "bg-[#1E3557] text-white" : "bg-gray-100 text-gray-500"}`}>
                     {hasRealRating(details) ? (
                       <span className="flex items-center gap-1">
                         <FaStar className="text-[#D4A73C] text-xs" />
@@ -298,17 +319,18 @@ return (
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-4">
+                <div className="mt-4 grid grid-cols-2 gap-3">
                   <Link to={`/profile/${astro.id}`} state={{ msg: "Viewing Profile..." }} onClick={() => handleClick("Viewing Profile...")} className="flex-1">
                     <button className="w-full border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-[#1E3557] hover:text-[#1E3557] transition">
                       View Profile
                     </button>
                   </Link>
                   <button
-                    onClick={() => navigate(`/consultation/${astro.id}`, { state: { type: "chat", astrologer: astro } })}
-                    className="flex-1 bg-[#1E3557] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[#162744] hover:shadow-md transition"
+                    disabled={unavailable}
+                    onClick={() => navigate(`/consultation/${astro.id}`, { state: { type: selectedConsultationType, astrologer: astro } })}
+                    className="flex-1 bg-[#1E3557] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[#162744] hover:shadow-md transition disabled:cursor-not-allowed disabled:bg-red-600"
                   >
-                    Book Now
+                    {unavailable ? "Unavailable" : "Book Now"}
                   </button>
                 </div>
 

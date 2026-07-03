@@ -108,6 +108,21 @@ export const getPanchang = async (datetime, coordinates, ayanamsa = 1, options =
   }
 };
 
+export const getPanchangExtras = async (datetime, coordinates, ayanamsa = 1, options = {}) => {
+  try {
+    const response = await api.post(`/prokerala/panchang/extras`, {
+      datetime,
+      coordinates,
+      ayanamsa,
+      ...options,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching panchang extras:", error);
+    throw error;
+  }
+};
+
 export const downloadFreeKundliPdf = async (payload) => {
   try {
     const response = await api.post('/prokerala/kundli/free-pdf', payload, {

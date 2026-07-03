@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import api from "../../api/axios";
 import { searchLocation } from "../../api/prokeralaApi";
 import { useAuth } from "../../context/AuthContext";
+import { assetUrl } from "../../utils/assetUrl";
+import UserDashboardSidebar from "../../components/UserDashboardSidebar";
 
 const emptyForm = {
   name: "",
@@ -18,15 +19,34 @@ const emptyForm = {
   longitude: "",
 };
 
+const normalizeProfileDate = (value = "") => {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+};
+
+const normalizeProfileTime = (value = "") => {
+  if (!value) return "";
+  return String(value).slice(0, 5);
+};
+
+const appendIfPresent = (payload, key, value) => {
+  const normalized = typeof value === "string" ? value.trim() : value;
+  if (normalized !== "" && normalized !== null && normalized !== undefined) {
+    payload.append(key, normalized);
+  }
+};
+
 export default function UserProfile() {
   const { user, setUser } = useAuth();
-  const location = useLocation();
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [locationResults, setLocationResults] = useState([]);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [profileFile, setProfileFile] = useState(null);
+  const [profilePreview, setProfilePreview] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     if (!user) {
@@ -38,12 +58,13 @@ export default function UserProfile() {
       email: user.email || "",
       phone: user.phone || "",
       gender: user.gender || "Male",
-      date_of_birth: user.date_of_birth || "",
-      time_of_birth: user.time_of_birth || "",
+      date_of_birth: normalizeProfileDate(user.date_of_birth),
+      time_of_birth: normalizeProfileTime(user.time_of_birth),
       place_of_birth: user.place_of_birth || "",
       latitude: user.latitude ?? "",
       longitude: user.longitude ?? "",
     });
+    setProfilePreview(assetUrl(user.profile_image));
   }, [user]);
 
   const setFeedback = (text, type = "success") => {
@@ -55,17 +76,21 @@ export default function UserProfile() {
     }, 3500);
   };
 
-  const getTabClass = (path) => {
-    return location.pathname === path
-      ? "bg-gradient-to-r from-[#1E3557] to-[#2c4b7c] text-white shadow-md border-l-4 border-[#D4A73C]"
-      : "bg-transparent text-gray-600 hover:bg-gray-50 hover:text-[#1E3557] border-l-4 border-transparent";
-  };
-
   const updateField = (field, value) => {
     setForm((prev) => ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleProfileImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setProfileFile(file);
+    setProfilePreview((current) => {
+      if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+      return URL.createObjectURL(file);
+    });
   };
 
   const handleLocationChange = async (event) => {
@@ -115,17 +140,19 @@ export default function UserProfile() {
 
     try {
       setSaving(true);
-      const payload = {
-        name: form.name.trim(),
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
-        gender: form.gender || null,
-        date_of_birth: form.date_of_birth || null,
-        time_of_birth: form.time_of_birth || null,
-        place_of_birth: form.place_of_birth.trim() || null,
-        latitude: form.latitude === "" ? null : Number(form.latitude),
-        longitude: form.longitude === "" ? null : Number(form.longitude),
-      };
+      const payload = new FormData();
+      payload.append("name", form.name.trim());
+      appendIfPresent(payload, "email", form.email);
+      appendIfPresent(payload, "phone", form.phone);
+      appendIfPresent(payload, "gender", form.gender);
+      appendIfPresent(payload, "date_of_birth", normalizeProfileDate(form.date_of_birth));
+      appendIfPresent(payload, "time_of_birth", normalizeProfileTime(form.time_of_birth));
+      appendIfPresent(payload, "place_of_birth", form.place_of_birth);
+      appendIfPresent(payload, "latitude", form.latitude === "" ? "" : String(form.latitude));
+      appendIfPresent(payload, "longitude", form.longitude === "" ? "" : String(form.longitude));
+      if (profileFile) {
+        payload.append("profile_image", profileFile);
+      }
 
       const response = await api.post("/dashboard/profile/update", payload);
       const updatedUser = response?.data?.data;
@@ -133,6 +160,8 @@ export default function UserProfile() {
       if (response?.data?.status === "success" && updatedUser) {
         setUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
+        setProfileFile(null);
+        setProfilePreview(assetUrl(updatedUser.profile_image));
         setFeedback("Profile updated successfully.");
         return;
       }
@@ -161,34 +190,7 @@ export default function UserProfile() {
       <Navbar />
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-8">
-        <aside className="w-full lg:w-[280px] flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
-            <div className="relative pt-8 pb-6 px-6 text-center">
-              <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-[#1E3557] to-[#0D1B3E] opacity-90 rounded-b-3xl"></div>
-
-              <div className="relative w-20 h-20 mx-auto bg-gradient-to-br from-[#D4A73C] to-[#b88c29] text-white text-3xl font-bold rounded-2xl flex items-center justify-center shadow-lg border-4 border-white rotate-3 hover:rotate-0 transition-transform duration-300">
-                <span className="-rotate-3">{user?.name ? user.name.charAt(0).toUpperCase() : "U"}</span>
-              </div>
-
-              <div className="mt-4">
-                <h3 className="font-bold text-[#1E3557] text-lg">{user?.name || "Celestial User"}</h3>
-                <p className="text-xs font-medium text-gray-500 mt-0.5">{user?.email || user?.phone || "Free Member"}</p>
-              </div>
-            </div>
-
-            <nav className="flex flex-col p-3 space-y-1 bg-white">
-              <Link to="/dashboard" className={`px-5 py-3.5 rounded-xl transition-all duration-200 font-medium text-sm ${getTabClass("/dashboard")}`}>
-                Dashboard Overview
-              </Link>
-              <Link to="/user-profile" className={`px-5 py-3.5 rounded-xl transition-all duration-200 font-medium text-sm ${getTabClass("/user-profile")}`}>
-                My Profile
-              </Link>
-              <Link to="/my-bookings" className={`px-5 py-3.5 rounded-xl transition-all duration-200 font-medium text-sm ${getTabClass("/my-bookings")}`}>
-                My Bookings
-              </Link>
-            </nav>
-          </div>
-        </aside>
+        <UserDashboardSidebar />
 
         <main className="flex-1 flex flex-col gap-6">
           <div className="flex justify-between items-end mb-2">
@@ -207,6 +209,28 @@ export default function UserProfile() {
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+              <div className="md:col-span-2 rounded-2xl border border-dashed border-[#D4A73C]/40 bg-[#FFF9EA] p-5">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-white text-3xl font-black text-[#1E3557] shadow-sm ring-1 ring-[#F0E1C4]">
+                    {profilePreview ? (
+                      <img src={profilePreview} alt={form.name || "User"} className="h-full w-full object-cover" />
+                    ) : (
+                      form.name?.charAt(0)?.toUpperCase() || "U"
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold uppercase tracking-wide text-gray-600">Profile Picture</label>
+                    <p className="mt-1 text-sm text-gray-500">Upload a clear JPG, PNG, GIF, or WebP image up to 4 MB.</p>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                      onChange={handleProfileImageChange}
+                      className="mt-4 block w-full text-sm text-[#1E3557] file:mr-4 file:rounded-xl file:border-0 file:bg-[#1E3557] file:px-5 file:py-2.5 file:text-sm file:font-bold file:text-white hover:file:bg-[#162744]"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold tracking-wide text-gray-600 uppercase mb-2">Full Name</label>
                 <input
@@ -258,6 +282,7 @@ export default function UserProfile() {
                 <input
                   type="date"
                   value={form.date_of_birth}
+                  max={today}
                   onChange={(event) => updateField("date_of_birth", event.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-[#1E3557] focus:bg-white focus:border-[#D4A73C] focus:ring-2 focus:ring-[#D4A73C]/20 outline-none transition-all"
                 />

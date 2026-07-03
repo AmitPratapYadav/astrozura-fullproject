@@ -12,6 +12,10 @@ import icon4 from "../assets/icon4.png";
 import heart from "../assets/heart.png";
 import plus from "../assets/plus.png";
 import minus from "../assets/minus.png";
+import CatalogImage from "../components/CatalogImage";
+import { assetUrl } from "../utils/assetUrl";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 const splitDetails = (value) =>
   String(value || "")
@@ -29,9 +33,15 @@ export default function ProductPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [inWishlist, setInWishlist] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0 });
+  const [canReview, setCanReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", comment: "" });
+  const [reviewMessage, setReviewMessage] = useState("");
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -55,6 +65,65 @@ export default function ProductPage() {
     fetchProduct();
   }, [id, baseUrl, searchParams]);
 
+  useEffect(() => {
+    if (!user) {
+      setInWishlist(false);
+      return;
+    }
+    api.get("/dashboard/wishlist")
+      .then((response) => setInWishlist((response.data?.data || []).some((item) => String(item.id) === String(id))))
+      .catch(() => setInWishlist(false));
+  }, [id, user]);
+
+  const loadReviews = async () => {
+    const response = await axios.get(`${baseUrl}/ecomm/products/${id}/reviews`);
+    setReviews(response.data?.data?.data || []);
+    setReviewSummary(response.data?.summary || { average: 0, count: 0 });
+  };
+
+  useEffect(() => {
+    void loadReviews();
+  }, [id, baseUrl]);
+
+  useEffect(() => {
+    if (!user) {
+      setCanReview(false);
+      return;
+    }
+    api.get(`/ecomm/products/${id}/review-eligibility`)
+      .then((response) => {
+        setCanReview(Boolean(response.data?.can_review));
+        if (response.data?.review) {
+          setReviewForm({
+            rating: response.data.review.rating,
+            title: response.data.review.title || "",
+            comment: response.data.review.comment || "",
+          });
+        }
+      })
+      .catch(() => setCanReview(false));
+  }, [id, user]);
+
+  const toggleWishlist = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    const response = await api.post("/dashboard/wishlist/toggle", { product_id: Number(id) });
+    setInWishlist(Boolean(response.data?.in_wishlist));
+  };
+
+  const submitReview = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post(`/ecomm/products/${id}/reviews`, reviewForm);
+      setReviewMessage("Your review has been saved.");
+      await loadReviews();
+    } catch (error) {
+      setReviewMessage(error.response?.data?.message || "Review could not be saved.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -71,17 +140,9 @@ export default function ProductPage() {
     );
   }
 
-  const productImage = product.image
-    ? product.image.startsWith("http://") || product.image.startsWith("https://")
-      ? product.image
-      : `${backendUrl}${product.image.startsWith("/") ? "" : "/"}${product.image}`
-    : "https://placehold.co/400x400?text=No+Image";
+  const productImage = assetUrl(product.image);
   const selectedVariant = product.active_variants?.find((variant) => String(variant.id) === selectedVariantId);
-  const selectedImage = selectedVariant?.image
-    ? selectedVariant.image.startsWith("http")
-      ? selectedVariant.image
-      : `${backendUrl}${selectedVariant.image.startsWith("/") ? "" : "/"}${selectedVariant.image}`
-    : productImage;
+  const selectedImage = assetUrl(selectedVariant?.image, productImage);
   const selectedPrice = selectedVariant?.price ?? product.price;
   const isOutOfStock = selectedVariant ? Number(selectedVariant.stock_quantity) < 1 : false;
 
@@ -113,15 +174,21 @@ export default function ProductPage() {
               {/* LEFT: IMAGE AREA */}
               <div className="space-y-4">
                 <div className="aspect-[4/5] md:aspect-square bg-[#f8f8fa] rounded-2xl sm:rounded-[2rem] overflow-hidden relative group border border-gray-50">
-                  <img
+                  <CatalogImage
                     src={selectedImage}
                     className="w-full h-full object-contain p-8 md:p-12 group-hover:scale-110 transition-transform duration-700"
                     alt={product.name}
                   />
 
                   <div className="absolute top-6 right-6 flex flex-col gap-3 transform translate-x-12 group-hover:translate-x-0 transition-transform duration-500">
-                    <button className="bg-white p-3 rounded-2xl shadow-xl shadow-black/5 text-gray-400 hover:text-red-500 transition-all active:scale-95">
-                      <img src={heart} className="w-5 h-5" alt="Favorite" />
+                    <button
+                      type="button"
+                      onClick={() => void toggleWishlist()}
+                      className={`bg-white p-3 rounded-2xl shadow-xl shadow-black/5 transition-all active:scale-95 ${
+                        inWishlist ? "ring-2 ring-red-400" : ""
+                      }`}
+                    >
+                      <img src={heart} className={`w-5 h-5 ${inWishlist ? "opacity-100" : "opacity-50"}`} alt="Favorite" />
                     </button>
                     <button className="bg-white p-3 rounded-2xl shadow-xl shadow-black/5 text-gray-400 hover:text-[#184070] transition-all active:scale-95">
                       <img src={icon2} className="w-5 h-5" alt="Share" />
@@ -151,11 +218,11 @@ export default function ProductPage() {
                   <div className="flex items-center gap-4 py-4 border-y border-gray-50 mb-6">
                     <div className="flex items-center gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <img key={i} src={icon4} className="w-3.5 h-3.5" alt="Star" />
+                        <img key={i} src={icon4} className={`h-3.5 w-3.5 ${i < Math.round(reviewSummary.average) ? "opacity-100" : "opacity-20"}`} alt="" />
                       ))}
                     </div>
                     <span className="text-xs font-bold text-gray-400 border-l pl-4 tracking-widest uppercase">
-                      4.9 (128 Reviews)
+                      {reviewSummary.count ? `${Number(reviewSummary.average).toFixed(1)} (${reviewSummary.count} Reviews)` : "Not Rated Yet"}
                     </span>
                   </div>
 
@@ -386,6 +453,30 @@ export default function ProductPage() {
           </div>
         </div>
 
+        <section className="mx-auto mb-16 max-w-6xl px-4">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div><p className="text-xs font-bold uppercase tracking-widest text-[#D4A73C]">Verified Customers</p><h2 className="mt-1 text-2xl font-black text-[#1E3557]">Ratings & Reviews</h2></div>
+              <p className="font-bold text-[#1E3557]">{reviewSummary.count ? `${reviewSummary.average} / 5 · ${reviewSummary.count} reviews` : "Not Rated Yet"}</p>
+            </div>
+
+            {canReview && (
+              <form onSubmit={submitReview} className="mt-6 grid gap-3 rounded-xl bg-[#f8f9fa] p-4">
+                <div className="flex gap-2" aria-label="Rating">{[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" onClick={() => setReviewForm({ ...reviewForm, rating })} className={`text-2xl ${rating <= reviewForm.rating ? "text-[#D4A73C]" : "text-gray-300"}`}>★</button>)}</div>
+                <input value={reviewForm.title} onChange={(event) => setReviewForm({ ...reviewForm, title: event.target.value })} placeholder="Review title" className="rounded-lg border bg-white p-3" />
+                <textarea value={reviewForm.comment} onChange={(event) => setReviewForm({ ...reviewForm, comment: event.target.value })} rows="4" placeholder="Share your experience" className="rounded-lg border bg-white p-3" />
+                <button className="w-fit rounded-lg bg-[#1E3557] px-5 py-2.5 text-sm font-bold text-white">Save Review</button>
+                {reviewMessage && <p className="text-sm text-gray-600">{reviewMessage}</p>}
+              </form>
+            )}
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {reviews.map((review) => <article key={review.id} className="rounded-xl border border-gray-100 p-4"><div className="flex items-center justify-between gap-3"><p className="font-bold text-[#1E3557]">{review.user?.name || "Verified Customer"}</p><span className="text-[#D4A73C]">{"★".repeat(review.rating)}<span className="text-gray-200">{"★".repeat(5 - review.rating)}</span></span></div>{review.title && <h3 className="mt-3 font-semibold">{review.title}</h3>}{review.comment && <p className="mt-2 text-sm leading-6 text-gray-600">{review.comment}</p>}<p className="mt-3 text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p></article>)}
+              {!reviews.length && <p className="text-sm text-gray-500">No customer reviews have been submitted yet.</p>}
+            </div>
+          </div>
+        </section>
+
         {/* CONSULT BANNER */}
         <div className="max-w-6xl mx-auto px-4 mb-20">
           <div className="bg-[#f2f2f7] rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-12 relative overflow-hidden border border-white">
@@ -409,9 +500,9 @@ export default function ProductPage() {
                    ))}
                  </div>
                  <div className="text-xs font-bold text-[#184070]/60 uppercase tracking-widest">50+ Expert Astrologers</div>
-                 <button className="bg-[#184070] text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#23205b] hover:translate-y-[-2px] transition-all shadow-xl shadow-[#184070]/20">
+                 <a href="https://astrozura.com/astrologers" className="bg-[#184070] text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#23205b] hover:translate-y-[-2px] transition-all shadow-xl shadow-[#184070]/20">
                     Book Consult
-                 </button>
+                 </a>
               </div>
             </div>
 

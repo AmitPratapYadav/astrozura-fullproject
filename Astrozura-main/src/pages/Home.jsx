@@ -1,4 +1,5 @@
 import Navbar from "../components/Navbar"
+import FeaturedAstrologerSection from "../components/FeaturedAstrologerSection"
 import HeroServices from "../components/HeroServices"
 import Premium from "../components/Premium"
 import MainSections from "../components/MainSections"
@@ -11,6 +12,8 @@ return(
 <div>
 
 <Navbar/>
+
+<FeaturedAstrologerSection/>
 
 <HeroServices/>
 

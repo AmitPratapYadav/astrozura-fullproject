@@ -4,6 +4,10 @@ import Footer from "../components/Footer";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useCart } from "../context/CartContext";
+import CatalogImage from "../components/CatalogImage";
+import { assetUrl } from "../utils/assetUrl";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function ShopLayout() {
   const [price, setPrice] = useState(150);
@@ -17,6 +21,8 @@ export default function ShopLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [wishlistIds, setWishlistIds] = useState(new Set());
 
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
@@ -42,6 +48,29 @@ export default function ShopLayout() {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setWishlistIds(new Set());
+      return;
+    }
+    api.get("/dashboard/wishlist")
+      .then((response) => setWishlistIds(new Set((response.data?.data || []).map((item) => item.id))))
+      .catch(() => setWishlistIds(new Set()));
+  }, [user]);
+
+  const toggleWishlist = async (productId) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    const response = await api.post("/dashboard/wishlist/toggle", { product_id: productId });
+    setWishlistIds((current) => {
+      const next = new Set(current);
+      response.data?.in_wishlist ? next.add(productId) : next.delete(productId);
+      return next;
+    });
+  };
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const catId = params.get("category");
     if (catId) {
@@ -55,7 +84,7 @@ export default function ShopLayout() {
     try {
       setLoading(true);
       // VITE_API_BASE_URL already contains /api, so we don't add it again
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
       
       const [catRes, prodRes] = await Promise.all([
         axios.get(`${baseUrl}/ecomm/categories`),
@@ -83,10 +112,7 @@ export default function ShopLayout() {
   }, [msg]);
 
   const getImage = (img) => {
-    if (!img) return "https://placehold.co/400x400?text=No+Image";
-    if (img.startsWith("http")) return img;
-    const host = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
-    return `${host}/${img}`;
+    return assetUrl(img);
   };
 
   return (
@@ -299,13 +325,20 @@ export default function ShopLayout() {
                         className="group bg-white rounded-2xl border border-gray-100 hover:border-[#184070]/20 hover:shadow-xl hover:shadow-[#184070]/5 transition-all duration-300 flex flex-col overflow-hidden"
                       >
                         <div className="relative w-full aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
-                          <img
-                            src={getImage(product.image)}
+                          <CatalogImage
+                            src={product.image}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             alt={product.name}
                           />
                           <div className="absolute top-2 right-2 flex flex-col gap-2 transform translate-x-12 group-hover:translate-x-0 transition-transform duration-300">
-                            <button className="p-2 bg-white rounded-full shadow-md text-gray-400 hover:text-red-500 transition">
+                            <button
+                              type="button"
+                              onClick={() => void toggleWishlist(product.id)}
+                              aria-label={wishlistIds.has(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                              className={`p-2 bg-white rounded-full shadow-md transition ${
+                                wishlistIds.has(product.id) ? "text-red-500" : "text-gray-400 hover:text-red-500"
+                              }`}
+                            >
                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
                               </svg>
@@ -327,9 +360,9 @@ export default function ShopLayout() {
 
                           <div className="flex items-center gap-1 mt-2 mb-4">
                             {[...Array(5)].map((_, idx) => (
-                              <img key={idx} src={icon4} className="w-3 h-3 grayscale opacity-30" alt="star" />
+                              <img key={idx} src={icon4} className={`h-3 w-3 ${idx < Math.round(Number(product.reviews_avg_rating || 0)) ? "" : "grayscale opacity-30"}`} alt="" />
                             ))}
-                            <span className="text-[10px] text-gray-400 font-medium ml-1">(0)</span>
+                            <span className="ml-1 text-[10px] font-medium text-gray-400">{product.reviews_count ? `(${product.reviews_count})` : "Not Rated Yet"}</span>
                           </div>
 
                           <div className="mt-auto flex items-center justify-between gap-2 pt-4 border-t border-gray-50">

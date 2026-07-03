@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getAstrologerBookings, markBookingCompleted } from "../../api/bookingApi";
+import api from "../../api/axios";
+import { assetUrl } from "../../utils/assetUrl";
 
 const formatSchedule = (value) =>
   value
@@ -48,7 +50,7 @@ function resolveImageUrl(baseUrl, path) {
 function ProfileManagementForm({ user }) {
   const { setUser } = useAuth();
   const nameParts = getNameParts(user?.name);
-  const backendBaseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const backendBaseUrl = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
   const astrologerDetail = user?.astrologer_detail || user?.astrologerDetail || {};
 
   const [formData, setFormData] = useState({
@@ -117,7 +119,7 @@ function ProfileManagementForm({ user }) {
         payload.append(key, value ?? "");
       });
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"}/astrologer/profile/update`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api"}/astrologer/profile/update`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -267,7 +269,7 @@ function ProfileManagementForm({ user }) {
 }
 
 export default function AstrologerDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
   const astrologerDetail = user?.astrologer_detail || user?.astrologerDetail || {};
   const canHostLive = Boolean(user?.role === "astrologer" && astrologerDetail?.is_featured);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -284,6 +286,8 @@ export default function AstrologerDashboard() {
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [actionBookingId, setActionBookingId] = useState(null);
   const [banner, setBanner] = useState("");
+  const [availabilitySaving, setAvailabilitySaving] = useState(false);
+  const profileImage = assetUrl(user?.profile_image || astrologerDetail?.profile_image);
 
   if (!user || user.role !== "astrologer") {
     return (
@@ -365,6 +369,23 @@ export default function AstrologerDashboard() {
     }
   };
 
+  const toggleAvailability = async () => {
+    try {
+      setAvailabilitySaving(true);
+      const response = await api.post("/astrologer/availability", {
+        is_online: !Boolean(astrologerDetail?.is_online),
+      });
+      if (response.data?.user) {
+        setUser(response.data.user);
+        setBanner(response.data.message || "Availability updated.");
+      }
+    } catch (error) {
+      setBanner(error?.response?.data?.message || "Availability could not be updated.");
+    } finally {
+      setAvailabilitySaving(false);
+    }
+  };
+
   const renderBookingCard = (booking, allowComplete = false) => (
     <div key={booking.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -415,28 +436,12 @@ export default function AstrologerDashboard() {
 
       {(allowComplete || !["completed", "cancelled", "declined"].includes(booking.status)) && (
         <div className="mt-5 flex flex-wrap justify-end gap-3">
-          <a
-            href="/kundli"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
-          >
-            Kundali Report
-          </a>
-          <a
-            href="/matching"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
-          >
-            Matchmaking
-          </a>
           {!["completed", "cancelled", "declined"].includes(booking.status) && (
             <Link
               to={`/session/${booking.id}`}
               className="rounded-xl border border-[#1E3557] px-5 py-2.5 text-sm font-semibold text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white"
             >
-              {booking.consultation_type === "call" ? "Open Consultation Room" : "Open Chat Session"}
+              {booking.consultation_type === "call" ? "Open Consultation Room" : "Open Chat Session & Kundali"}
             </Link>
           )}
           <button
@@ -461,13 +466,33 @@ export default function AstrologerDashboard() {
             <div className="relative pt-8 pb-6 px-6 text-center border-b border-gray-100">
               <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-[#1E3557] to-[#0D1B3E] opacity-90 rounded-b-3xl"></div>
 
-              <div className="relative w-20 h-20 mx-auto bg-gradient-to-br from-[#D4A73C] to-[#b88c29] text-white text-3xl font-bold rounded-2xl flex items-center justify-center shadow-lg border-4 border-white rotate-3 hover:rotate-0 transition-transform duration-300">
-                <span className="-rotate-3">{user.name.charAt(0).toUpperCase()}</span>
+              <div className="relative mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-[#D4A73C] text-3xl font-bold text-white shadow-lg">
+                {profileImage ? (
+                  <img src={profileImage} alt={user.name} className="h-full w-full object-cover" />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
               </div>
 
               <div className="mt-4">
                 <h3 className="font-bold text-[#1E3557] text-lg">{user.name}</h3>
                 <p className="text-[11px] font-bold tracking-wider uppercase text-[#D4A73C] mt-1">Certified Astrologer</p>
+                <button
+                  type="button"
+                  onClick={() => void toggleAvailability()}
+                  disabled={availabilitySaving}
+                  className={`mt-3 rounded-full px-4 py-2 text-xs font-bold ${
+                    astrologerDetail?.is_online
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-red-100 text-red-700"
+                  } disabled:opacity-60`}
+                >
+                  {availabilitySaving
+                    ? "Updating..."
+                    : astrologerDetail?.is_online
+                      ? "Online - Go Offline"
+                      : "Unavailable - Go Online"}
+                </button>
               </div>
             </div>
 

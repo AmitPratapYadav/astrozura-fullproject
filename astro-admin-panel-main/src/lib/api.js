@@ -1,5 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-const APP_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
+const APP_BASE = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 
 export async function apiRequest(path, options = {}) {
   const {
@@ -27,10 +27,27 @@ export async function apiRequest(path, options = {}) {
   }
 
   const response = await fetch(`${API_BASE}${path}`, config);
-  const data = await response.json();
+  const rawText = await response.text();
+  let data = null;
+
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = {
+        message: rawText
+          .replace(/<script[\s\S]*?<\/script>/gi, " ")
+          .replace(/<style[\s\S]*?<\/style>/gi, " ")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 240),
+      };
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(data?.message || "Request failed.");
+    throw new Error(data?.message || `Request failed with status ${response.status}.`);
   }
 
   return data;

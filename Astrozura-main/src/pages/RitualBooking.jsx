@@ -3,12 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { createRitualBooking } from "../api/bookingApi";
+import { ensureRazorpayConfigured, payWithRazorpay } from "../api/paymentApi";
 import poojaRitual from "../assets/pooja ritual.png";
 import bhagwat from "../assets/bhagwat.png";
 import lamp from "../assets/lamp.png";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 const ritualFallbacks = [poojaRitual, bhagwat, lamp];
 
 const getImageUrl = (path, fallback) => {
@@ -164,12 +165,21 @@ export default function RitualBooking() {
       setSubmitting(true);
       setMessage("");
 
+      await ensureRazorpayConfigured();
       const response = await createRitualBooking(ritual.id, form);
 
       if (response?.success) {
+        await payWithRazorpay({
+          purpose: "ritual",
+          recordId: response.booking.id,
+          name: form.devotee_name,
+          email: form.devotee_email,
+          contact: form.devotee_phone,
+          description: ritual.name,
+        });
         navigate("/my-bookings", {
           state: {
-            message: `Ritual booking ${response.booking.booking_reference} submitted successfully.`,
+            message: `Ritual booking ${response.booking.booking_reference} paid and submitted successfully.`,
           },
         });
       }
@@ -402,6 +412,7 @@ export default function RitualBooking() {
                   type="date"
                   name="birth_details.date_of_birth"
                   value={form.birth_details.date_of_birth}
+                  max={new Date().toISOString().slice(0, 10)}
                   onChange={handleChange}
                   className="w-full rounded-2xl border border-[#eadac2] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                 />

@@ -35,6 +35,25 @@ Thumbs.db
 login_api.zip
 deploy/*.zip
 deploy/*.tgz
+deploy/mobile_builds/
 AstrologyAPI_Endpoint_Audit_2026-05-13.xlsx
 .gitignore
 api_pdf_extract.txt
+
+# Flutter mobile generated and local-only files
+astrozura_mobile/.dart_tool/
+astrozura_mobile/build/
+astrozura_mobile/.flutter-plugins
+astrozura_mobile/.flutter-plugins-dependencies
+astrozura_mobile/android/local.properties
+astrozura_mobile/android/key.properties
+astrozura_mobile/android/.gradle/
+astrozura_mobile/android/.kotlin/
+astrozura_mobile/android/app/.cxx/
+astrozura_mobile/android/**/*.jks
+astrozura_mobile/android/**/*.keystore
+astrozura_mobile/ios/Pods/
+astrozura_mobile/ios/Flutter/Generated.xcconfig
+astrozura_mobile/ios/Flutter/flutter_export_environment.sh
+astrozura_mobile/macos/Pods/
+astrozura_mobile/**/ephemeral/

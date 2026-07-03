@@ -29,6 +29,7 @@ class RitualService extends Model
         'materials',
         'faqs',
         'mantras',
+        'translations',
         'assigned_astrologer_id',
     ];
 
@@ -40,6 +41,7 @@ class RitualService extends Model
         'materials' => 'array',
         'faqs' => 'array',
         'mantras' => 'array',
+        'translations' => 'array',
     ];
 
     public function assignedAstrologer()

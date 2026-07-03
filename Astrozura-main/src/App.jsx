@@ -12,7 +12,6 @@ import Rituals from "./pages/Rituals";
 import RitualDetail from "./pages/RitualDetail";
 import RitualBooking from "./pages/RitualBooking";
 import Matching from "./pages/Matching";
-import Kundli from "./pages/Kundli";
 import Numerology from "./pages/Numerology";
 import Rashifal from "./pages/Rashifal";
 import Panchang from "./pages/Panchang";
@@ -29,6 +28,8 @@ import AboutUs from "./pages/AboutUs";
 import ContactSupport from "./pages/ContactSupport";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+import Blogs from "./pages/Blogs";
+import BlogDetail from "./pages/BlogDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import OAuthCallback from "./pages/OAuthCallback";
@@ -38,11 +39,11 @@ import AstrologerDashboard from "./pages/astrologer/Dashboard";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserProfile from "./pages/user/UserProfile";
 import MyBookings from "./pages/user/MyBookings";
+import UserNotifications from "./pages/user/Notifications";
 import { AuthProvider } from "./context/AuthContext";
 import { PushNotificationsProvider } from "./context/PushNotificationsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
-import TestingAccessGate from "./components/TestingAccessGate";
 
 const ChatPage = lazy(() => import("./pages/ChatPage"));
 const LiveSessions = lazy(() => import("./pages/LiveSessions"));
@@ -55,12 +56,11 @@ const RouteLoader = () => (
 
 function App() {
   return (
-    <TestingAccessGate>
-      <AuthProvider>
-        <PushNotificationsProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <Suspense fallback={<RouteLoader />}>
+    <AuthProvider>
+      <PushNotificationsProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <Suspense fallback={<RouteLoader />}>
           <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -90,7 +90,6 @@ function App() {
           <Route path="/matching-calculators" element={<MatchingCalculators />} />
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/matching" element={<Matching />} />
-          <Route path="/kundli" element={<Kundli />} />
           <Route path="/detailed-numerology" element={<Numerology />} />
           <Route path="/numerology" element={<Numerology />} />
           <Route path="/rashifal" element={<Rashifal />} />
@@ -99,6 +98,8 @@ function App() {
           <Route path="/contact-support" element={<ContactSupport />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-and-conditions" element={<TermsConditions />} />
+          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs/:slug" element={<BlogDetail />} />
           <Route path="/live" element={<LiveSessions />} />
 
           {/* Astrologer Routes */}
@@ -127,6 +128,11 @@ function App() {
               <MyBookings />
             </ProtectedRoute>
           } />
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <UserNotifications />
+            </ProtectedRoute>
+          } />
           <Route path="/consultation/:astrologerId" element={
             <ProtectedRoute>
               <ConsultationPage />
@@ -153,11 +159,10 @@ function App() {
             </ProtectedRoute>
           } />
           </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </PushNotificationsProvider>
-      </AuthProvider>
-    </TestingAccessGate>
+          </Suspense>
+        </BrowserRouter>
+      </PushNotificationsProvider>
+    </AuthProvider>
   );
 }
 

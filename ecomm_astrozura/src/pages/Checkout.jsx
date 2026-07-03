@@ -4,19 +4,22 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
+import { ensureRazorpayConfigured, payForOrder } from "../api/paymentApi";
 import locationIcon from "../assets/location.png";
 import cardIcon from "../assets/carti.png";
 import upiIcon from "../assets/upi.png";
 import deliveryIcon from "../assets/delivery.png";
 import arrow from "../assets/right-arrow.png";
 import secure from "../assets/verified.png";
+import { useShippingQuote } from "../hooks/useShippingQuote";
 
 export default function CheckoutPage() {
-  const [method, setMethod] = useState("card");
+  const [method, setMethod] = useState("razorpay");
   const { cartItems, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState([]);
 
   // Location Search State
   const [showLocationList, setShowLocationList] = useState(false);
@@ -44,8 +47,35 @@ export default function CheckoutPage() {
     phone: user?.phone || "",
     address: "",
     city: "",
+    state: "",
     zip: "",
   });
+
+  useEffect(() => {
+    if (!user) return;
+    api.get("/dashboard/addresses")
+      .then((response) => {
+        const addresses = response.data?.data || [];
+        const recent = (response.data?.recent_order_addresses || []).map((item, index) => ({
+          id: `recent-${index}`,
+          label: "Previous Order",
+          ...item,
+        }));
+        setSavedAddresses([...addresses, ...recent]);
+        const preferred = addresses.find((item) => item.is_default);
+        if (preferred) {
+          setFormData({
+            fullName: preferred.recipient_name || user.name || "",
+            phone: preferred.phone || user.phone || "",
+            address: preferred.address_line || "",
+            city: preferred.city || "",
+            state: preferred.state || "",
+            zip: preferred.postal_code || "",
+          });
+        }
+      })
+      .catch(() => setSavedAddresses([]));
+  }, [user]);
 
   const [paymentDetails, setPaymentDetails] = useState({
     cardName: "",
@@ -56,13 +86,11 @@ export default function CheckoutPage() {
   });
   const [errors, setErrors] = useState({});
 
-  const subtotal = cartItems.reduce(
-    (acc, item) => acc + (Number(item.price) || 0) * (Number(item.qty) || 1),
-    0
-  );
-  const shipping = subtotal > 500 ? 0 : 40;
-  const tax = subtotal * 0.12;
-  const total = subtotal + shipping + tax;
+  const { quote, loading: quoteLoading } = useShippingQuote(cartItems);
+  const subtotal = Number(quote.subtotal_amount || 0);
+  const shipping = Number(quote.shipping_amount || 0);
+  const tax = Number(quote.tax_amount || 0);
+  const total = Number(quote.total_amount || 0);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -80,7 +108,7 @@ export default function CheckoutPage() {
   const searchLocation = async (query) => {
     setIsSearchingLocation(true);
     try {
-      const response = await api.get(`/prokerala/location/search?name=${query}`);
+      const response = await api.get("/prokerala/location/search", { params: { q: query } });
       // Assuming response.data.data is the list of locations from ProKerala
       const results = response.data?.data || [];
       setLocations(results);
@@ -96,7 +124,7 @@ export default function CheckoutPage() {
     setFormData((prev) => ({
       ...prev,
       city: loc.name,
-      // Some API responses might include state or region
+      state: loc.state || loc.region || prev.state,
     }));
     setShowLocationList(false);
   };
@@ -138,25 +166,8 @@ export default function CheckoutPage() {
 
     if (!formData.address.trim()) newErrors.address = "Address is required";
     if (!formData.city.trim()) newErrors.city = "City is required";
-
-    if (method === "card") {
-      if (!paymentDetails.cardName.trim()) newErrors.cardName = "Required";
-      const cleanCard = paymentDetails.cardNumber.replace(/\s+/g, "");
-      if (!cleanCard) newErrors.cardNumber = "Required";
-      else if (cleanCard.length !== 16) newErrors.cardNumber = "Enter 16 digits";
-
-      if (!paymentDetails.expiry.trim()) newErrors.expiry = "Required";
-      else if (!/^(0[1-9]|1[0-2])\/([0-9]{2})$/.test(paymentDetails.expiry))
-        newErrors.expiry = "Use MM/YY";
-
-      if (!paymentDetails.cvv.trim()) newErrors.cvv = "Required";
-      else if (!/^\d{3}$/.test(paymentDetails.cvv))
-        newErrors.cvv = "3 digits";
-    } else if (method === "upi") {
-      if (!paymentDetails.upiId.trim()) newErrors.upiId = "UPI ID is required";
-      else if (!paymentDetails.upiId.includes("@"))
-        newErrors.upiId = "Enter a valid ID (name@upi)";
-    }
+    if (!formData.state.trim()) newErrors.state = "State is required";
+    if (!formData.zip.trim()) newErrors.zip = "Postal code is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -174,10 +185,22 @@ export default function CheckoutPage() {
 
     setLoading(true);
     try {
+      if (method === "razorpay") {
+        await ensureRazorpayConfigured();
+      }
       const response = await api.post("/dashboard/orders/store", {
         total_amount: total.toFixed(2),
         payment_method: method,
         shipping_address: `${formData.address}, ${formData.city}, ${formData.zip}`,
+        shipping_details: {
+          recipient_name: formData.fullName,
+          phone: formData.phone,
+          address_line: formData.address,
+          city: formData.city,
+          state: formData.state,
+          postal_code: formData.zip,
+          country: "India",
+        },
         phone: formData.phone,
         items: cartItems.map((item) => ({
           id: item.id,
@@ -188,6 +211,13 @@ export default function CheckoutPage() {
       });
 
       if (response.data.status === "success") {
+        if (method === "razorpay") {
+          await payForOrder({
+            order: response.data.order,
+            user,
+            contact: formData.phone,
+          });
+        }
         alert(
           `Order placed successfully! Order ID: ${response.data.order.order_number}`
         );
@@ -236,6 +266,35 @@ export default function CheckoutPage() {
                     <p className="text-xs text-gray-400 mt-1 font-medium italic">Standard delivery usually takes 3-5 business days.</p>
                   </div>
                 </div>
+
+                {savedAddresses.length > 0 && (
+                  <div className="relative z-10 mb-6">
+                    <label className="mb-2 block px-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Use a saved or previous address</label>
+                    <select
+                      defaultValue=""
+                      onChange={(event) => {
+                        const address = savedAddresses.find((item) => String(item.id) === event.target.value);
+                        if (!address) return;
+                        setFormData({
+                          fullName: address.recipient_name || user?.name || "",
+                          phone: address.phone || user?.phone || "",
+                          address: address.address_line || "",
+                          city: address.city || "",
+                          state: address.state || "",
+                          zip: address.postal_code || "",
+                        });
+                      }}
+                      className="w-full rounded-2xl border border-gray-100 bg-[#F8FAFC] px-5 py-3.5 text-sm font-bold text-[#0F172A] outline-none focus:border-[#C5A021]"
+                    >
+                      <option value="">Enter a new address</option>
+                      {savedAddresses.map((address) => (
+                        <option key={address.id} value={address.id}>
+                          {address.label || "Address"} - {address.address_line}, {address.city}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 relative z-10">
                   <div className="space-y-1.5">
@@ -301,6 +360,17 @@ export default function CheckoutPage() {
                     {errors.city && <p className="text-[10px] text-red-500 font-bold px-4">{errors.city}</p>}
                   </div>
                   <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">State</label>
+                    <input
+                      className={`w-full px-5 py-3.5 rounded-2xl bg-[#F8FAFC] border-[1.5px] ${errors.state ? "border-red-400" : "border-gray-100"} focus:border-[#C5A021] focus:bg-white outline-none transition-all duration-300 font-bold text-[#0F172A] text-sm`}
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      placeholder="Uttar Pradesh"
+                    />
+                    {errors.state && <p className="text-[10px] text-red-500 font-bold px-4">{errors.state}</p>}
+                  </div>
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Postal Code</label>
                     <input 
                       className="w-full px-5 py-3.5 rounded-2xl bg-[#F8FAFC] border-[1.5px] border-gray-100 focus:border-[#C5A021] focus:bg-white outline-none transition-all duration-300 font-bold text-[#0F172A] text-sm" 
@@ -309,6 +379,7 @@ export default function CheckoutPage() {
                       onChange={handleInputChange} 
                       placeholder="000 000" 
                     />
+                    {errors.zip && <p className="text-[10px] text-red-500 font-bold px-4">{errors.zip}</p>}
                   </div>
                 </div>
               </div>
@@ -325,10 +396,9 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                   {[
-                    { id: "card", label: "Credit / Debit", icon: cardIcon },
-                    { id: "upi", label: "Direct UPI", icon: upiIcon },
+                    { id: "razorpay", label: "Pay securely", icon: upiIcon },
                     { id: "cod", label: "Cash on delivery", icon: deliveryIcon }
                   ].map((it) => (
                     <button
@@ -345,6 +415,19 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="bg-[#F8FAFC]/50 p-6 md:p-8 rounded-[2rem] border border-gray-100">
+                  {method === "razorpay" && (
+                    <div className="animate-fadeIn py-4">
+                      <div className="flex items-start gap-6 bg-white p-6 rounded-3xl border border-white">
+                        <div className="w-16 h-16 bg-[#F8F1E6] rounded-2xl flex-shrink-0 flex items-center justify-center">
+                          <img src={upiIcon} className="w-8 opacity-70" alt="Razorpay" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-[#0F172A] mb-1">Razorpay Checkout</h3>
+                          <p className="text-sm text-gray-400 font-medium leading-relaxed max-w-sm">Choose UPI, card, net banking, or a supported wallet inside Razorpay's secure payment window.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {method === "card" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 animate-fadeIn">
                        <div className="md:col-span-2 space-y-1.5">
@@ -440,9 +523,17 @@ export default function CheckoutPage() {
                     <span className="text-white">₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs text-white/40">
-                    <span>Logistic fee</span>
-                    <span className={shipping === 0 ? "text-[#4ADE80] font-black" : "text-white"}>{shipping === 0 ? "EXEMPT" : `₹${shipping}`}</span>
+                    <span>Category shipping</span>
+                    <span className={shipping === 0 ? "text-[#4ADE80] font-black" : "text-white"}>
+                      {quoteLoading ? "Calculating..." : shipping === 0 ? "FREE" : `₹${shipping.toFixed(2)}`}
+                    </span>
                   </div>
+                  {(quote.shipping_breakdown || []).map((item) => (
+                    <div key={item.category_id} className="flex justify-between text-[10px] text-white/40">
+                      <span>{item.category_name}</span>
+                      <span className="text-white">{Number(item.amount) === 0 ? "Free" : `₹${Number(item.amount).toFixed(2)}`}</span>
+                    </div>
+                  ))}
                   <div className="flex justify-between text-xs text-white/40">
                     <span>GST (12%)</span>
                     <span className="text-white">₹{tax.toFixed(2)}</span>

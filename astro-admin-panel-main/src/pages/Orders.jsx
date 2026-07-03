@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "../lib/api";
+import { Link } from "react-router-dom";
 
 const statusOptions = ["pending", "processing", "completed", "cancelled"];
 
@@ -55,6 +56,7 @@ export default function Orders() {
                 <th className="p-3">Payment</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Placed</th>
+                <th className="p-3">Details</th>
               </tr>
             </thead>
             <tbody>
@@ -86,10 +88,11 @@ export default function Orders() {
                     </select>
                   </td>
                   <td className="p-3 text-gray-500">{new Date(order.created_at).toLocaleString()}</td>
+                  <td className="p-3"><Link to={`/orders/${order.id}`} className="rounded-lg border px-3 py-2 font-semibold text-blue-700">View</Link></td>
                 </tr>
               ))}
               {!orders.length && (
-                <tr><td colSpan="7" className="p-10 text-center text-gray-500">No product orders yet.</td></tr>
+                <tr><td colSpan="8" className="p-10 text-center text-gray-500">No product orders yet.</td></tr>
               )}
             </tbody>
           </table>

@@ -40,7 +40,7 @@ export default function UserWishlist() {
   const getImage = (img) => {
     if (!img) return "https://placehold.co/400x400?text=No+Image";
     if (img.startsWith("http")) return img;
-    const host = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+    const host = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
     return `${host}/${img}`;
   };
 
@@ -112,7 +112,7 @@ export default function UserWishlist() {
           </p>
           <button 
             className="mt-8 bg-[#1d1d2b] text-white px-10 py-3 rounded-xl font-bold hover:shadow-xl transition-all"
-            onClick={() => window.location.href = '/all-products'}
+            onClick={() => window.location.href = '/allproduct'}
           >
             Explore Products
           </button>
