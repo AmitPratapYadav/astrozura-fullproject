@@ -2,13 +2,18 @@ import React from "react";
 import { displayCell } from "./reportUtils";
 
 export function ReportTable({ columns = [], rows = [], emptyText = "No data returned.", compact = false }) {
+  const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report"));
+  const theadBgClass = isCalculator ? "bg-[#D7AF4B]" : "bg-[#fff8df]";
+  const theadTextClass = isCalculator ? "text-[#1E3557]" : "text-[#7a5205]";
+  const borderClass = isCalculator ? "border-[#D7AF4B]" : "border-[#e7c76c]";
+
   return (
     <div className="overflow-x-auto rounded-sm border border-gray-200 bg-white">
       <table className="min-w-full border-collapse text-left text-sm">
-        <thead className="bg-[#fff8df] text-[#7a5205]">
+        <thead className={`${theadBgClass} ${theadTextClass}`}>
           <tr>
             {columns.map((column) => (
-              <th key={column.key || column.label} className="border-b border-[#e7c76c] px-3 py-3 font-bold">
+              <th key={column.key || column.label} className={`border-b ${borderClass} px-3 py-3 font-bold`}>
                 {column.label}
               </th>
             ))}
@@ -83,12 +88,18 @@ export function KeyValueTable({ rows = [], label = "Field", value = "Value", col
 }
 
 export function ReportPanel({ title, subtitle, children, actions = null }) {
+  const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report"));
+  const bgClass = isCalculator ? "bg-[#D7AF4B]" : "bg-[#fff8df]";
+  const borderClass = isCalculator ? "border-[#D7AF4B]" : "border-[#e7c76c]";
+  const textClass = isCalculator ? "text-[#1E3557]" : "text-[#7a5205]";
+  const subtextClass = isCalculator ? "text-[#1E3557]/80" : "text-gray-600";
+
   return (
     <section className="rounded-sm border border-gray-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-2 border-b border-[#e7c76c] bg-[#fff8df] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className={`flex flex-col gap-2 border-b ${borderClass} ${bgClass} px-4 py-3 sm:flex-row sm:items-center sm:justify-between`}>
         <div>
-          <h3 className="text-base font-bold text-[#7a5205]">{title}</h3>
-          {subtitle ? <p className="mt-1 text-xs text-gray-600">{subtitle}</p> : null}
+          <h3 className={`text-base font-bold ${textClass}`}>{title}</h3>
+          {subtitle ? <p className={`mt-1 text-xs ${subtextClass}`}>{subtitle}</p> : null}
         </div>
         {actions}
       </div>

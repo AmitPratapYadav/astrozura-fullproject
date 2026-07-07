@@ -101,16 +101,20 @@ export function ReportDataBlock({ title, data, depth = 0 }) {
           rows={simpleEntries.map(([key, value]) => [formatReportLabel(key), compactText(value)])}
         />
       )}
-      {nestedEntries.map(([key, value]) => (
-        <section key={key} className="overflow-hidden rounded-md border border-[#ead79d] bg-white shadow-sm">
-          <h3 className="border-b border-[#e7c76c] bg-[#fff3c7] px-4 py-3 text-sm font-bold text-[#6f4a04]">
-            {formatReportLabel(key)}
-          </h3>
-          <div className="p-4">
-            <ReportDataBlock title={formatReportLabel(key)} data={value} depth={depth + 1} />
-          </div>
-        </section>
-      ))}
+      {nestedEntries.map(([key, value]) => {
+        const label = formatReportLabel(key);
+        const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report"));
+        return (
+          <section key={key} className={`overflow-hidden rounded-md border ${isCalculator ? "border-[#D7AF4B]" : "border-[#ead79d]"} bg-white shadow-sm`}>
+            <h3 className={`border-b ${isCalculator ? "border-[#D7AF4B] bg-[#D7AF4B] text-[#1E3557]" : "border-[#e7c76c] bg-[#fff3c7] text-[#6f4a04]"} px-4 py-3 text-sm font-bold`}>
+              {label}
+            </h3>
+            <div className="p-4">
+              <ReportDataBlock title={label} data={value} depth={depth + 1} />
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -123,26 +127,30 @@ export function ProviderSections({ sections = [] }) {
       {sections.map((section, sectionIndex) => (
         <ReportPanel key={section.id || sectionIndex} title={section.title} subtitle={section.summary}>
           <div className="space-y-4">
-            {Object.entries(section.items || {}).map(([key, item]) => (
-              <section key={key} className="overflow-hidden rounded-md border border-[#ead79d] bg-white shadow-sm">
-                <h3 className="border-b border-[#e7c76c] bg-[#fff3c7] px-4 py-3 text-sm font-bold text-[#6f4a04]">
-                  {formatReportLabel(key)}
-                </h3>
-                <div className="p-4">
-                  {item?.status === "error" ? (
-                    <KeyValueTable
-                      columns={1}
-                      rows={[
-                        ["Status", "Unavailable"],
-                        ["Message", item.message],
-                      ]}
-                    />
-                  ) : (
-                    <ReportDataBlock title={formatReportLabel(key)} data={item?.data ?? item} />
-                  )}
-                </div>
-              </section>
-            ))}
+            {Object.entries(section.items || {}).map(([key, item]) => {
+              const label = formatReportLabel(key);
+              const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report"));
+              return (
+                <section key={key} className={`overflow-hidden rounded-md border ${isCalculator ? "border-[#D7AF4B]" : "border-[#ead79d]"} bg-white shadow-sm`}>
+                  <h3 className={`border-b ${isCalculator ? "border-[#D7AF4B] bg-[#D7AF4B] text-[#1E3557]" : "border-[#e7c76c] bg-[#fff3c7] text-[#6f4a04]"} px-4 py-3 text-sm font-bold`}>
+                    {label}
+                  </h3>
+                  <div className="p-4">
+                    {item?.status === "error" ? (
+                      <KeyValueTable
+                        columns={1}
+                        rows={[
+                          ["Status", "Unavailable"],
+                          ["Message", item.message],
+                        ]}
+                      />
+                    ) : (
+                      <ReportDataBlock title={label} data={item?.data ?? item} />
+                    )}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         </ReportPanel>
       ))}
