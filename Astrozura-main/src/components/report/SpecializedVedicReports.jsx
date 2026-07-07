@@ -886,7 +886,7 @@ export function PujaSuggestionReport({ result }) {
   return (
     <ReportPanel title="Puja Suggestion" subtitle="Recommended puja and spiritual remedies.">
       <div className="space-y-5">
-        <div className="rounded-sm border border-[#e7c76c] bg-[#fff8df] px-5 py-4 text-sm font-semibold leading-7 text-[#5f4208]">
+        <div className="rounded-sm border border-[#D7AF4B] bg-[#D7AF4B] px-5 py-4 text-sm font-semibold leading-7 text-[#1E3557]">
           {renderCleanValue(summary)}
         </div>
         <div>

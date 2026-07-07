@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('push_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('token', 512)->unique();
+            $table->string('token', 250)->unique();
             $table->string('channel', 32)->default('live');
             $table->string('platform', 32)->default('web');
             $table->string('permission', 32)->default('granted');

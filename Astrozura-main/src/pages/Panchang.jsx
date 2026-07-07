@@ -125,10 +125,10 @@ const splitMuhurtaRows = (payload, keyCandidates) => {
 const chaughadiyaClass = (name) => {
   const normalised = String(name || "").toLowerCase();
   if (["amrit", "shubh", "labh"].some((item) => normalised.includes(item))) {
-    return "bg-emerald-100 text-slate-800";
+    return "bg-emerald-50/70 border-l-4 border-l-emerald-500 text-emerald-900";
   }
-  if (normalised.includes("char")) return "bg-sky-100 text-slate-800";
-  return "bg-rose-100 text-slate-800";
+  if (normalised.includes("char")) return "bg-sky-50/70 border-l-4 border-l-sky-400 text-sky-900";
+  return "bg-rose-50/70 border-l-4 border-l-rose-400 text-rose-900";
 };
 
 function FieldShell({ label, children }) {
@@ -140,18 +140,18 @@ function FieldShell({ label, children }) {
   );
 }
 
-function MuhurtaTable({ title, rows, rowClass = () => "bg-[#e9f5fb]" }) {
+function MuhurtaTable({ title, rows, rowClass = () => "bg-slate-50/50 border-l-4 border-l-[#D7AF4B] text-slate-700" }) {
   return (
-    <section className="overflow-hidden rounded-md border border-slate-200 bg-white">
-      <h3 className="bg-slate-100 px-5 py-4 text-center text-xl font-black text-slate-900">{title}</h3>
-      <div>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      <h3 className="bg-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557] border-b border-[#D7AF4B]">{title}</h3>
+      <div className="divide-y divide-slate-100">
         {(rows.length ? rows : [{ id: "empty", name: "No data returned", time: "-" }]).map((row) => (
           <div
             key={row.id}
-            className={`grid grid-cols-[1fr_1.2fr] border-t border-slate-200 px-5 py-4 text-center text-base ${rowClass(row.name)}`}
+            className={`grid grid-cols-[1fr_1.2fr] px-5 py-3.5 text-center text-sm md:text-base items-center ${rowClass(row.name)}`}
           >
-            <strong>{row.name}</strong>
-            <span className="font-mono text-sm">{row.time}</span>
+            <strong className="font-bold">{row.name}</strong>
+            <span className="font-mono text-xs md:text-sm font-semibold">{row.time}</span>
           </div>
         ))}
       </div>
@@ -161,13 +161,17 @@ function MuhurtaTable({ title, rows, rowClass = () => "bg-[#e9f5fb]" }) {
 
 function InfoTable({ title, rows }) {
   return (
-    <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-      {title ? <h2 className="border-b border-slate-200 px-5 py-5 text-center text-2xl font-black text-slate-900">{title}</h2> : null}
-      <div className="grid grid-cols-2">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      {title ? (
+        <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">
+          {title}
+        </h2>
+      ) : null}
+      <div className="grid grid-cols-2 divide-x divide-y divide-slate-100">
         {rows.map(([label, value]) => (
-          <div key={label} className="border-b border-r border-slate-200 p-4 even:border-r-0">
-            <p className="font-semibold text-slate-900">{label}</p>
-            <p className="mt-1 text-sm leading-6 text-slate-500">{value || "-"}</p>
+          <div key={label} className="p-4 bg-white transition hover:bg-slate-50/60 border-t border-l border-slate-100 first:border-t-0 odd:border-l-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
+            <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value || "-"}</p>
           </div>
         ))}
       </div>
@@ -229,24 +233,24 @@ const objectRows = (payload) => {
 
 function PanchangDataTable({ title, rows, columns }) {
   return (
-    <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-      <h3 className="border-b border-slate-200 bg-[#FFF6D8] px-5 py-4 text-lg font-black text-slate-950">{title}</h3>
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      <h3 className="border-b border-[#D7AF4B] bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557]">{title}</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-left text-sm">
-          <thead className="bg-[#FFF1BD] text-slate-950">
+          <thead className="bg-[#1E3557] text-white">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} className="border-b border-slate-200 px-4 py-3 font-black">
+                <th key={column.key} className="px-4 py-3 font-semibold uppercase tracking-wider text-xs">
                   {column.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {(rows.length ? rows : [{ id: "empty" }]).map((row, index) => (
-              <tr key={row.id || index} className="odd:bg-white even:bg-slate-50">
+              <tr key={row.id || index} className="hover:bg-slate-50/80 transition odd:bg-white even:bg-slate-50/40">
                 {columns.map((column) => (
-                  <td key={column.key} className="border-b border-slate-200 px-4 py-3 text-slate-700">
+                  <td key={column.key} className="px-4 py-3.5 text-slate-700 font-medium">
                     {row[column.key] || "-"}
                   </td>
                 ))}
@@ -275,8 +279,8 @@ function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
   ];
 
   return (
-    <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-      <h2 className="bg-[#FFF6D8] px-5 py-4 text-xl font-black text-slate-950">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      <h2 className="bg-[#D7AF4B] px-5 py-4 text-lg font-bold text-[#1E3557]">
         Planetary Positions & Panchang Chart
       </h2>
       <div className="space-y-6 p-5">
@@ -287,8 +291,8 @@ function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
               <PanchangDataTable title="Planetary Positions" rows={planetaryRows} columns={planetColumns} />
               <PanchangDataTable title="Sunrise Planetary Positions" rows={sunriseRows} columns={planetColumns} />
               {chartSvg && String(chartSvg).includes("<svg") ? (
-                <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-                  <h3 className="border-b border-slate-200 bg-[#FFF6D8] px-5 py-4 text-lg font-black text-slate-950">Panchang Chart</h3>
+                <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+                  <h3 className="border-b border-[#D7AF4B] bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557]">Panchang Chart</h3>
                   <div className="mx-auto max-w-xl p-5 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: chartSvg }} />
                 </section>
               ) : (
@@ -627,29 +631,29 @@ export default function Panchang() {
         {activeView === "daily" ? (
           <div className="space-y-8">
             <div className="grid gap-8 lg:grid-cols-3">
-              <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-                <div className="bg-[#D4A73C] p-5 text-white">
-                  <h2 className="text-xl font-black">{selectedInputLabel}</h2>
-                  <p className="mt-2 text-sm font-semibold">Ayana - {valueFrom(advanced.ayan, advanced.ayana)}</p>
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+                <div className="bg-[#D7AF4B] p-5 text-[#1E3557]">
+                  <h2 className="text-xl font-bold">{selectedInputLabel}</h2>
+                  <p className="mt-2 text-xs font-bold uppercase tracking-wide opacity-80">Ayana - {valueFrom(advanced.ayan, advanced.ayana)}</p>
                   <p className="mt-1 text-sm font-semibold">{valueFrom(summary.vaara, advanced.day)}</p>
                 </div>
-                <div className="grid grid-cols-2">
+                <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 border-t border-[#D7AF4B]">
                   {dailyCardRows.map(([label, value]) => (
-                    <div key={label} className="border-b border-r border-slate-200 p-4 even:border-r-0">
-                      <p className="font-semibold text-slate-900">{label}</p>
-                      <p className="mt-1 text-sm text-slate-500">{value}</p>
+                    <div key={label} className="p-4 bg-white transition hover:bg-slate-50/60 border-t border-l border-slate-100 first:border-t-0 odd:border-l-0">
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                      <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
-              <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-                <h2 className="border-b border-slate-200 px-5 py-5 text-center text-2xl font-black text-slate-900">Panchang Elements</h2>
-                <div className="divide-y divide-slate-200">
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+                <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">Panchang Elements</h2>
+                <div className="divide-y divide-slate-100">
                   {elementRows.map(([label, value]) => (
-                    <div key={label} className="grid grid-cols-[118px_1fr]">
-                      <p className="border-r border-slate-200 p-4 font-semibold text-slate-900">{label}</p>
-                      <p className="p-4 text-slate-700">{value}</p>
+                    <div key={label} className="grid grid-cols-[118px_1fr] bg-white transition hover:bg-slate-50/60 items-center">
+                      <p className="border-r border-slate-100 p-4 text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                      <p className="p-4 text-sm font-semibold text-[#1E3557]">{value}</p>
                     </div>
                   ))}
                 </div>
@@ -658,10 +662,10 @@ export default function Panchang() {
               <InfoTable title="Hindu Month & Year" rows={monthYearRows} />
             </div>
 
-            <section className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-              <div className="grid md:grid-cols-[290px_1fr]">
-                <div className="bg-[#D4A73C] px-5 py-4 text-lg font-black text-white">Today's Festival & Vratas</div>
-                <div className="px-5 py-4 text-lg font-bold text-[#1E3557]">{valueFrom(advanced.festivals, advanced.vrat, basic.festivals, "No festival returned")}</div>
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+              <div className="grid md:grid-cols-[290px_1fr] items-center">
+                <div className="bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557] h-full flex items-center">Today's Festival & Vratas</div>
+                <div className="px-5 py-4 text-base font-semibold text-[#1E3557]">{valueFrom(advanced.festivals, advanced.vrat, basic.festivals, "No festival returned")}</div>
               </div>
             </section>
 
@@ -670,22 +674,22 @@ export default function Panchang() {
               <InfoTable title="Auspicious Timing" rows={auspiciousRows} />
             </div>
 
-            <section className="max-w-md overflow-hidden rounded-sm border border-slate-200 bg-white">
-              <h2 className="border-b border-slate-200 px-5 py-5 text-center text-2xl font-black text-slate-900">Other Yoga</h2>
-              <div className="grid grid-cols-[120px_1fr] border-b border-slate-200">
-                <p className="border-r border-slate-200 p-4 font-semibold text-slate-900">Anandadi Yog</p>
-                <p className="p-4 text-slate-700">{valueFrom(advanced.anandadi_yog, advanced.anandadi_yoga)}</p>
+            <section className="max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+              <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">Other Yoga</h2>
+              <div className="grid grid-cols-[120px_1fr] bg-white transition hover:bg-slate-50/60 items-center border-b border-slate-100">
+                <p className="border-r border-slate-100 p-4 text-xs font-bold uppercase tracking-wider text-slate-400">Anandadi Yog</p>
+                <p className="p-4 text-sm font-semibold text-[#1E3557]">{valueFrom(advanced.anandadi_yog, advanced.anandadi_yoga)}</p>
               </div>
-              <h3 className="border-b border-slate-200 p-4 text-center font-black text-slate-900">Shool & Nivas</h3>
-              <div className="grid grid-cols-2">
+              <h3 className="bg-slate-50/80 border-b border-slate-100 p-3 text-center text-sm font-bold uppercase tracking-wider text-[#1E3557]">Shool & Nivas</h3>
+              <div className="grid grid-cols-2 divide-x divide-y divide-slate-100">
                 {[
                   ["Disha Shool", valueFrom(advanced.disha_shool)],
                   ["Nakshatra Shool", valueFrom(advanced.nakshatra_shool)],
                   ["Moon Nivash", valueFrom(advanced.moon_nivas, advanced.moon_nivash)],
                 ].map(([label, value]) => (
-                  <div key={label} className="border-b border-r border-slate-200 p-4 even:border-r-0">
-                    <p className="font-semibold text-slate-900">{label}</p>
-                    <p className="mt-1 text-sm uppercase text-slate-500">{value}</p>
+                  <div key={label} className="p-4 bg-white transition hover:bg-slate-50/60 border-t border-l border-slate-100 first:border-t-0 odd:border-l-0">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                    <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value}</p>
                   </div>
                 ))}
               </div>
