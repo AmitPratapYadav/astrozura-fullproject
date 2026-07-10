@@ -19,6 +19,8 @@ class Blog extends Model
         'translations',
         'author_name',
         'status',
+        'show_on_main',
+        'show_on_shop',
         'published_at',
         'views_count',
         'seo_title',
@@ -30,6 +32,8 @@ class Blog extends Model
         'content_blocks' => 'array',
         'translations' => 'array',
         'status' => 'boolean',
+        'show_on_main' => 'boolean',
+        'show_on_shop' => 'boolean',
         'published_at' => 'datetime',
         'views_count' => 'integer',
     ];
@@ -37,5 +41,10 @@ class Blog extends Model
     public function category()
     {
         return $this->belongsTo(BlogCategory::class, 'blog_category_id');
+    }
+
+    public function guidedProducts()
+    {
+        return $this->hasMany(Product::class, 'guide_blog_id');
     }
 }

@@ -17,6 +17,8 @@ export default function ShopLayout() {
   const [msg, setMsg] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCatId, setSelectedCatId] = useState(null);
+  const [isNewArrivalView, setIsNewArrivalView] = useState(false);
+  const [categoryNameFilter, setCategoryNameFilter] = useState("");
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,7 +47,7 @@ export default function ShopLayout() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (!user) {
@@ -73,6 +75,8 @@ export default function ShopLayout() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const catId = params.get("category");
+    setIsNewArrivalView(params.get("new_arrivals") === "1");
+    setCategoryNameFilter(params.get("category_name") || "");
     if (catId) {
       setSelectedCatId(parseInt(catId));
     } else {
@@ -85,10 +89,17 @@ export default function ShopLayout() {
       setLoading(true);
       // VITE_API_BASE_URL already contains /api, so we don't add it again
       const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
+      const params = new URLSearchParams(location.search);
       
       const [catRes, prodRes] = await Promise.all([
         axios.get(`${baseUrl}/ecomm/categories`),
-        axios.get(`${baseUrl}/ecomm/products`)
+        axios.get(`${baseUrl}/ecomm/products`, {
+          params: {
+            category: params.get("category") || undefined,
+            category_name: params.get("category_name") || undefined,
+            new_arrivals: params.get("new_arrivals") === "1" ? 1 : undefined,
+          },
+        })
       ]);
 
       if (catRes.data.status === "success") {
@@ -203,10 +214,10 @@ export default function ShopLayout() {
         <div className="mb-6">
           <p className="text-xs text-gray-600">Home & Shop</p>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold">
-            {selectedCatId ? categories.find(c => c.id === selectedCatId)?.name : "Spiritual Store"}
+            {isNewArrivalView ? "New Arrival" : categoryNameFilter ? categoryNameFilter : selectedCatId ? categories.find(c => c.id === selectedCatId)?.name : "Spiritual Store"}
           </h1>
           <p className="text-sm mt-2 max-w-xl">
-            {selectedCatId ? `Explore our collection of ${categories.find(c => c.id === selectedCatId)?.name}` : "Ethically sourced treasures to inspire mindfulness."}
+            {isNewArrivalView ? "Freshly added spiritual products curated by AstroZura." : selectedCatId ? `Explore our collection of ${categories.find(c => c.id === selectedCatId)?.name}` : "Ethically sourced treasures to inspire mindfulness."}
           </p>
         </div>
 
@@ -317,7 +328,6 @@ export default function ShopLayout() {
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 mt-6">
                 {products.length > 0 ? (
                   products
-                    .filter(p => !selectedCatId || p.category_id === selectedCatId)
                     .filter(p => p.price <= price)
                     .map((product, i) => (
                       <div

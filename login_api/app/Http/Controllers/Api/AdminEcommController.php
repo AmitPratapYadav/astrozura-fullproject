@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Blog;
 use App\Models\Order;
 use App\Models\Product;
 use App\Support\MediaStorage;
@@ -118,7 +119,7 @@ class AdminEcommController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => Product::with(['category', 'variants'])->orderBy('id', 'desc')->get()
+            'data' => Product::with(['category', 'variants', 'guideBlog'])->orderBy('id', 'desc')->get()
         ]);
     }
 
@@ -138,11 +139,12 @@ class AdminEcommController extends Controller
             }
 
             $product->is_trending = $request->has('is_trending') ? filter_var($request->is_trending, FILTER_VALIDATE_BOOLEAN) : 0;
+            $product->is_new_arrival = $request->has('is_new_arrival') ? filter_var($request->is_new_arrival, FILTER_VALIDATE_BOOLEAN) : 0;
             $product->status = $request->has('status') ? filter_var($request->status, FILTER_VALIDATE_BOOLEAN) : 1;
             $product->save();
             $this->syncVariants($product, $validated['variants'] ?? []);
 
-            return $product->load(['category', 'variants']);
+            return $product->load(['category', 'variants', 'guideBlog']);
         });
 
         return response()->json(['status' => 'success', 'message' => 'Product added successfully!', 'data' => $product]);
@@ -152,7 +154,7 @@ class AdminEcommController extends Controller
     {
         $this->ensureAdmin($request);
 
-        $product = Product::with(['category', 'variants'])->find($id);
+        $product = Product::with(['category', 'variants', 'guideBlog'])->find($id);
         if (!$product) return response()->json(['status' => 'error', 'message' => 'Product not found'], 404);
         
         return response()->json(['status' => 'success', 'data' => $product]);
@@ -177,6 +179,9 @@ class AdminEcommController extends Controller
             if ($request->has('is_trending')) {
                 $product->is_trending = filter_var($request->is_trending, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
             }
+            if ($request->has('is_new_arrival')) {
+                $product->is_new_arrival = filter_var($request->is_new_arrival, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
             if ($request->has('status')) {
                 $product->status = filter_var($request->status, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
             }
@@ -188,7 +193,7 @@ class AdminEcommController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Product updated successfully!',
-            'data' => $product->fresh()->load(['category', 'variants']),
+            'data' => $product->fresh()->load(['category', 'variants', 'guideBlog']),
         ]);
     }
 
@@ -316,6 +321,7 @@ class AdminEcommController extends Controller
     {
         return [
             'category_id' => 'required|exists:categories,id',
+            'guide_blog_id' => 'nullable|exists:blogs,id',
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'unit' => 'nullable|string|max:100',
@@ -349,6 +355,7 @@ class AdminEcommController extends Controller
     {
         $product->fill([
             'category_id' => $validated['category_id'],
+            'guide_blog_id' => $validated['guide_blog_id'] ?? null,
             'name' => trim($validated['name']),
             'price' => $validated['price'],
             'unit' => $this->nullableText($validated['unit'] ?? null),

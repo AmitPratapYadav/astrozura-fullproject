@@ -7,6 +7,7 @@ use App\Models\AdminNotification;
 use App\Models\Booking;
 use App\Models\Order;
 use App\Models\RitualBooking;
+use App\Models\YearlyHoroscopeAccess;
 use App\Services\UltronSmsService;
 use App\Services\UserNotificationService;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,7 @@ class RazorpayPaymentController extends Controller
     public function createOrder(Request $request)
     {
         $validated = $request->validate([
-            'purpose' => ['required', Rule::in(['consultation', 'ritual', 'product'])],
+            'purpose' => ['required', Rule::in(['consultation', 'ritual', 'product', 'yearly_horoscope'])],
             'record_id' => 'required|integer',
         ]);
 
@@ -100,7 +101,7 @@ class RazorpayPaymentController extends Controller
     public function verify(Request $request)
     {
         $validated = $request->validate([
-            'purpose' => ['required', Rule::in(['consultation', 'ritual', 'product'])],
+            'purpose' => ['required', Rule::in(['consultation', 'ritual', 'product', 'yearly_horoscope'])],
             'record_id' => 'required|integer',
             'razorpay_order_id' => 'required|string',
             'razorpay_payment_id' => 'required|string',
@@ -172,6 +173,7 @@ class RazorpayPaymentController extends Controller
             'consultation' => Booking::class,
             'ritual' => RitualBooking::class,
             'product' => Order::class,
+            'yearly_horoscope' => YearlyHoroscopeAccess::class,
         ] as $purpose => $modelClass) {
             $record = $modelClass::where('razorpay_order_id', $orderId)->first();
             if ($record) {
@@ -195,6 +197,7 @@ class RazorpayPaymentController extends Controller
             'consultation' => Booking::class,
             'ritual' => RitualBooking::class,
             'product' => Order::class,
+            'yearly_horoscope' => YearlyHoroscopeAccess::class,
         };
 
         return $modelClass::whereKey($recordId)->where('user_id', $userId)->firstOrFail();
@@ -227,6 +230,8 @@ class RazorpayPaymentController extends Controller
                 $sendBookingSms = true;
             } elseif ($record instanceof RitualBooking) {
                 $updates['status'] = 'pending';
+            } elseif ($record instanceof YearlyHoroscopeAccess) {
+                $updates['access_expires_at'] = now('Asia/Kolkata')->addHours(12);
             }
 
             $record->update($updates);
@@ -242,9 +247,11 @@ class RazorpayPaymentController extends Controller
 
         if ($record->user_id) {
             $surface = $purpose === 'product' ? 'shop' : 'main';
-            $actionUrl = $purpose === 'product'
-                ? "/dashboard/orders/{$record->id}"
-                : '/my-bookings';
+            $actionUrl = match ($purpose) {
+                'product' => "/dashboard/orders/{$record->id}",
+                'yearly_horoscope' => '/rashifal?period=yearly',
+                default => '/my-bookings',
+            };
             app(UserNotificationService::class)->send(
                 $record->user_id,
                 $surface,
@@ -278,6 +285,17 @@ class RazorpayPaymentController extends Controller
                 'message' => "{$record->devotee_name} requested {$record->ritual?->name}.",
                 'route' => '/ritual-bookings',
                 'data' => ['ritual_booking_id' => $record->id],
+            ]);
+            return;
+        }
+
+        if ($purpose === 'yearly_horoscope') {
+            AdminNotification::create([
+                'type' => 'yearly_horoscope_payment',
+                'title' => 'Yearly horoscope unlocked',
+                'message' => "A user purchased yearly horoscope access for {$record->year}.",
+                'route' => '/reports',
+                'data' => ['yearly_horoscope_access_id' => $record->id],
             ]);
             return;
         }

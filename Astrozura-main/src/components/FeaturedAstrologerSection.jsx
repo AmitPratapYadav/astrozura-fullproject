@@ -24,6 +24,11 @@ const formatRatingText = (details) => {
   return `${ratingValue.toFixed(1)} (${totalReviews} review${totalReviews === 1 ? "" : "s"})`;
 };
 
+const FOUNDER_TAGLINE = "Align Your Stars. Engineer Your Destiny.";
+const FOUNDER_DISPLAY_NAME = "Meet Ananya Gupta (Astrotarsh)";
+const FOUNDER_QUOTE =
+  "Astrology is not just about predicting the future; it's about decoding the blueprint of your soul.";
+
 export default function FeaturedAstrologerSection() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -127,18 +132,28 @@ export default function FeaturedAstrologerSection() {
             </span>
 
             <h2 className="mb-2 text-3xl font-black leading-[1.1] text-[#1E3557] md:text-5xl">
-              {t("main.founder_title_start")} <br />
-              <span className="text-[#D4A73C] drop-shadow-sm">{t("main.founder_title_end")}</span>
+              Meet Ananya Gupta <br />
+              <span className="text-[#D4A73C] drop-shadow-sm">(Astrotarsh)</span>
             </h2>
 
-            <p className="mb-3 text-lg font-bold text-[#b8860b]">{featured?.name || "Featured Astrologer"}</p>
+            <p className="mb-2 text-xs font-black uppercase tracking-[0.24em] text-[#D4A73C]">{FOUNDER_TAGLINE}</p>
+            <p className="mb-3 text-lg font-bold text-[#b8860b]">
+              {(featured?.name || "").toLowerCase().includes("ananya")
+                ? "Ananya Gupta"
+                : featured?.name || "Featured Astrologer"}
+            </p>
             <p className="mb-6 text-sm font-semibold text-gray-500">{formatRatingText(featuredDetails)}</p>
 
             <div className="relative">
               <div className="absolute bottom-0 left-0 top-0 w-1 rounded-full bg-[#D4A73C]" />
               <p className="pl-6 text-sm font-medium italic leading-loose text-gray-500 md:text-base">
-                "{featuredDetails.about_bio || t("main.founder_quote")}"
+                "{featuredDetails.about_bio || FOUNDER_QUOTE}"
               </p>
+              {featuredDetails.about_bio ? (
+                <p className="mt-4 pl-6 text-sm font-black leading-6 text-[#1E3557] md:text-base">
+                  "{FOUNDER_QUOTE}"
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6">

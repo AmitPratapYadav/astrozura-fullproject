@@ -5,6 +5,7 @@ import VariantEditor from "../components/VariantEditor";
 
 export default function AddProduct() {
   const [categories, setCategories] = useState([]);
+  const [blogs, setBlogs] = useState([]);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -21,6 +22,8 @@ export default function AddProduct() {
     threadType: "",
     origin: "",
     isTrending: false,
+    isNewArrival: false,
+    guideBlogId: "",
     status: true
   });
   const [hindi, setHindi] = useState({ name: "", description: "", benefits: "" });
@@ -32,6 +35,7 @@ export default function AddProduct() {
 
   useEffect(() => {
     fetchCategories();
+    fetchBlogs();
   }, []);
 
   const fetchCategories = async () => {
@@ -45,6 +49,16 @@ export default function AddProduct() {
     }
   };
 
+  const fetchBlogs = async () => {
+    try {
+      const result = await apiRequest("/admin/blogs?per_page=200");
+      const rows = Array.isArray(result.data?.data) ? result.data.data : (result.data || []);
+      setBlogs(rows.filter((blog) => blog.status));
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -52,6 +66,7 @@ export default function AddProduct() {
     const payload = new FormData();
     payload.append("name", formData.name);
     payload.append("category_id", formData.categoryId);
+    if (formData.guideBlogId) payload.append("guide_blog_id", formData.guideBlogId);
     payload.append("price", formData.price);
     payload.append("unit", formData.unit);
     payload.append("description", formData.description);
@@ -64,6 +79,7 @@ export default function AddProduct() {
     payload.append("thread_type", formData.threadType);
     payload.append("origin", formData.origin);
     payload.append("is_trending", formData.isTrending ? 1 : 0);
+    payload.append("is_new_arrival", formData.isNewArrival ? 1 : 0);
     payload.append("status", formData.status ? 1 : 0);
     payload.append("option_names", JSON.stringify(optionNames));
     payload.append("variants", JSON.stringify(variants));
@@ -278,6 +294,16 @@ export default function AddProduct() {
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
+              id="isNewArrival"
+              checked={formData.isNewArrival}
+              onChange={(e) => setFormData({...formData, isNewArrival: e.target.checked})}
+              className="w-4 h-4 cursor-pointer"
+            />
+            <label htmlFor="isNewArrival" className="font-medium cursor-pointer text-gray-700">New Arrival</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
               id="status"
               checked={formData.status}
               onChange={(e) => setFormData({...formData, status: e.target.checked})}
@@ -285,6 +311,20 @@ export default function AddProduct() {
             />
             <label htmlFor="status" className="font-medium cursor-pointer text-gray-700">Active Status</label>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Product Guide Blog</label>
+          <select
+            className="w-full border px-4 py-2 rounded-lg bg-white"
+            value={formData.guideBlogId}
+            onChange={(e) => setFormData({...formData, guideBlogId: e.target.value})}
+          >
+            <option value="">No guide blog</option>
+            {blogs.map((blog) => (
+              <option key={blog.id} value={blog.id}>{blog.title}</option>
+            ))}
+          </select>
         </div>
 
         <VariantEditor

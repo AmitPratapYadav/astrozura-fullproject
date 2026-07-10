@@ -32,7 +32,7 @@ class EcommController extends Controller
         $products = Product::where('status', 1)
                            ->whereHas('category', fn ($query) => $query->where('status', 1))
                            ->where('is_trending', 1)
-                           ->with(['category', 'activeVariants'])
+                           ->with(['category', 'activeVariants', 'guideBlog.category'])
                            ->withAvg('reviews', 'rating')
                            ->withCount('reviews')
                            ->get();
@@ -52,7 +52,7 @@ class EcommController extends Controller
     {
         $products = Product::where('status', 1)
                            ->whereHas('category', fn ($query) => $query->where('status', 1))
-                           ->with(['category', 'activeVariants'])
+                           ->with(['category', 'activeVariants', 'guideBlog.category'])
                            ->withAvg('reviews', 'rating')
                            ->withCount('reviews')
                            ->when($request->filled('q'), function ($query) use ($request) {
@@ -63,6 +63,11 @@ class EcommController extends Controller
                                });
                            })
                            ->when($request->filled('category'), fn ($query) => $query->where('category_id', $request->query('category')))
+                           ->when($request->boolean('new_arrivals'), fn ($query) => $query->where('is_new_arrival', 1))
+                           ->when($request->filled('category_name'), function ($query) use ($request) {
+                               $categoryName = trim((string) $request->query('category_name'));
+                               $query->whereHas('category', fn ($builder) => $builder->where('name', 'like', "%{$categoryName}%"));
+                           })
                            ->latest()
                            ->get();
         $this->localize($products, $request->query('la'));
@@ -81,7 +86,7 @@ class EcommController extends Controller
     {
         $product = Product::where('status', 1)
             ->whereHas('category', fn ($query) => $query->where('status', 1))
-            ->with(['category', 'activeVariants'])
+            ->with(['category', 'activeVariants', 'guideBlog.category'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->find($id);
@@ -92,7 +97,7 @@ class EcommController extends Controller
                 'message' => 'Product not found',
             ], 404);
         }
-        $this->localize(collect([$product, $product->category])->filter(), $request->query('la'));
+        $this->localize(collect([$product, $product->category, $product->guideBlog, $product->guideBlog?->category])->filter(), $request->query('la'));
 
         return response()->json([
             'status' => 'success',

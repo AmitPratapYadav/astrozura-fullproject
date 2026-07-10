@@ -5,6 +5,8 @@ const emptyForm = {
   name: "",
   status: "1",
   sort_order: 0,
+  show_on_main: true,
+  show_on_shop: false,
   image: null,
 };
 
@@ -39,6 +41,8 @@ export default function BlogCategories() {
       payload.append("name", form.name);
       payload.append("status", form.status);
       payload.append("sort_order", String(form.sort_order || 0));
+      payload.append("show_on_main", form.show_on_main ? "1" : "0");
+      payload.append("show_on_shop", form.show_on_shop ? "1" : "0");
       if (form.image) payload.append("image", form.image);
 
       await apiRequest(editingId ? `/admin/blog-categories/${editingId}` : "/admin/blog-categories", {
@@ -62,6 +66,8 @@ export default function BlogCategories() {
       name: category.name || "",
       status: category.status ? "1" : "0",
       sort_order: category.sort_order || 0,
+      show_on_main: category.show_on_main !== false,
+      show_on_shop: Boolean(category.show_on_shop),
       image: null,
     });
   };
@@ -121,6 +127,16 @@ export default function BlogCategories() {
               className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
             />
           </label>
+          <div className="md:col-span-4 flex flex-wrap gap-5 rounded-lg bg-gray-50 px-4 py-3">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <input type="checkbox" checked={form.show_on_main} onChange={(event) => setForm((current) => ({ ...current, show_on_main: event.target.checked }))} />
+              Show on Main Website
+            </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <input type="checkbox" checked={form.show_on_shop} onChange={(event) => setForm((current) => ({ ...current, show_on_shop: event.target.checked }))} />
+              Show on Shop Guide Book
+            </label>
+          </div>
           <label className="md:col-span-4">
             <span className="text-sm font-semibold text-gray-700">Image</span>
             <input
@@ -155,6 +171,7 @@ export default function BlogCategories() {
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Slug</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Platforms</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -171,6 +188,9 @@ export default function BlogCategories() {
                 <td className="px-4 py-3 font-semibold text-gray-900">{category.name}</td>
                 <td className="px-4 py-3 text-gray-500">{category.slug}</td>
                 <td className="px-4 py-3">{category.status ? "Published" : "Draft"}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {[category.show_on_main && "Main", category.show_on_shop && "Shop"].filter(Boolean).join(", ") || "-"}
+                </td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => handleEdit(category)} className="mr-3 font-semibold text-blue-600">Edit</button>
                   <button onClick={() => handleDelete(category)} className="font-semibold text-red-600">Delete</button>
@@ -179,7 +199,7 @@ export default function BlogCategories() {
             ))}
             {!categories.length && (
               <tr>
-                <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No blog categories yet.</td>
+                <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No blog categories yet.</td>
               </tr>
             )}
           </tbody>

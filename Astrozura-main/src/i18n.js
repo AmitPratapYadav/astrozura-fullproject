@@ -248,6 +248,7 @@ const enOverrides = {
     yesterday: "Yesterday",
     today: "Today",
     tomorrow: "Tomorrow",
+    yearly: "Yearly",
     fetch_error: "Horoscope could not be loaded right now.",
     elements: {
       fire: "Fire",
@@ -590,12 +591,14 @@ const resources = {
     translation: {
       ...translationEN,
       ...enOverrides,
+      horoscope: { ...translationEN.horoscope, ...enOverrides.horoscope, yearly: "Yearly" },
     },
   },
   hi: {
     translation: {
       ...translationHI,
       ...hiOverrides,
+      horoscope: { ...translationHI.horoscope, ...hiOverrides.horoscope, yearly: "\u0935\u093e\u0930\u094d\u0937\u093f\u0915" },
     },
   },
 };

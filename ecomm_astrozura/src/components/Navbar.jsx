@@ -26,11 +26,12 @@ export default function Navbar() {
   const [wishlistCount, setWishlistCount] = useState(0);
 
   const menuItems = [
-    { path: "/allproduct", name: "View All Products" },
+    { path: "/allproduct?new_arrivals=1", name: "New Arrival", mega: "new-arrivals" },
+    { path: "/allproduct?category_name=Gems", name: "Gems", mega: "gems" },
+    { path: "/guide-book", name: "Guide Book" },
     { path: "https://astrozura.com", name: "Follow Your Stars", external: true },
-    { path: "/Contact", name: "Contact us" },
-    { path: "/About", name: "About us" }
   ];
+  const gemsCategory = categories.find((category) => /gems?|gemstones?|crystals?/i.test(category.name || ""));
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
 
@@ -130,7 +131,7 @@ export default function Navbar() {
             </li>
 
             {menuItems.map((item, i) => (
-              <li key={i}>
+              <li key={i} className={item.mega ? "group relative" : ""}>
                 {item.external ? (
                   <a
                     href={item.path}
@@ -148,6 +149,23 @@ export default function Navbar() {
                   }>
                   {item.name}
                 </NavLink>}
+                {item.mega && (
+                  <div className="invisible absolute left-0 top-full z-[65] mt-2 w-[360px] rounded-2xl border border-gray-100 bg-white p-4 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                    <div className="grid gap-3">
+                      <NavLink to={item.path} className="rounded-xl bg-[#1E3557] px-4 py-3 text-sm font-bold text-white">
+                        {item.mega === "new-arrivals" ? "Explore New Arrival Products" : "Explore Gems Collection"}
+                      </NavLink>
+                      {item.mega === "gems" && gemsCategory && (
+                        <NavLink to={`/allproduct?category=${gemsCategory.id}`} className="rounded-xl bg-[#fff8df] px-4 py-3 text-sm font-bold text-[#1E3557]">
+                          {gemsCategory.name}
+                        </NavLink>
+                      )}
+                      <NavLink to={`/guide-book${item.mega === "gems" ? "?category=gems" : ""}`} className="rounded-xl border border-gray-100 px-4 py-3 text-sm font-bold text-[#1E3557] hover:bg-gray-50">
+                        Guide Book
+                      </NavLink>
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

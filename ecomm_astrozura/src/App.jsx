@@ -9,6 +9,8 @@ import Checkout from "./pages/Checkout";
 import Allproduct from "./pages/Allproduct";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import GuideBook from "./pages/GuideBook";
+import GuideBookDetail from "./pages/GuideBookDetail";
 import SR from "./pages/SR";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import SupportPage from "./pages/SupportPage";
@@ -47,6 +49,8 @@ function AppContent() {
         <Route path="/allproduct" element={<Allproduct />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
+        <Route path="/guide-book" element={<GuideBook />} />
+        <Route path="/guide-book/:slug" element={<GuideBookDetail />} />
         <Route path="/shipping-return" element={<SR />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/support" element={<SupportPage />} />

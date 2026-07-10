@@ -9,6 +9,8 @@ const emptyForm = {
   excerpt: "",
   author_name: "AstroZura Team",
   status: "1",
+  show_on_main: true,
+  show_on_shop: false,
   published_at: "",
   seo_title: "",
   seo_description: "",
@@ -99,6 +101,8 @@ export default function Blogs() {
       ].forEach((key) => {
         if (form[key] !== null && form[key] !== undefined) payload.append(key, form[key]);
       });
+      payload.append("show_on_main", form.show_on_main ? "1" : "0");
+      payload.append("show_on_shop", form.show_on_shop ? "1" : "0");
       if (form.cover_image) payload.append("cover_image", form.cover_image);
       payload.append("content_blocks", JSON.stringify(form.content_blocks));
       Object.entries(form.block_images || {}).forEach(([index, file]) => {
@@ -133,6 +137,8 @@ export default function Blogs() {
         excerpt: record.excerpt || "",
         author_name: record.author_name || "AstroZura Team",
         status: record.status ? "1" : "0",
+        show_on_main: record.show_on_main !== false,
+        show_on_shop: Boolean(record.show_on_shop),
         published_at: record.published_at ? String(record.published_at).slice(0, 16) : "",
         seo_title: record.seo_title || "",
         seo_description: record.seo_description || "",
@@ -234,6 +240,16 @@ export default function Blogs() {
               className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
             />
           </label>
+          <div className="lg:col-span-2 flex flex-wrap gap-5 rounded-lg bg-gray-50 px-4 py-3">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <input type="checkbox" checked={form.show_on_main} onChange={(event) => setForm((current) => ({ ...current, show_on_main: event.target.checked }))} />
+              Show on Main Website
+            </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <input type="checkbox" checked={form.show_on_shop} onChange={(event) => setForm((current) => ({ ...current, show_on_shop: event.target.checked }))} />
+              Show on Shop Guide Book
+            </label>
+          </div>
           <label className="lg:col-span-2">
             <span className="text-sm font-semibold text-gray-700">Excerpt</span>
             <textarea
@@ -359,6 +375,7 @@ export default function Blogs() {
               <th className="px-4 py-3">Title</th>
               <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Platforms</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -378,6 +395,9 @@ export default function Blogs() {
                 </td>
                 <td className="px-4 py-3">{blog.category?.name || "-"}</td>
                 <td className="px-4 py-3">{blog.status ? "Published" : "Draft"}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {[blog.show_on_main && "Main", blog.show_on_shop && "Shop"].filter(Boolean).join(", ") || "-"}
+                </td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => handleEdit(blog)} className="mr-3 font-semibold text-blue-600">Edit</button>
                   <button onClick={() => handleDelete(blog)} className="font-semibold text-red-600">Delete</button>
@@ -386,7 +406,7 @@ export default function Blogs() {
             ))}
             {!blogs.length && (
               <tr>
-                <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No blogs yet.</td>
+                <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No blogs yet.</td>
               </tr>
             )}
           </tbody>

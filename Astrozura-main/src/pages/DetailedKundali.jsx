@@ -52,6 +52,7 @@ const divisionalChartOptions = [
 
 const dossierTabs = [
   { id: "birth", label: "Birth Details" },
+  { id: "astro", label: "Astro Details" },
   { id: "charts", label: "Divisional Charts" },
   { id: "predictions", label: "Life Predictions" },
   { id: "dashas", label: "Vimshottari Dasha" },
@@ -715,7 +716,7 @@ export default function DetailedKundali() {
                   {/* Birth Details Tab Content */}
                   {activeDossierTab === "birth" && (
                     <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-6">
-                      <h3 className="text-lg font-bold text-[#1E3557]">Natal Coordinates & Planetary Positions</h3>
+                      <h3 className="text-lg font-bold text-[#1E3557]">Birth Details</h3>
                       <div className="grid gap-4 sm:grid-cols-2">
                         {kundliSummaryRows(reportData.kundli, form).map(([k, v], i) => (
                           <div key={i} className="flex justify-between border-b border-gray-100 pb-2 text-xs">
@@ -724,6 +725,23 @@ export default function DetailedKundali() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Astro Details Tab Content */}
+                  {activeDossierTab === "astro" && (
+                    <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-6">
+                      <h3 className="text-lg font-bold text-[#1E3557]">Astro Details</h3>
+                      {objectTableRows(providerData(reportData.kundli, "astro_details")).length > 0 && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {objectTableRows(providerData(reportData.kundli, "astro_details")).map(([k, v], i) => (
+                            <div key={`${k}-${i}`} className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+                              <span className="font-semibold text-slate-500">{k}</span>
+                              <span className="text-right font-bold text-[#1E3557]">{displayValue(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {planetRowsFromPayload(reportData.kundli).length > 0 && (
                         <div className="overflow-x-auto rounded-2xl border border-gray-100">
@@ -1010,6 +1028,7 @@ export default function DetailedKundali() {
                   {activeDossierTab === "kaal" && (
                     <KaalSarpDoshaReport result={{ data: reportData.doshas?.kaal }} />
                   )}
+
                 </div>
               )}
             </main>

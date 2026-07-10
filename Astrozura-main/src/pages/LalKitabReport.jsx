@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { ProviderSections } from "../components/report/ReportDataRenderer";
 import { getLalKitabReport, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 import { getServiceIcon } from "../data/serviceIcons";
@@ -27,6 +26,82 @@ const formatDateTime = (value) => {
 };
 
 const pageIcon = getServiceIcon("lal-kitab-report");
+
+const displayValue = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (Array.isArray(value)) return value.length ? value.map(displayValue).join(", ") : "-";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "object") {
+    return Object.entries(value)
+      .map(([key, item]) => `${key.replace(/_/g, " ")}: ${displayValue(item)}`)
+      .join(" | ");
+  }
+  return String(value);
+};
+
+function LalKitabDebts({ debts = [] }) {
+  return (
+    <section className="rounded-[2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm">
+      <h3 className="text-2xl font-black text-[#1E3557]">Your Debts (Rina) in the Lal Kitab</h3>
+      <div className="mt-6 grid gap-5">
+        {(debts.length ? debts : [{ debt_name: "No Lal Kitab debt returned", indications: "-", events: "-" }]).map((debt, index) => (
+          <article
+            key={`${debt.debt_name || "debt"}-${index}`}
+            className={`rounded-2xl border-l-4 p-5 shadow-sm ${
+              index % 2 === 0 ? "border-l-[#D4A73C] bg-[#FFF7BF]" : "border-l-[#E05A63] bg-[#FFE3E3]"
+            }`}
+          >
+            <h4 className="text-base font-black text-slate-950">{displayValue(debt.debt_name)}</h4>
+            {debt.indications ? (
+              <>
+                <p className="mt-4 text-sm font-black text-[#B77900]">Indications</p>
+                <p className="mt-1 text-sm leading-6 text-slate-800">{displayValue(debt.indications)}</p>
+              </>
+            ) : null}
+            {debt.events ? (
+              <>
+                <p className="mt-4 text-sm font-black text-[#B77900]">Effects</p>
+                <p className="mt-1 text-sm leading-6 text-slate-800">{displayValue(debt.events)}</p>
+              </>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LalKitabTable({ title, columns, rows = [] }) {
+  return (
+    <section className="overflow-hidden rounded-[2rem] border border-[#EFE3D1] bg-white shadow-sm">
+      <h3 className="px-6 py-5 text-2xl font-black text-[#1E3557]">{title}</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse text-left text-sm">
+          <thead className="bg-[#F6B76E] text-white">
+            <tr>
+              {columns.map((column) => (
+                <th key={column.key} className="px-4 py-4 text-sm font-black uppercase tracking-wide">
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(rows.length ? rows : [{}]).map((row, index) => (
+              <tr key={index} className={index % 2 === 0 ? "bg-[#FFD8A8]" : "bg-[#FFF0D9]"}>
+                {columns.map((column) => (
+                  <td key={column.key} className="px-4 py-3 font-semibold text-slate-900">
+                    {displayValue(row[column.key])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
 
 export default function LalKitabReport() {
   const { user } = useAuth();
@@ -262,7 +337,33 @@ export default function LalKitabReport() {
                   </div>
                 </div>
 
-                <ProviderSections sections={report.provider_sections || []} />
+                <LalKitabDebts debts={Array.isArray(report.debts) ? report.debts : []} />
+
+                <LalKitabTable
+                  title="The State of Planets in Your Lal Kitab Kundli"
+                  columns={[
+                    { key: "planet", label: "Planet" },
+                    { key: "rashi", label: "Rashi" },
+                    { key: "soya", label: "Soya Graha" },
+                    { key: "position", label: "Position" },
+                    { key: "nature", label: "Nature" },
+                  ]}
+                  rows={Array.isArray(report.planets) ? report.planets : []}
+                />
+
+                <LalKitabTable
+                  title="Lal Kitab House Details"
+                  columns={[
+                    { key: "khana_number", label: "Khana" },
+                    { key: "maalik", label: "Maalik" },
+                    { key: "pakka_ghar", label: "Pakka Ghar" },
+                    { key: "kismat", label: "Kismat" },
+                    { key: "soya", label: "Soya" },
+                    { key: "exalt", label: "Exalted" },
+                    { key: "debilitated", label: "Debilitated" },
+                  ]}
+                  rows={Array.isArray(report.houses) ? report.houses : []}
+                />
               </>
             )}
           </main>

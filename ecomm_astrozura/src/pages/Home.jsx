@@ -169,7 +169,7 @@ export default function Home() {
         </h2>
       </div>
       <div
-        onClick={() => alert("Redirecting ")}
+        onClick={() => navigate("/allproduct?new_arrivals=1")}
         className="flex items-center gap-2 text-[#5e6bcd] cursor-pointer hover:underline" >
         <span className="text-sm font-medium">View All Arrivals</span>
         <img src={arrow} className="w-4 h-4" />

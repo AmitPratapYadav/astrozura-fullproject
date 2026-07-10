@@ -11,6 +11,7 @@ class Product extends Model
 
     protected $fillable = [
         'category_id',
+        'guide_blog_id',
         'name',
         'description',
         'benefits',
@@ -27,6 +28,7 @@ class Product extends Model
         'origin',
         'option_names',
         'is_trending',
+        'is_new_arrival',
         'status',
     ];
 
@@ -37,6 +39,7 @@ class Product extends Model
             'option_names' => 'array',
             'translations' => 'array',
             'is_trending' => 'boolean',
+            'is_new_arrival' => 'boolean',
             'status' => 'boolean',
         ];
     }
@@ -61,5 +64,10 @@ class Product extends Model
     public function reviews()
     {
         return $this->hasMany(ProductReview::class);
+    }
+
+    public function guideBlog()
+    {
+        return $this->belongsTo(Blog::class, 'guide_blog_id');
     }
 }

@@ -10,6 +10,7 @@ export default function EditProduct() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [categories, setCategories] = useState([]);
+  const [blogs, setBlogs] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -26,6 +27,8 @@ export default function EditProduct() {
     thread_type: "",
     origin: "",
     is_trending: false,
+    is_new_arrival: false,
+    guide_blog_id: "",
     status: true,
     name_hi: "",
     description_hi: "",
@@ -38,6 +41,7 @@ export default function EditProduct() {
 
   useEffect(() => {
     fetchCategories();
+    fetchBlogs();
     fetchProduct();
   }, [id]);
 
@@ -49,6 +53,16 @@ export default function EditProduct() {
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
+    }
+  };
+
+  const fetchBlogs = async () => {
+    try {
+      const result = await apiRequest("/admin/blogs?per_page=200");
+      const rows = Array.isArray(result.data?.data) ? result.data.data : (result.data || []);
+      setBlogs(rows.filter((blog) => blog.status));
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
     }
   };
 
@@ -72,6 +86,8 @@ export default function EditProduct() {
           thread_type: product.thread_type || "",
           origin: product.origin || "",
           is_trending: Boolean(product.is_trending),
+          is_new_arrival: Boolean(product.is_new_arrival),
+          guide_blog_id: product.guide_blog_id || "",
           status: Boolean(product.status),
           name_hi: product.translations?.hi?.name || "",
           description_hi: product.translations?.hi?.description || "",
@@ -125,6 +141,7 @@ export default function EditProduct() {
       const data = new FormData();
       data.append("name", formData.name);
       data.append("category_id", formData.category_id);
+      if (formData.guide_blog_id) data.append("guide_blog_id", formData.guide_blog_id);
       data.append("price", formData.price);
       data.append("unit", formData.unit);
       data.append("description", formData.description);
@@ -137,6 +154,7 @@ export default function EditProduct() {
       data.append("thread_type", formData.thread_type);
       data.append("origin", formData.origin);
       data.append("is_trending", formData.is_trending ? 1 : 0);
+      data.append("is_new_arrival", formData.is_new_arrival ? 1 : 0);
       data.append("status", formData.status ? 1 : 0);
       data.append("option_names", JSON.stringify(optionNames));
       data.append("variants", JSON.stringify(variants));
@@ -248,6 +266,22 @@ export default function EditProduct() {
               className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"
               placeholder="e.g. per piece or per kg"
             />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Guide Blog
+            </label>
+            <select
+              name="guide_blog_id"
+              value={formData.guide_blog_id}
+              onChange={handleInputChange}
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white"
+            >
+              <option value="">No guide blog</option>
+              {blogs.map((blog) => (
+                <option key={blog.id} value={blog.id}>{blog.title}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -414,6 +448,20 @@ export default function EditProduct() {
             />
             <label htmlFor="is_trending" className="text-sm font-medium text-gray-700 cursor-pointer">
               Mark as Trending
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="is_new_arrival"
+              name="is_new_arrival"
+              checked={formData.is_new_arrival}
+              onChange={handleInputChange}
+              className="w-5 h-5 text-yellow-500 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 focus:ring-2 cursor-pointer"
+            />
+            <label htmlFor="is_new_arrival" className="text-sm font-medium text-gray-700 cursor-pointer">
+              Mark as New Arrival
             </label>
           </div>
 

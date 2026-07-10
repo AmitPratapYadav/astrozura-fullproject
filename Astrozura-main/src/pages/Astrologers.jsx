@@ -214,9 +214,17 @@ return (
             <span className="inline-block text-xs bg-[#FFF8ED] text-[#D4A73C] border border-[#F3E7D3] px-3 py-1 rounded-full font-bold tracking-wider uppercase w-fit mb-4">
               Featured Expert
             </span>
-            <h2 className="text-2xl md:text-3xl font-bold text-[#1E3557]">{featuredExpert.name}</h2>
+            <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[#D4A73C]">Align Your Stars. Engineer Your Destiny.</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#1E3557]">
+              {(featuredExpert.name || "").toLowerCase().includes("ananya")
+                ? "Meet Ananya Gupta (AstroTarsh)"
+                : featuredExpert.name}
+            </h2>
             <p className="mt-3 text-gray-500 text-sm leading-relaxed">
               {featuredDetails.about_bio || "Expert Vedic Astrologer providing guidance through life's most important decisions."}
+            </p>
+            <p className="mt-3 text-sm font-bold italic leading-relaxed text-[#1E3557]">
+              "Astrology is not just about predicting the future; it's about decoding the blueprint of your soul."
             </p>
 
             <div className="flex items-center gap-4 sm:gap-8 md:gap-10 mt-6 flex-wrap">

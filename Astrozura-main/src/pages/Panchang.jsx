@@ -87,6 +87,12 @@ const valueFrom = (...values) => {
   return "-";
 };
 
+const timeRange = (period) => {
+  if (!period || typeof period !== "object") return null;
+  if (!period.start || !period.end) return null;
+  return `${formatTime(period.start)} - ${formatTime(period.end)}`;
+};
+
 const splitMuhurtaRows = (payload, keyCandidates) => {
   const source = payload || {};
   const normalise = (items = []) =>
@@ -489,6 +495,7 @@ export default function Panchang() {
   const panchang = data?.panchang || {};
   const basic = panchang.basic || {};
   const advanced = panchang.advanced || {};
+  const hinduMaah = advanced.hindu_maah || {};
   const horaRows = splitMuhurtaRows(panchang.hora, ["hora", "planet", "name"]);
   const chaughadiyaRows = splitMuhurtaRows(panchang.chaughadiya, ["muhurta", "name"]);
 
@@ -497,6 +504,8 @@ export default function Panchang() {
     ["Sunset", formatTime(summary.sunset || advanced.sunset || basic.sunset)],
     ["Moonrise", formatTime(summary.moonrise || advanced.moonrise || basic.moonrise)],
     ["Moonset", formatTime(summary.moonset || advanced.moonset || basic.moonset)],
+    ["Vedic Sunrise", formatTime(advanced.vedic_sunrise || basic.vedic_sunrise)],
+    ["Vedic Sunset", formatTime(advanced.vedic_sunset || basic.vedic_sunset)],
     ["Sun Sign", valueFrom(advanced.sun_sign, basic.sun_sign, advanced.sunSign)],
     ["Moon Sign", valueFrom(advanced.moon_sign, basic.moon_sign, advanced.moonSign)],
   ];
@@ -509,31 +518,44 @@ export default function Panchang() {
   ];
 
   const monthYearRows = [
-    ["Vikram Samvat", valueFrom(advanced.vikram_samvat, basic.vikram_samvat, advanced.vikram_samvat_name)],
+    ["Vikram Samvat", valueFrom(advanced.vikram_samvat, basic.vikram_samvat)],
+    ["Vikram Samvat Name", valueFrom(advanced.vkram_samvat_name, advanced.vikram_samvat_name, basic.vikram_samvat_name)],
     ["Shaka Samvat", valueFrom(advanced.shaka_samvat, basic.shaka_samvat, advanced.shaka_samvat_name)],
-    ["Paksha", valueFrom(summary.current_tithi?.paksha, advanced.tithi?.details?.paksha)],
-    ["Ayana", valueFrom(advanced.ayan, advanced.ayana, basic.ayana)],
-    ["Purnimanta", valueFrom(advanced.purnimanta, basic.purnimanta)],
-    ["Amanta", valueFrom(advanced.amanta, basic.amanta)],
+    ["Shaka Samvat Name", valueFrom(advanced.shaka_samvat_name, basic.shaka_samvat_name)],
+    ["Paksha", valueFrom(advanced.paksha, summary.current_tithi?.paksha, advanced.tithi?.details?.paksha)],
+    ["Ritu", valueFrom(advanced.ritu, basic.ritu)],
+    ["Ayana", valueFrom(advanced.ayana, advanced.ayan, basic.ayana)],
+    ["Purnimanta", valueFrom(hinduMaah.purnimanta, advanced.purnimanta, basic.purnimanta)],
+    ["Amanta", valueFrom(hinduMaah.amanta, advanced.amanta, basic.amanta)],
+    ["Adhik Maas", hinduMaah.adhik_status === true ? "Yes" : hinduMaah.adhik_status === false ? "No" : "-"],
     ["Sun Sign", valueFrom(advanced.sun_sign, basic.sun_sign)],
     ["Moon Sign", valueFrom(advanced.moon_sign, basic.moon_sign)],
   ];
 
   const inauspiciousRows = [
-    ["Rahu Kalam", valueFrom(advanced.rahukaal?.start && advanced.rahukaal?.end ? `${advanced.rahukaal.start}-${advanced.rahukaal.end}` : null)],
-    ["Yamghant Kalam", valueFrom(advanced.yamghant_kaal?.start && advanced.yamghant_kaal?.end ? `${advanced.yamghant_kaal.start}-${advanced.yamghant_kaal.end}` : null)],
-    ["Gulika Kalam", valueFrom(advanced.guliKaal?.start && advanced.guliKaal?.end ? `${advanced.guliKaal.start}-${advanced.guliKaal.end}` : null)],
-    ["Dur Muhurtam", valueFrom(advanced.dur_muhurat?.start && advanced.dur_muhurat?.end ? `${advanced.dur_muhurat.start}-${advanced.dur_muhurat.end}` : null)],
-    ["Varjyam", valueFrom(advanced.varjyam?.start && advanced.varjyam?.end ? `${advanced.varjyam.start}-${advanced.varjyam.end}` : null)],
+    ["Rahu Kaal", valueFrom(timeRange(advanced.rahukaal))],
+    ["Yamghant Kaal", valueFrom(timeRange(advanced.yamghant_kaal))],
+    ["Gulika Kaal", valueFrom(timeRange(advanced.guliKaal), timeRange(advanced.gulikaal), timeRange(advanced.gulika_kaal))],
+    ["Dur Muhurtam", valueFrom(timeRange(advanced.dur_muhurat), timeRange(advanced.durmuhurat))],
+    ["Varjyam", valueFrom(timeRange(advanced.varjyam))],
   ];
 
   const auspiciousRows = [
-    ["Abhijit Muhurta", valueFrom(advanced.abhijit_muhurta?.start && advanced.abhijit_muhurta?.end ? `${advanced.abhijit_muhurta.start}-${advanced.abhijit_muhurta.end}` : null)],
-    ["Amrit Kalam", valueFrom(advanced.amrit_kalam?.start && advanced.amrit_kalam?.end ? `${advanced.amrit_kalam.start}-${advanced.amrit_kalam.end}` : null)],
+    ["Abhijit Muhurta", valueFrom(timeRange(advanced.abhijit_muhurta))],
+    ["Amrit Kalam", valueFrom(timeRange(advanced.amrit_kalam))],
+    ["Panchang Yog", valueFrom(advanced.panchang_yog)],
+  ];
+
+  const directionalRows = [
+    ["Disha Shool", valueFrom(advanced.disha_shool)],
+    ["Disha Shool Remedies", valueFrom(advanced.disha_shool_remedies)],
+    ["Nakshatra Shool", valueFrom(advanced.nak_shool?.direction, advanced.nakshatra_shool)],
+    ["Nakshatra Shool Remedies", valueFrom(advanced.nak_shool?.remedies)],
+    ["Moon Nivas", valueFrom(advanced.moon_nivas, advanced.moon_nivash)],
   ];
 
   return (
-    <div className="min-h-screen bg-white font-sans text-[#1E3557]">
+    <div className="min-h-screen overflow-x-hidden bg-white font-sans text-[#1E3557]">
       {message && (
         <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-medium text-white shadow-lg">
           {message}
@@ -543,7 +565,7 @@ export default function Panchang() {
 
       <section className="bg-gradient-to-r from-[#1E3557] via-[#315f9d] to-[#D4A73C] text-white">
         <div className="mx-auto max-w-6xl px-4 py-5 md:px-8">
-          <h1 className="text-2xl font-black md:text-4xl">
+          <h1 className="max-w-[340px] text-xl font-black leading-tight sm:max-w-none sm:text-2xl md:text-4xl">
             {currentView.title} For {selectedDateLabel}
           </h1>
         </div>
@@ -614,7 +636,7 @@ export default function Panchang() {
             </select>
           </FieldShell>
 
-          <div className="grid grid-cols-2 gap-3 self-end">
+          <div className="grid grid-cols-2 gap-2 self-end">
             <button type="button" onClick={() => void moveDate(-1)} className="h-12 rounded-md bg-[#1E3557] px-4 text-sm font-bold text-white hover:bg-[#172a46]">
               Previous
             </button>
@@ -674,26 +696,16 @@ export default function Panchang() {
               <InfoTable title="Auspicious Timing" rows={auspiciousRows} />
             </div>
 
-            <section className="max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-              <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">Other Yoga</h2>
-              <div className="grid grid-cols-[120px_1fr] bg-white transition hover:bg-slate-50/60 items-center border-b border-slate-100">
-                <p className="border-r border-slate-100 p-4 text-xs font-bold uppercase tracking-wider text-slate-400">Anandadi Yog</p>
-                <p className="p-4 text-sm font-semibold text-[#1E3557]">{valueFrom(advanced.anandadi_yog, advanced.anandadi_yoga)}</p>
-              </div>
-              <h3 className="bg-slate-50/80 border-b border-slate-100 p-3 text-center text-sm font-bold uppercase tracking-wider text-[#1E3557]">Shool & Nivas</h3>
-              <div className="grid grid-cols-2 divide-x divide-y divide-slate-100">
-                {[
-                  ["Disha Shool", valueFrom(advanced.disha_shool)],
-                  ["Nakshatra Shool", valueFrom(advanced.nakshatra_shool)],
-                  ["Moon Nivash", valueFrom(advanced.moon_nivas, advanced.moon_nivash)],
-                ].map(([label, value]) => (
-                  <div key={label} className="p-4 bg-white transition hover:bg-slate-50/60 border-t border-l border-slate-100 first:border-t-0 odd:border-l-0">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
-                    <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <div className="grid gap-8 lg:grid-cols-[1fr_2fr]">
+              <InfoTable
+                title="Other Yoga"
+                rows={[
+                  ["Anandadi Yog", valueFrom(advanced.anandadi_yog, advanced.anandadi_yoga)],
+                  ["Panchang Yog", valueFrom(advanced.panchang_yog)],
+                ]}
+              />
+              <InfoTable title="Shool & Nivas" rows={directionalRows} />
+            </div>
 
             <PanchangExtraBlocks
               extrasData={extrasData}

@@ -100,6 +100,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payments/razorpay/config', [RazorpayPaymentController::class, 'config']);
     Route::post('/payments/razorpay/order', [RazorpayPaymentController::class, 'createOrder']);
     Route::post('/payments/razorpay/verify', [RazorpayPaymentController::class, 'verify']);
+    Route::get('/horoscope/yearly/access', [AstrologyController::class, 'yearlyHoroscopeAccess']);
+    Route::post('/horoscope/yearly/access', [AstrologyController::class, 'createYearlyHoroscopeAccess']);
+    Route::post('/horoscope/yearly/report', [AstrologyController::class, 'getPaidYearlyHoroscope']);
 
     // Booking Routes (auth required)
     Route::get('/my-bookings', [BookingController::class, 'myBookings']);

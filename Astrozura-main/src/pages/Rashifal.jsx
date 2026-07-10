@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { FaArrowRight, FaBriefcase, FaHeartbeat, FaHeart, FaMagic } from "react-icons/fa";
 import { getDailyHoroscope } from "../api/prokeralaApi";
 import { getZodiacIcon } from "../data/zodiacIcons";
+import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
+import { ensureRazorpayConfigured, payWithRazorpay } from "../api/paymentApi";
+import { ProviderSections } from "../components/report/ReportDataRenderer";
 
 const zodiacs = [
   { name: "Aries", key: "aries", date: "Mar 21 - Apr 19", element: "fire", ruler: "mars", tone: "from-[#f97316] to-[#dc2626]", surface: "bg-[#fff6ed]", accent: "text-[#c2410c]" },
@@ -24,15 +28,27 @@ const zodiacs = [
 
 export default function Rashifal() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedSign, setSelectedSign] = useState(null);
   const initialPeriod = searchParams.get("period");
   const [activeTab, setActiveTab] = useState(
-    ["yesterday", "today", "tomorrow"].includes(initialPeriod) ? initialPeriod : "today"
+    ["yesterday", "today", "tomorrow", "yearly"].includes(initialPeriod) ? initialPeriod : "today"
   );
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [yearlyLoading, setYearlyLoading] = useState(false);
+  const [yearlyMessage, setYearlyMessage] = useState("");
+  const [yearlyReport, setYearlyReport] = useState(null);
+  const [yearlyForm, setYearlyForm] = useState({
+    date: "",
+    time: "",
+    latitude: "",
+    longitude: "",
+    year: String(new Date().getFullYear()),
+  });
 
   const fetchHoroscope = async (sign, day) => {
     try {
@@ -57,19 +73,84 @@ export default function Rashifal() {
 
   const handleSelect = (zodiac) => {
     setSelectedSign(zodiac);
-    fetchHoroscope(zodiac.name, activeTab);
+    setYearlyReport(null);
+    setYearlyMessage("");
+    if (activeTab !== "yearly") {
+      fetchHoroscope(zodiac.name, activeTab);
+    }
   };
 
   const handleTabChange = (day) => {
     setActiveTab(day);
     setSearchParams({ period: day });
+    setYearlyReport(null);
+    setYearlyMessage("");
+    if (day === "yearly") {
+      setData(null);
+      setError("");
+      return;
+    }
     if (selectedSign) {
       fetchHoroscope(selectedSign.name, day);
     }
   };
 
+  const unlockYearlyHoroscope = async () => {
+    if (!user) {
+      navigate("/login");
+      return null;
+    }
+
+    const year = Number(yearlyForm.year || new Date().getFullYear());
+    await ensureRazorpayConfigured();
+    const { data: accessResponse } = await api.post("/horoscope/yearly/access", { year });
+    const accessRecord = accessResponse?.data;
+    if (!accessRecord?.id) {
+      throw new Error("Unable to initialize yearly horoscope access.");
+    }
+    if (accessRecord.payment_status !== "paid") {
+      await payWithRazorpay({
+        purpose: "yearly_horoscope",
+        recordId: accessRecord.id,
+        name: user?.name,
+        email: user?.email,
+        contact: user?.phone,
+        description: `Yearly horoscope access for ${year}`,
+      });
+    }
+    return accessRecord;
+  };
+
+  const generateYearlyHoroscope = async (event) => {
+    event.preventDefault();
+    try {
+      setYearlyLoading(true);
+      setYearlyMessage("");
+      setYearlyReport(null);
+      await unlockYearlyHoroscope();
+
+      const datetime = `${yearlyForm.date}T${yearlyForm.time || "12:00"}:00+05:30`;
+      const coordinates = `${yearlyForm.latitude},${yearlyForm.longitude}`;
+      const { data: reportResponse } = await api.post("/horoscope/yearly/report", {
+        datetime,
+        coordinates,
+        year: Number(yearlyForm.year || new Date().getFullYear()),
+      });
+
+      if (reportResponse?.status === "success") {
+        setYearlyReport(reportResponse.data);
+      } else {
+        setYearlyMessage(reportResponse?.message || "Unable to generate yearly horoscope.");
+      }
+    } catch (err) {
+      setYearlyMessage(err?.response?.data?.message || err?.message || "Payment or report generation failed.");
+    } finally {
+      setYearlyLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8f9fa] font-sans">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#f8f9fa] font-sans">
       <Navbar />
 
       <section className="relative bg-[#1E3557] px-4 py-20 text-center text-white md:px-8">
@@ -78,8 +159,11 @@ export default function Rashifal() {
           <span className="mb-4 inline-block rounded-full border border-[#D4A73C]/30 bg-[#D4A73C]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#D4A73C]">
             {t("horoscope.eyebrow")}
           </span>
-          <h1 className="mb-4 text-3xl font-extrabold md:text-5xl">{t("horoscope.page_title")}</h1>
-          <p className="text-gray-300 md:text-xl">{t("horoscope.page_subtitle")}</p>
+          <h1 className="mx-auto mb-4 max-w-[235px] text-lg font-extrabold leading-tight sm:max-w-[520px] sm:text-3xl md:max-w-none md:text-5xl">
+            <span className="sm:hidden">Zodiac Horoscope</span>
+            <span className="hidden sm:inline">{t("horoscope.page_title")}</span>
+          </h1>
+          <p className="mx-auto max-w-[285px] text-sm leading-6 text-gray-300 sm:max-w-2xl md:text-xl">{t("horoscope.page_subtitle")}</p>
         </div>
       </section>
 
@@ -96,7 +180,7 @@ export default function Rashifal() {
                 <div className={`absolute -right-8 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${zodiac.tone} opacity-20 transition group-hover:scale-125`} />
                 <div className="absolute inset-x-5 top-0 h-1 rounded-b-full bg-gradient-to-r from-transparent via-white/70 to-transparent" />
 
-                <div className="relative flex items-start justify-between gap-4">
+                <div className="relative flex flex-wrap items-start justify-between gap-3">
                   <span className="rounded-full border border-white/70 bg-white/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600 shadow-sm">
                     {t(`horoscope.elements.${zodiac.element}`)}
                   </span>
@@ -149,19 +233,66 @@ export default function Rashifal() {
 
             <div className="p-6 md:p-10">
               <div className="mx-auto mb-10 flex w-max flex-wrap justify-center gap-2 rounded-xl border bg-gray-50 p-2">
-                {["yesterday", "today", "tomorrow"].map((day) => (
+                {["yesterday", "today", "tomorrow", "yearly"].map((day) => (
                   <button
                     key={day}
                     type="button"
                     onClick={() => handleTabChange(day)}
                     className={`rounded-lg px-6 py-2 font-semibold capitalize transition ${activeTab === day ? "bg-[#1E3557] text-[#D4A73C] shadow-md" : "text-gray-600 hover:bg-gray-100"}`}
                   >
-                    {t(`horoscope.${day}`)}
+                    {day === "yearly" ? "Yearly (Rs 10)" : t(`horoscope.${day}`)}
                   </button>
                 ))}
               </div>
 
-              {loading ? (
+              {activeTab === "yearly" ? (
+                <div className="space-y-8 animate-fadeIn">
+                  <div className="rounded-2xl border border-[#D4A73C]/30 bg-[#fff9e8] p-6 text-center">
+                    <h3 className="text-2xl font-black text-[#1E3557]">Yearly Horoscope</h3>
+                    <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-700">
+                      Unlock a birth-detail based Varshaphal yearly report for Rs 10. Access remains open for 12 hours after payment.
+                    </p>
+                  </div>
+
+                  <form onSubmit={generateYearlyHoroscope} className="grid gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-5 md:grid-cols-5">
+                    <label className="text-sm font-semibold text-slate-700">
+                      Birth Date
+                      <input required type="date" value={yearlyForm.date} onChange={(event) => setYearlyForm({ ...yearlyForm, date: event.target.value })} className="mt-2 w-full rounded-xl border px-3 py-2" />
+                    </label>
+                    <label className="text-sm font-semibold text-slate-700">
+                      Birth Time
+                      <input required type="time" value={yearlyForm.time} onChange={(event) => setYearlyForm({ ...yearlyForm, time: event.target.value })} className="mt-2 w-full rounded-xl border px-3 py-2" />
+                    </label>
+                    <label className="text-sm font-semibold text-slate-700">
+                      Latitude
+                      <input required value={yearlyForm.latitude} onChange={(event) => setYearlyForm({ ...yearlyForm, latitude: event.target.value })} placeholder="28.6139" className="mt-2 w-full rounded-xl border px-3 py-2" />
+                    </label>
+                    <label className="text-sm font-semibold text-slate-700">
+                      Longitude
+                      <input required value={yearlyForm.longitude} onChange={(event) => setYearlyForm({ ...yearlyForm, longitude: event.target.value })} placeholder="77.2090" className="mt-2 w-full rounded-xl border px-3 py-2" />
+                    </label>
+                    <label className="text-sm font-semibold text-slate-700">
+                      Year
+                      <input required type="number" min="1900" max="2100" value={yearlyForm.year} onChange={(event) => setYearlyForm({ ...yearlyForm, year: event.target.value })} className="mt-2 w-full rounded-xl border px-3 py-2" />
+                    </label>
+                    <div className="md:col-span-5">
+                      <button disabled={yearlyLoading} className="rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg disabled:opacity-60">
+                        {yearlyLoading ? "Processing..." : user ? "Unlock & Generate" : "Login to Unlock"}
+                      </button>
+                      {yearlyMessage && <p className="mt-3 text-sm font-semibold text-red-600">{yearlyMessage}</p>}
+                    </div>
+                  </form>
+
+                  {yearlyReport?.sections?.length ? (
+                    <div className="rounded-2xl border border-gray-100 bg-white p-5">
+                      <div className="mb-5 text-sm font-semibold text-slate-500">
+                        Access active until {new Date(yearlyReport.access_expires_at).toLocaleString()}
+                      </div>
+                      <ProviderSections sections={yearlyReport.sections} />
+                    </div>
+                  ) : null}
+                </div>
+              ) : loading ? (
                 <div className="flex flex-col items-center justify-center py-20">
                   <div className="mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-[#1E3557]" />
                   <p className="text-gray-500">{t("horoscope.reading")}</p>

@@ -14,10 +14,12 @@ class BlogController extends Controller
 {
     public function categories(Request $request)
     {
+        $platform = $this->platform($request);
         $query = BlogCategory::query()->orderBy('sort_order')->orderBy('name');
 
         if (!$this->isAdminRequest($request)) {
-            $query->where('status', true);
+            $query->where('status', true)
+                ->where($platform === 'shop' ? 'show_on_shop' : 'show_on_main', true);
         }
 
         $categories = $query->get();
@@ -31,12 +33,21 @@ class BlogController extends Controller
 
     public function blogs(Request $request)
     {
+        $platform = $this->platform($request);
         $query = Blog::query()->with('category')->latest('published_at')->latest('id');
 
         if (!$this->isAdminRequest($request)) {
             $query->where('status', true)
+                ->where($platform === 'shop' ? 'show_on_shop' : 'show_on_main', true)
                 ->where(function ($builder) {
                     $builder->whereNull('published_at')->orWhere('published_at', '<=', now());
+                })
+                ->where(function ($builder) use ($platform) {
+                    $builder->whereDoesntHave('category')
+                        ->orWhereHas('category', function ($categoryQuery) use ($platform) {
+                            $categoryQuery->where('status', true)
+                                ->where($platform === 'shop' ? 'show_on_shop' : 'show_on_main', true);
+                        });
                 });
         }
 
@@ -68,6 +79,7 @@ class BlogController extends Controller
             ->with('category')
             ->where('slug', $slug)
             ->where('status', true)
+            ->where($this->platform($request) === 'shop' ? 'show_on_shop' : 'show_on_main', true)
             ->where(function ($builder) {
                 $builder->whereNull('published_at')->orWhere('published_at', '<=', now());
             })
@@ -94,6 +106,8 @@ class BlogController extends Controller
             'status' => 'nullable',
             'sort_order' => 'nullable|integer|min:0',
             'translations' => 'nullable|string',
+            'show_on_main' => 'nullable',
+            'show_on_shop' => 'nullable',
         ]);
 
         if ($request->hasFile('image')) {
@@ -104,6 +118,8 @@ class BlogController extends Controller
         $validated['status'] = $request->boolean('status', true);
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
         $validated['translations'] = $this->decodeTranslations($validated['translations'] ?? null);
+        $validated['show_on_main'] = $request->boolean('show_on_main', true);
+        $validated['show_on_shop'] = $request->boolean('show_on_shop', false);
 
         return response()->json([
             'status' => 'success',
@@ -123,6 +139,8 @@ class BlogController extends Controller
             'status' => 'nullable',
             'sort_order' => 'nullable|integer|min:0',
             'translations' => 'nullable|string',
+            'show_on_main' => 'nullable',
+            'show_on_shop' => 'nullable',
         ]);
 
         if ($request->hasFile('image')) {
@@ -133,6 +151,8 @@ class BlogController extends Controller
         $validated['status'] = $request->boolean('status', true);
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
         $validated['translations'] = $this->decodeTranslations($validated['translations'] ?? null);
+        $validated['show_on_main'] = $request->boolean('show_on_main', true);
+        $validated['show_on_shop'] = $request->boolean('show_on_shop', false);
         $category->update($validated);
 
         return response()->json(['status' => 'success', 'data' => $category->fresh()]);
@@ -202,6 +222,8 @@ class BlogController extends Controller
             'translations' => 'nullable|string',
             'author_name' => 'nullable|string|max:255',
             'status' => 'nullable',
+            'show_on_main' => 'nullable',
+            'show_on_shop' => 'nullable',
             'published_at' => 'nullable|date',
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string',
@@ -232,6 +254,8 @@ class BlogController extends Controller
         }));
         $validated['translations'] = $this->decodeTranslations($validated['translations'] ?? null);
         $validated['status'] = $request->boolean('status', false);
+        $validated['show_on_main'] = $request->boolean('show_on_main', true);
+        $validated['show_on_shop'] = $request->boolean('show_on_shop', false);
         $validated['published_at'] = !empty($validated['published_at'])
             ? Carbon::parse($validated['published_at'])
             : null;
@@ -267,6 +291,11 @@ class BlogController extends Controller
     private function isAdminRequest(Request $request): bool
     {
         return $request->user()?->role === 'admin';
+    }
+
+    private function platform(Request $request): string
+    {
+        return $request->query('platform') === 'shop' ? 'shop' : 'main';
     }
 
     private function decodeTranslations(?string $value): ?array

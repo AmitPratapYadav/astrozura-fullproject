@@ -6,6 +6,7 @@ import { getMarriageMatching, searchLocation } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
 import { FaHeart, FaStar, FaInfoCircle, FaSpinner, FaExchangeAlt } from "react-icons/fa";
 import { getServiceIcon } from "../data/serviceIcons";
+import { ProviderSections } from "../components/report/ReportDataRenderer";
 
 const initialForm = {
   boy_name: "",
@@ -24,6 +25,8 @@ const initialForm = {
 };
 
 const pageIcon = getServiceIcon("detailed-matchmaking");
+
+const normalizeMatchData = (data) => data?.match || data || {};
 
 export default function DetailedMatchmaking() {
   const { user } = useAuth();
@@ -154,11 +157,13 @@ export default function DetailedMatchmaking() {
     }
   };
 
-  const matchInfo = matchData?.match || {};
+  const matchInfo = normalizeMatchData(matchData);
   const gunaDetails = matchInfo.guna_milan || {};
   const totalScore = gunaDetails.total_points != null ? gunaDetails.total_points : matchInfo.total_points || 0;
-  const maxScore = 36;
+  const maxScore = gunaDetails.maximum_points || 36;
   const percentage = Math.round((totalScore / maxScore) * 100);
+  const verdictText = matchInfo.message?.description || matchInfo.message || "Compatibility report generated successfully.";
+  const gunaRows = Array.isArray(gunaDetails.guna) ? gunaDetails.guna : [];
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] text-[#1E3557] font-sans">
@@ -417,15 +422,49 @@ export default function DetailedMatchmaking() {
                       <div>
                         <h3 className="font-bold text-lg text-[#1E3557]">Guna Milan Score</h3>
                         <p className="text-xs text-gray-400">Ashtakoota traditional points matched</p>
-                        <p className="text-sm font-extrabold text-[#8E2DE2] mt-1">Verdict: {matchInfo.message || "Compatible Match"}</p>
+                        <p className="text-sm font-extrabold text-[#8E2DE2] mt-1">Verdict: {matchInfo.message?.type || "Generated"}</p>
+                        <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">{verdictText}</p>
                       </div>
                     </div>
 
                     <div className="text-center md:text-right bg-white rounded-2xl px-5 py-3 border border-purple-100 shadow-sm shrink-0">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Mutual Manglik Cancellation</span>
-                      <span className="text-xs font-bold text-emerald-600 mt-1 block">Exceptions cancel harmoniously</span>
+                      <span className="text-xs font-bold text-emerald-600 mt-1 block">
+                        {matchInfo.exceptions?.length ? `${matchInfo.exceptions.length} exception note(s)` : "No major exception returned"}
+                      </span>
                     </div>
                   </div>
+
+                  {gunaRows.length > 0 && (
+                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm">
+                      <div className="border-b border-[#EFE3D1] bg-[#1E3557] px-6 py-4">
+                        <h3 className="text-lg font-black text-white">Ashtakoot Breakdown</h3>
+                        <p className="mt-1 text-xs text-white/70">Real compatibility points returned from the matchmaking API.</p>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-left text-sm">
+                          <thead className="bg-[#FFF7DF] text-[#7A4C00]">
+                            <tr>
+                              {["Koot", "Groom", "Bride", "Points", "Description"].map((heading) => (
+                                <th key={heading} className="px-4 py-3 font-black">{heading}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {gunaRows.map((row, index) => (
+                              <tr key={row.id || row.name || index} className="border-b border-slate-100 last:border-b-0 odd:bg-white even:bg-slate-50">
+                                <td className="px-4 py-3 font-black text-[#1E3557]">{row.name || row.id}</td>
+                                <td className="px-4 py-3 text-slate-600">{row.boy_koot || "-"}</td>
+                                <td className="px-4 py-3 text-slate-600">{row.girl_koot || "-"}</td>
+                                <td className="px-4 py-3 font-bold text-[#8E2DE2]">{row.obtained_points ?? 0}/{row.maximum_points ?? "-"}</td>
+                                <td className="px-4 py-3 text-slate-600">{row.description || "-"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 5 Pillar Compatibility Cards */}
                   <div className="space-y-4">
@@ -466,6 +505,8 @@ export default function DetailedMatchmaking() {
                       ))}
                     </div>
                   </div>
+
+                  <ProviderSections sections={matchInfo.provider_sections || []} />
                 </div>
               )}
             </main>

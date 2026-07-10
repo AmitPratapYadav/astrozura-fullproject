@@ -151,6 +151,7 @@ export default function ProductPage() {
     { id: "benefits", label: "Benefits" },
     { id: "specifications", label: "Specifications" },
     { id: "warnings", label: "Care & Safety" },
+    ...(product.guide_blog ? [{ id: "guide", label: "Guide Book" }] : []),
   ];
 
   return (
@@ -419,6 +420,23 @@ export default function ProductPage() {
                     <div className="border-l-4 border-amber-400 bg-amber-50 px-5 py-4 text-amber-950 rounded-r-md whitespace-pre-wrap">
                       {product.warnings_precautions || "Follow the care instructions supplied with the product and keep it away from young children."}
                     </div>
+                  </div>
+                )}
+                {activeTab === "guide" && product.guide_blog && (
+                  <div className="animate-fadeIn">
+                    <h3 className="text-xl font-black text-[#1e1b4b] mb-6">Guide Book</h3>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/guide-book/${product.guide_blog.slug}`)}
+                      className="grid w-full overflow-hidden rounded-2xl border border-gray-100 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg md:grid-cols-[220px_1fr]"
+                    >
+                      <CatalogImage src={product.guide_blog.cover_image} alt={product.guide_blog.title} className="h-56 w-full object-cover md:h-full" />
+                      <span className="block p-5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#D4A73C]">{product.guide_blog.category?.name || "Guide"}</span>
+                        <strong className="mt-2 block text-2xl font-black text-[#1E3557]">{product.guide_blog.title}</strong>
+                        {product.guide_blog.excerpt && <span className="mt-3 block text-sm leading-6 text-gray-600">{product.guide_blog.excerpt}</span>}
+                      </span>
+                    </button>
                   </div>
                 )}
               </div>
