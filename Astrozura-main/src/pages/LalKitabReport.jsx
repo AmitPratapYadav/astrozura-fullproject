@@ -77,7 +77,7 @@ function LalKitabTable({ title, columns, rows = [] }) {
       <h3 className="px-6 py-5 text-2xl font-black text-[#1E3557]">{title}</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-left text-sm">
-          <thead className="bg-[#F6B76E] text-white">
+          <thead className="bg-[#D7AF4B] text-[#1E3557]">
             <tr>
               {columns.map((column) => (
                 <th key={column.key} className="px-4 py-4 text-sm font-black uppercase tracking-wide">
@@ -88,7 +88,7 @@ function LalKitabTable({ title, columns, rows = [] }) {
           </thead>
           <tbody>
             {(rows.length ? rows : [{}]).map((row, index) => (
-              <tr key={index} className={index % 2 === 0 ? "bg-[#FFD8A8]" : "bg-[#FFF0D9]"}>
+              <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-[#FAF9F6]"}>
                 {columns.map((column) => (
                   <td key={column.key} className="px-4 py-3 font-semibold text-slate-900">
                     {displayValue(row[column.key])}

@@ -715,9 +715,9 @@ export default function DetailedKundali() {
 
                   {/* Birth Details Tab Content */}
                   {activeDossierTab === "birth" && (
-                    <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-6">
-                      <h3 className="text-lg font-bold text-[#1E3557]">Birth Details</h3>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
+                      <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3557]">Birth Details</h3>
+                      <div className="grid gap-4 sm:grid-cols-2 p-6 mt-0 pt-0">
                         {kundliSummaryRows(reportData.kundli, form).map(([k, v], i) => (
                           <div key={i} className="flex justify-between border-b border-gray-100 pb-2 text-xs">
                             <span className="font-semibold text-slate-500">{k}</span>
@@ -730,75 +730,77 @@ export default function DetailedKundali() {
 
                   {/* Astro Details Tab Content */}
                   {activeDossierTab === "astro" && (
-                    <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-6">
-                      <h3 className="text-lg font-bold text-[#1E3557]">Astro Details</h3>
-                      {objectTableRows(providerData(reportData.kundli, "astro_details")).length > 0 && (
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          {objectTableRows(providerData(reportData.kundli, "astro_details")).map(([k, v], i) => (
-                            <div key={`${k}-${i}`} className="flex justify-between border-b border-gray-100 pb-2 text-xs">
-                              <span className="font-semibold text-slate-500">{k}</span>
-                              <span className="text-right font-bold text-[#1E3557]">{displayValue(v)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {planetRowsFromPayload(reportData.kundli).length > 0 && (
-                        <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                          <table className="w-full min-w-[760px] border-collapse text-left text-xs">
-                            <thead>
-                              <tr className="bg-[#FFF7DF] text-[#7A4C00]">
-                                {["Planet", "Sign", "Sign Lord", "Degree", "Nakshatra", "Nakshatra Lord", "House", "Motion"].map((heading) => (
-                                  <th key={heading} className="border-b border-amber-100 px-3 py-3 font-black">
-                                    {heading}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {planetRowsFromPayload(reportData.kundli).map((planet, index) => (
-                                <tr key={`${planet.planet}-${index}`} className="border-b border-gray-100 last:border-b-0 odd:bg-white even:bg-slate-50">
-                                  <td className="px-3 py-3 font-bold text-[#1E3557]">{planet.planet}</td>
-                                  <td className="px-3 py-3 text-slate-600">{planet.sign}</td>
-                                  <td className="px-3 py-3 text-slate-600">{planet.signLord}</td>
-                                  <td className="px-3 py-3 text-slate-600">{planet.degree}</td>
-                                  <td className="px-3 py-3 text-slate-600">{planet.nakshatra}</td>
-                                  <td className="px-3 py-3 text-slate-600">{planet.nakshatraLord}</td>
-                                  <td className="px-3 py-3 text-slate-600">{planet.house}</td>
-                                  <td className="px-3 py-3 text-slate-600">{planet.motion}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-
-                      {/* Positive Yogas present */}
-                      {reportData.kundli?.yoga_details && reportData.kundli.yoga_details.length > 0 && (
-                        <div className="mt-6 border-t border-gray-100 pt-6">
-                          <h4 className="font-bold text-sm text-[#1E3557] mb-3">Positive Yogas Present In Chart:</h4>
-                          <div className="grid gap-3">
-                            {reportData.kundli.yoga_details.flatMap(g => g.yoga_list || []).filter(y => y.has_yoga).slice(0, 4).map((y, index) => (
-                              <div key={index} className="rounded-xl bg-[#FAF9F6] border border-[#EFECE6] p-4 text-xs">
-                                <p className="font-bold text-[#B05B35]">{y.name}</p>
-                                <p className="mt-1 leading-5 text-gray-500">{y.description}</p>
+                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
+                      <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3557]">Astro Details</h3>
+                      <div className="p-6 mt-0 pt-0 space-y-6">
+                        {objectTableRows(providerData(reportData.kundli, "astro_details")).length > 0 && (
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {objectTableRows(providerData(reportData.kundli, "astro_details")).map(([k, v], i) => (
+                              <div key={`${k}-${i}`} className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+                                <span className="font-semibold text-slate-500">{k}</span>
+                                <span className="text-right font-bold text-[#1E3557]">{displayValue(v)}</span>
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        )}
+
+                        {planetRowsFromPayload(reportData.kundli).length > 0 && (
+                          <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                            <table className="w-full min-w-[760px] border-collapse text-left text-xs">
+                              <thead>
+                                <tr className="bg-[#D7AF4B] text-[#1E3557]">
+                                  {["Planet", "Sign", "Sign Lord", "Degree", "Nakshatra", "Nakshatra Lord", "House", "Motion"].map((heading) => (
+                                    <th key={heading} className="border-b border-amber-100 px-3 py-3 font-black">
+                                      {heading}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {planetRowsFromPayload(reportData.kundli).map((planet, index) => (
+                                  <tr key={`${planet.planet}-${index}`} className="border-b border-gray-100 last:border-b-0 odd:bg-white even:bg-slate-50">
+                                    <td className="px-3 py-3 font-bold text-[#1E3557]">{planet.planet}</td>
+                                    <td className="px-3 py-3 text-slate-600">{planet.sign}</td>
+                                    <td className="px-3 py-3 text-slate-600">{planet.signLord}</td>
+                                    <td className="px-3 py-3 text-slate-600">{planet.degree}</td>
+                                    <td className="px-3 py-3 text-slate-600">{planet.nakshatra}</td>
+                                    <td className="px-3 py-3 text-slate-600">{planet.nakshatraLord}</td>
+                                    <td className="px-3 py-3 text-slate-600">{planet.house}</td>
+                                    <td className="px-3 py-3 text-slate-600">{planet.motion}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* Positive Yogas present */}
+                        {reportData.kundli?.yoga_details && reportData.kundli.yoga_details.length > 0 && (
+                          <div className="mt-6 border-t border-gray-100 pt-6">
+                            <h4 className="font-bold text-sm text-[#1E3557] mb-3">Positive Yogas Present In Chart:</h4>
+                            <div className="grid gap-3">
+                              {reportData.kundli.yoga_details.flatMap(g => g.yoga_list || []).filter(y => y.has_yoga).slice(0, 4).map((y, index) => (
+                                <div key={index} className="rounded-xl bg-[#FAF9F6] border border-[#EFECE6] p-4 text-xs">
+                                  <p className="font-bold text-[#B05B35]">{y.name}</p>
+                                  <p className="mt-1 leading-5 text-gray-500">{y.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
                   {/* Divisional Charts Tab Content */}
                   {activeDossierTab === "charts" && (
-                    <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-6">
-                      <div className="flex items-center justify-between gap-4 flex-wrap">
-                        <h3 className="text-lg font-bold text-[#1E3557]">Divisional Charts Selector</h3>
+                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
+                      <div className="flex items-center justify-between gap-4 flex-wrap bg-[#D7AF4B] px-6 py-5">
+                        <h3 className="text-2xl font-black text-[#1E3557]">Divisional Charts</h3>
                         <select
                           value={selectedChartType}
                           onChange={(e) => setSelectedChartType(e.target.value)}
-                          className="rounded-xl border border-slate-200 bg-[#f8f9fc] px-4 py-2 text-xs outline-none font-bold"
+                          className="rounded-xl border border-slate-200 bg-[#f8f9fc] px-4 py-2 text-xs outline-none font-bold text-[#1E3557]"
                         >
                           {divisionalChartOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -806,125 +808,117 @@ export default function DetailedKundali() {
                         </select>
                       </div>
 
-                      <div className="flex min-h-[300px] items-center justify-center overflow-x-auto border border-gray-200 bg-[#fffbf0] rounded-2xl p-4 shadow-inner relative">
-                        {loadingChart ? (
-                          <div className="text-center"><FaSpinner className="animate-spin text-2xl text-[#1E3C72] mx-auto" /><p className="mt-2 text-xs text-gray-500 font-semibold">Generating Chart Layout...</p></div>
-                        ) : loadedCharts[selectedChartType] ? (
-                          <div dangerouslySetInnerHTML={{ __html: loadedCharts[selectedChartType] }} className="max-w-full" style={{ minWidth: "300px", minHeight: "300px" }} />
-                        ) : (
-                          <p className="text-xs text-gray-400">Loading Divisional chart...</p>
-                        )}
+                      <div className="p-6 mt-0 pt-0">
+                        <div className="flex min-h-[300px] items-center justify-center overflow-x-auto border border-gray-200 bg-[#fffbf0] rounded-2xl p-4 shadow-inner relative">
+                          {loadingChart ? (
+                            <div className="text-center"><FaSpinner className="animate-spin text-2xl text-[#1E3C72] mx-auto" /><p className="mt-2 text-xs text-gray-500 font-semibold">Generating Chart Layout...</p></div>
+                          ) : loadedCharts[selectedChartType] ? (
+                            <div dangerouslySetInnerHTML={{ __html: loadedCharts[selectedChartType] }} className="max-w-full" style={{ minWidth: "300px", minHeight: "300px" }} />
+                          ) : (
+                            <p className="text-xs text-gray-400">Loading Divisional chart...</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* Predictions Tab Content */}
                   {activeDossierTab === "predictions" && (
-                    <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-6">
-                      <div className="flex flex-wrap gap-2">
-                        {predictionTabs.map((area) => (
-                          <button
-                            key={area.id}
-                            type="button"
-                            onClick={() => setActivePredictionArea(area.id)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activePredictionArea === area.id ? "bg-[#1E3557] text-white" : "bg-[#f8f9fc] text-gray-500 hover:bg-gray-100"}`}
-                          >
-                            {area.label}
-                          </button>
-                        ))}
-                        {false && [
-                          { id: "career", label: "💼 Career" },
-                          { id: "love-and-relationship", label: "❤️ Relationships" },
-                          { id: "health", label: "💊 Health" },
-                          { id: "finance", label: "💰 Wealth & Finance" },
-                        ].map((area) => (
-                          <button
-                            key={area.id}
-                            type="button"
-                            onClick={() => setActivePredictionArea(area.id)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activePredictionArea === area.id ? "bg-[#1E3557] text-white" : "bg-[#f8f9fc] text-gray-500 hover:bg-gray-100"}`}
-                          >
-                            {area.label}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
+                      <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3557]">Life Predictions</h3>
+                      <div className="p-6 mt-0 pt-0 space-y-6">
+                        <div className="flex flex-wrap gap-2">
+                          {predictionTabs.map((area) => (
+                            <button
+                              key={area.id}
+                              type="button"
+                              onClick={() => setActivePredictionArea(area.id)}
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activePredictionArea === area.id ? "bg-[#1E3557] text-white" : "bg-[#f8f9fc] text-gray-500 hover:bg-gray-100"}`}
+                            >
+                              {area.label}
+                            </button>
+                          ))}
+                        </div>
 
-                      <div className="border-t border-gray-100 pt-4">
-                        {reportData.predictions[activePredictionArea] ? (
-                          predictionBlocks(reportData.predictions[activePredictionArea]).length ? (
-                            <div className="space-y-4">
-                              {predictionBlocks(reportData.predictions[activePredictionArea]).map((block, index) => (
-                                <div key={`${block.title}-${index}`} className="rounded-2xl border border-gray-100 bg-slate-50 p-4">
-                                  <h4 className="text-sm font-black text-[#1E3557]">{block.title}</h4>
-                                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{block.body}</p>
-                                </div>
-                              ))}
-                            </div>
+                        <div className="border-t border-gray-100 pt-4">
+                          {reportData.predictions[activePredictionArea] ? (
+                            predictionBlocks(reportData.predictions[activePredictionArea]).length ? (
+                              <div className="space-y-4">
+                                {predictionBlocks(reportData.predictions[activePredictionArea]).map((block, index) => (
+                                  <div key={`${block.title}-${index}`} className="rounded-2xl border border-gray-100 bg-slate-50 p-4">
+                                    <h4 className="text-sm font-black text-[#1E3557]">{block.title}</h4>
+                                    <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{block.body}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="rounded-2xl border border-gray-100 bg-slate-50 p-4 text-sm text-slate-500">
+                                No prediction text was returned for this section.
+                              </p>
+                            )
                           ) : (
                             <p className="rounded-2xl border border-gray-100 bg-slate-50 p-4 text-sm text-slate-500">
                               No prediction text was returned for this section.
                             </p>
-                          )
-                        ) : (
-                          <p className="rounded-2xl border border-gray-100 bg-slate-50 p-4 text-sm text-slate-500">
-                            No prediction text was returned for this section.
-                          </p>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* Dashas Tab Content */}
                   {activeDossierTab === "dashas" && (
-                    <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-6">
-                      <h3 className="text-lg font-bold text-[#1E3557]">Maha Dasha & Transit Timelines</h3>
-                      <p className="text-xs text-gray-400">The planetary timeline cycles active in your natal chart:</p>
+                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
+                      <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3557]">Maha Dasha & Transit Timelines</h3>
+                      <div className="p-6 mt-0 pt-0 space-y-6">
+                        <p className="text-xs text-gray-400">The planetary timeline cycles active in your natal chart:</p>
 
-                      <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 font-bold text-slate-700">
-                              <th className="p-3 border-b border-gray-100">Lord / Planet</th>
-                              <th className="p-3 border-b border-gray-100">Active Stage</th>
-                              <th className="p-3 border-b border-gray-100">Start Date</th>
-                              <th className="p-3 border-b border-gray-100">End Date</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reportData.kundli?.dasha_summary?.current_mahadasha && (
-                              <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
-                                <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_mahadasha.name}</td>
-                                <td className="p-3 text-amber-600 font-bold">Current Maha Dasha</td>
-                                <td className="p-3">{reportData.kundli.dasha_summary.current_mahadasha.start || "-"}</td>
-                                <td className="p-3">{reportData.kundli.dasha_summary.current_mahadasha.end || "-"}</td>
+                        <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-[#D7AF4B] font-bold text-[#1E3557]">
+                                <th className="p-3 border-b border-[#EFE3D1]">Lord / Planet</th>
+                                <th className="p-3 border-b border-[#EFE3D1]">Active Stage</th>
+                                <th className="p-3 border-b border-[#EFE3D1]">Start Date</th>
+                                <th className="p-3 border-b border-[#EFE3D1]">End Date</th>
                               </tr>
-                            )}
-                            {reportData.kundli?.dasha_summary?.current_antardasha && (
-                              <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
-                                <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_antardasha.name}</td>
-                                <td className="p-3 text-emerald-600 font-bold">Current Antar Dasha</td>
-                                <td className="p-3">{reportData.kundli.dasha_summary.current_antardasha.start || "-"}</td>
-                                <td className="p-3">{reportData.kundli.dasha_summary.current_antardasha.end || "-"}</td>
-                              </tr>
-                            )}
-                            {reportData.kundli?.dasha_summary?.current_pratyantardasha && (
-                              <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
-                                <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_pratyantardasha.name}</td>
-                                <td className="p-3 text-blue-600 font-bold">Current Pratyantar Dasha</td>
-                                <td className="p-3">{reportData.kundli.dasha_summary.current_pratyantardasha.start || "-"}</td>
-                                <td className="p-3">{reportData.kundli.dasha_summary.current_pratyantardasha.end || "-"}</td>
-                              </tr>
-                            )}
-                            {reportData.kundli?.dasha_summary?.next_mahadasha?.map((dasha, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50 border-b border-gray-50 text-gray-500">
-                                <td className="p-3 font-semibold">{dasha.name}</td>
-                                <td className="p-3">Upcoming Maha Dasha</td>
-                                <td className="p-3">{dasha.start || "-"}</td>
-                                <td className="p-3">{dasha.end || "-"}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {reportData.kundli?.dasha_summary?.current_mahadasha && (
+                                <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
+                                  <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_mahadasha.name}</td>
+                                  <td className="p-3 text-amber-600 font-bold">Current Maha Dasha</td>
+                                  <td className="p-3">{reportData.kundli.dasha_summary.current_mahadasha.start || "-"}</td>
+                                  <td className="p-3">{reportData.kundli.dasha_summary.current_mahadasha.end || "-"}</td>
+                                </tr>
+                              )}
+                              {reportData.kundli?.dasha_summary?.current_antardasha && (
+                                <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
+                                  <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_antardasha.name}</td>
+                                  <td className="p-3 text-emerald-600 font-bold">Current Antar Dasha</td>
+                                  <td className="p-3">{reportData.kundli.dasha_summary.current_antardasha.start || "-"}</td>
+                                  <td className="p-3">{reportData.kundli.dasha_summary.current_antardasha.end || "-"}</td>
+                                </tr>
+                              )}
+                              {reportData.kundli?.dasha_summary?.current_pratyantardasha && (
+                                <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
+                                  <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_pratyantardasha.name}</td>
+                                  <td className="p-3 text-blue-600 font-bold">Current Pratyantar Dasha</td>
+                                  <td className="p-3">{reportData.kundli.dasha_summary.current_pratyantardasha.start || "-"}</td>
+                                  <td className="p-3">{reportData.kundli.dasha_summary.current_pratyantardasha.end || "-"}</td>
+                                </tr>
+                              )}
+                              {reportData.kundli?.dasha_summary?.next_mahadasha?.map((dasha, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50 border-b border-gray-50 text-gray-500">
+                                  <td className="p-3 font-semibold">{dasha.name}</td>
+                                  <td className="p-3">Upcoming Maha Dasha</td>
+                                  <td className="p-3">{dasha.start || "-"}</td>
+                                  <td className="p-3">{dasha.end || "-"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   )}
