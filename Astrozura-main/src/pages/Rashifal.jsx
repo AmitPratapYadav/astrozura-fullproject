@@ -4,12 +4,11 @@ import { useTranslation } from "react-i18next";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { FaArrowRight, FaBriefcase, FaHeartbeat, FaHeart, FaMagic } from "react-icons/fa";
-import { getDailyHoroscope } from "../api/prokeralaApi";
+import { getDailyHoroscope, getMonthlyHoroscope } from "../api/prokeralaApi";
 import { getZodiacIcon } from "../data/zodiacIcons";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import { ensureRazorpayConfigured, payWithRazorpay } from "../api/paymentApi";
-import { ProviderSections } from "../components/report/ReportDataRenderer";
 
 const zodiacs = [
   { name: "Aries", key: "aries", date: "Mar 21 - Apr 19", element: "fire", ruler: "mars", tone: "from-[#f97316] to-[#dc2626]", surface: "bg-[#fff6ed]", accent: "text-[#c2410c]" },
@@ -34,7 +33,7 @@ export default function Rashifal() {
   const [selectedSign, setSelectedSign] = useState(null);
   const initialPeriod = searchParams.get("period");
   const [activeTab, setActiveTab] = useState(
-    ["yesterday", "today", "tomorrow", "yearly"].includes(initialPeriod) ? initialPeriod : "today"
+    ["yesterday", "today", "tomorrow", "monthly", "yearly"].includes(initialPeriod) ? initialPeriod : "today"
   );
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -43,10 +42,6 @@ export default function Rashifal() {
   const [yearlyMessage, setYearlyMessage] = useState("");
   const [yearlyReport, setYearlyReport] = useState(null);
   const [yearlyForm, setYearlyForm] = useState({
-    date: "",
-    time: "",
-    latitude: "",
-    longitude: "",
     year: String(new Date().getFullYear()),
   });
 
@@ -56,7 +51,9 @@ export default function Rashifal() {
       setError("");
       setData(null);
 
-      const response = await getDailyHoroscope(sign.toLowerCase(), day);
+      const response = day === "monthly"
+        ? await getMonthlyHoroscope(sign.toLowerCase())
+        : await getDailyHoroscope(sign.toLowerCase(), day);
       if (response?.status === "success" && response?.data) {
         setData(response.data);
         return;
@@ -123,17 +120,19 @@ export default function Rashifal() {
 
   const generateYearlyHoroscope = async (event) => {
     event.preventDefault();
+    if (!selectedSign?.key) {
+      setYearlyMessage("Select a zodiac sign first.");
+      return;
+    }
+
     try {
       setYearlyLoading(true);
       setYearlyMessage("");
       setYearlyReport(null);
       await unlockYearlyHoroscope();
 
-      const datetime = `${yearlyForm.date}T${yearlyForm.time || "12:00"}:00+05:30`;
-      const coordinates = `${yearlyForm.latitude},${yearlyForm.longitude}`;
       const { data: reportResponse } = await api.post("/horoscope/yearly/report", {
-        datetime,
-        coordinates,
+        sign: selectedSign.key,
         year: Number(yearlyForm.year || new Date().getFullYear()),
       });
 
@@ -190,7 +189,7 @@ export default function Rashifal() {
                 </div>
 
                 <div className="relative mt-7 flex items-center gap-4">
-                  <div className={`grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${zodiac.tone} shadow-lg shadow-slate-900/10 ring-4 ring-white/70`}>
+                  <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border-2 border-[#F0E4CB] bg-white shadow-lg shadow-slate-900/10">
                     <img src={getZodiacIcon(zodiac.key)} alt="" className="h-14 w-14 object-contain" />
                   </div>
                   <div className="min-w-0">
@@ -214,7 +213,7 @@ export default function Rashifal() {
           </div>
         ) : (
           <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
-            <div className="relative bg-[#1E3557] p-8 text-center text-white">
+            <div className="relative bg-white p-8 text-center text-[#1E3557]">
               <button
                 type="button"
                 onClick={() => {
@@ -222,25 +221,27 @@ export default function Rashifal() {
                   setData(null);
                   setError("");
                 }}
-                className="absolute left-4 top-4 rounded-lg border border-gray-500 px-3 py-1 text-sm text-gray-300 hover:text-white"
+                className="absolute left-4 top-4 rounded-lg border border-slate-200 px-3 py-1 text-sm text-slate-500 hover:text-[#1E3557]"
               >
                 {t("horoscope.back")}
               </button>
-              <img src={getZodiacIcon(selectedSign.key)} alt="" className="mx-auto mb-2 h-20 w-20 object-contain" />
+              <div className="mx-auto mb-3 grid h-24 w-24 place-items-center rounded-2xl border-2 border-[#F0E4CB] bg-white shadow-sm">
+                <img src={getZodiacIcon(selectedSign.key)} alt="" className="h-20 w-20 object-contain" />
+              </div>
               <h2 className="text-3xl font-bold">{t("horoscope.sign_heading", { sign: t(`horoscope.signs.${selectedSign.key}`) })}</h2>
-              <p className="mt-1 text-gray-400">{selectedSign.date}</p>
+              <p className="mt-1 text-slate-400">{selectedSign.date}</p>
             </div>
 
             <div className="p-6 md:p-10">
               <div className="mx-auto mb-10 flex w-max flex-wrap justify-center gap-2 rounded-xl border bg-gray-50 p-2">
-                {["yesterday", "today", "tomorrow", "yearly"].map((day) => (
+                {["yesterday", "today", "tomorrow", "monthly", "yearly"].map((day) => (
                   <button
                     key={day}
                     type="button"
                     onClick={() => handleTabChange(day)}
                     className={`rounded-lg px-6 py-2 font-semibold capitalize transition ${activeTab === day ? "bg-[#1E3557] text-[#D4A73C] shadow-md" : "text-gray-600 hover:bg-gray-100"}`}
                   >
-                    {day === "yearly" ? "Yearly (Rs 10)" : t(`horoscope.${day}`)}
+                    {day === "yearly" ? "Yearly (Rs 25)" : day === "monthly" ? "Monthly (Rs 10)" : t(`horoscope.${day}`)}
                   </button>
                 ))}
               </div>
@@ -250,45 +251,63 @@ export default function Rashifal() {
                   <div className="rounded-2xl border border-[#D4A73C]/30 bg-[#fff9e8] p-6 text-center">
                     <h3 className="text-2xl font-black text-[#1E3557]">Yearly Horoscope</h3>
                     <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                      Unlock a birth-detail based Varshaphal yearly report for Rs 10. Access remains open for 12 hours after payment.
+                      Unlock the zodiac yearly horoscope for {t(`horoscope.signs.${selectedSign.key}`)} for Rs 25. Access remains open for 12 hours after payment.
+                      <span className="ml-2 rounded-full bg-white px-3 py-1 text-xs font-black text-[#1E3557]">
+                        <span className="mr-1 text-slate-400 line-through">Rs 50</span> Rs 25, 50% off
+                      </span>
                     </p>
                   </div>
 
-                  <form onSubmit={generateYearlyHoroscope} className="grid gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-5 md:grid-cols-5">
-                    <label className="text-sm font-semibold text-slate-700">
-                      Birth Date
-                      <input required type="date" value={yearlyForm.date} onChange={(event) => setYearlyForm({ ...yearlyForm, date: event.target.value })} className="mt-2 w-full rounded-xl border px-3 py-2" />
-                    </label>
-                    <label className="text-sm font-semibold text-slate-700">
-                      Birth Time
-                      <input required type="time" value={yearlyForm.time} onChange={(event) => setYearlyForm({ ...yearlyForm, time: event.target.value })} className="mt-2 w-full rounded-xl border px-3 py-2" />
-                    </label>
-                    <label className="text-sm font-semibold text-slate-700">
-                      Latitude
-                      <input required value={yearlyForm.latitude} onChange={(event) => setYearlyForm({ ...yearlyForm, latitude: event.target.value })} placeholder="28.6139" className="mt-2 w-full rounded-xl border px-3 py-2" />
-                    </label>
-                    <label className="text-sm font-semibold text-slate-700">
-                      Longitude
-                      <input required value={yearlyForm.longitude} onChange={(event) => setYearlyForm({ ...yearlyForm, longitude: event.target.value })} placeholder="77.2090" className="mt-2 w-full rounded-xl border px-3 py-2" />
-                    </label>
+                  <form onSubmit={generateYearlyHoroscope} className="grid gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-5 md:grid-cols-[180px_1fr]">
                     <label className="text-sm font-semibold text-slate-700">
                       Year
                       <input required type="number" min="1900" max="2100" value={yearlyForm.year} onChange={(event) => setYearlyForm({ ...yearlyForm, year: event.target.value })} className="mt-2 w-full rounded-xl border px-3 py-2" />
                     </label>
-                    <div className="md:col-span-5">
+                    <div className="flex items-end">
                       <button disabled={yearlyLoading} className="rounded-xl bg-[#1E3557] px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg disabled:opacity-60">
                         {yearlyLoading ? "Processing..." : user ? "Unlock & Generate" : "Login to Unlock"}
                       </button>
-                      {yearlyMessage && <p className="mt-3 text-sm font-semibold text-red-600">{yearlyMessage}</p>}
                     </div>
+                    {yearlyMessage && <p className="text-sm font-semibold text-red-600 md:col-span-2">{yearlyMessage}</p>}
                   </form>
 
-                  {yearlyReport?.sections?.length ? (
+                  {yearlyReport?.horoscope?.daily_prediction ? (
                     <div className="rounded-2xl border border-gray-100 bg-white p-5">
                       <div className="mb-5 text-sm font-semibold text-slate-500">
                         Access active until {new Date(yearlyReport.access_expires_at).toLocaleString()}
                       </div>
-                      <ProviderSections sections={yearlyReport.sections} />
+                      <div className="mb-5 rounded-2xl border border-[#F0E4CB] bg-[#FCF9F2] p-5">
+                        <p className="text-xs font-black uppercase tracking-wider text-slate-400">Yearly forecast</p>
+                        <p className="mt-2 text-lg font-black text-[#1E3557]">
+                          {t(`horoscope.signs.${selectedSign.key}`)} {yearlyReport.year}
+                        </p>
+                      </div>
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6">
+                          <h4 className="mb-2 flex items-center gap-2 font-bold text-indigo-900">
+                            <FaMagic className="text-indigo-500" /> {t("horoscope.personal_insights")}
+                          </h4>
+                          <p className="text-sm leading-relaxed text-indigo-800">{yearlyReport.horoscope.daily_prediction.personal || t("horoscope.no_insights")}</p>
+                        </div>
+                        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
+                          <h4 className="mb-2 flex items-center gap-2 font-bold text-blue-900">
+                            <FaBriefcase className="text-blue-500" /> {t("horoscope.career_professional")}
+                          </h4>
+                          <p className="text-sm leading-relaxed text-blue-800">{yearlyReport.horoscope.daily_prediction.profession || t("horoscope.no_insights")}</p>
+                        </div>
+                        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6">
+                          <h4 className="mb-2 flex items-center gap-2 font-bold text-rose-900">
+                            <FaHeartbeat className="text-rose-500" /> {t("horoscope.health")}
+                          </h4>
+                          <p className="text-sm leading-relaxed text-rose-800">{yearlyReport.horoscope.daily_prediction.health || t("horoscope.no_insights")}</p>
+                        </div>
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6">
+                          <h4 className="mb-2 flex items-center gap-2 font-bold text-amber-900">
+                            <FaHeart className="text-amber-500" /> {t("horoscope.emotions_luck")}
+                          </h4>
+                          <p className="text-sm leading-relaxed text-amber-800">{yearlyReport.horoscope.daily_prediction.emotions || t("horoscope.no_insights")}</p>
+                        </div>
+                      </div>
                     </div>
                   ) : null}
                 </div>

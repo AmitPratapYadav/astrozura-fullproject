@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { getMarriageMatching, searchLocation } from "../api/prokeralaApi";
+import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
 import { FaHeart, FaStar, FaInfoCircle, FaSpinner, FaExchangeAlt } from "react-icons/fa";
 import { getServiceIcon } from "../data/serviceIcons";
 import { ProviderSections } from "../components/report/ReportDataRenderer";
+import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const initialForm = {
   boy_name: "",
@@ -113,6 +116,35 @@ export default function DetailedMatchmaking() {
     setActiveSearchField("");
   };
 
+  const applyRecentProfile = (field, profile) => {
+    setForm((current) => ({
+      ...current,
+      [`${field}_name`]: profile.person_name || current[`${field}_name`],
+      [`${field}_dob`]: profile.date_of_birth || current[`${field}_dob`],
+      [`${field}_time`]: profileTime(profile.time_of_birth) || current[`${field}_time`],
+      [`${field}_place`]: profile.place_of_birth || current[`${field}_place`],
+      [`${field}_coordinates`]: profile.coordinates || current[`${field}_coordinates`],
+    }));
+  };
+
+  const rememberProfile = async (field, relationRole) => {
+    if (!user || !form[`${field}_dob`]) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: form[`${field}_name`],
+        gender: relationRole === "girl" ? "Female" : "Male",
+        date: form[`${field}_dob`],
+        time: form[`${field}_time`],
+        place: form[`${field}_place`],
+        coordinates: form[`${field}_coordinates`],
+        sourceModule: "detailed-matchmaking",
+        relationRole,
+      }));
+    } catch {
+      // Keep report generation independent from saved-profile storage.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.boy_dob || !form.boy_time || !form.boy_coordinates) {
@@ -146,6 +178,8 @@ export default function DetailedMatchmaking() {
 
       if (response?.status === "success" && response.data) {
         setMatchData(response.data);
+        void rememberProfile("boy", "boy");
+        void rememberProfile("girl", "girl");
         setToast("Premium matchmaking report generated successfully.");
         return;
       }
@@ -264,6 +298,10 @@ export default function DetailedMatchmaking() {
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <span className="text-xs">🤵</span> Groom's Profile
                   </h3>
+                  <RecentProfilePicker
+                    buttonLabel="Choose recent groom profile"
+                    onSelect={(profile) => applyRecentProfile("boy", profile)}
+                  />
                   <div>
                     <input
                       type="text"
@@ -323,6 +361,10 @@ export default function DetailedMatchmaking() {
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <span className="text-xs">👰</span> Bride's Profile
                   </h3>
+                  <RecentProfilePicker
+                    buttonLabel="Choose recent bride profile"
+                    onSelect={(profile) => applyRecentProfile("girl", profile)}
+                  />
                   <div>
                     <input
                       type="text"

@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { FaExclamationTriangle, FaFilePdf, FaHeart, FaPen, FaShieldAlt, FaStar } from "react-icons/fa";
 import { downloadMatchMakingPdf, getDivisionalCharts, getMarriageMatching, searchLocation } from "../api/prokeralaApi";
+import { saveRecentProfile } from "../api/recentProfilesApi";
 import { getServiceIcon } from "../data/serviceIcons";
+import { useAuth } from "../context/AuthContext";
+import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const emptyPerson = { name: "", dob: "", time: "", place: "", coordinates: "" };
 const pageIcon = getServiceIcon("premium-matchmaking-report");
@@ -145,6 +149,7 @@ function ChartPair({ label, boyName, girlName, boyChart, girlChart, loading }) {
 }
 
 export default function Matching() {
+  const { user } = useAuth();
   const [boyDetails, setBoyDetails] = useState(emptyPerson);
   const [girlDetails, setGirlDetails] = useState(emptyPerson);
   const [boySearchResults, setBoySearchResults] = useState([]);
@@ -185,6 +190,35 @@ export default function Matching() {
     setResults([]);
   };
 
+  const applyRecentProfile = (setPerson, profile) => {
+    setPerson((current) => ({
+      ...current,
+      name: profile.person_name || current.name,
+      dob: profile.date_of_birth || current.dob,
+      time: profileTime(profile.time_of_birth) || current.time,
+      place: profile.place_of_birth || current.place,
+      coordinates: profile.coordinates || current.coordinates,
+    }));
+  };
+
+  const rememberProfile = async (details, relationRole) => {
+    if (!user || !details?.dob) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: details.name,
+        gender: relationRole === "girl" ? "Female" : "Male",
+        date: details.dob,
+        time: details.time,
+        place: details.place,
+        coordinates: details.coordinates,
+        sourceModule: "matchmaking",
+        relationRole,
+      }));
+    } catch {
+      // Saved profiles are auxiliary and must not interrupt the report.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!boyDetails.coordinates || !girlDetails.coordinates) return showError("Select valid birthplaces from the dropdown suggestions for both entries.");
@@ -205,6 +239,8 @@ export default function Matching() {
       if (response?.status === "success" && response?.data) {
         setResult(response.data);
         setMeta(response.meta || null);
+        void rememberProfile(boyDetails, "boy");
+        void rememberProfile(girlDetails, "girl");
         setChartsLoading(true);
         Promise.allSettled([
           getDivisionalCharts(boyDatetime, boyDetails.coordinates, ["rasi", "moon", "navamsa"], "north-indian"),
@@ -349,6 +385,10 @@ export default function Matching() {
             {[{ title: "Boy's Details", state: boyDetails, setState: setBoyDetails, results: boySearchResults, setResults: setBoySearchResults, loading: isBoySearching, setLoading: setIsBoySearching, accent: "bg-blue-500" }, { title: "Girl's Details", state: girlDetails, setState: setGirlDetails, results: girlSearchResults, setResults: setGirlSearchResults, loading: isGirlSearching, setLoading: setIsGirlSearching, accent: "bg-pink-500" }].map((section) => (
               <div key={section.title} className="space-y-6">
                 <div className="flex items-center gap-3 border-b-2 border-gray-100 pb-3 mb-6"><div className={`w-8 h-8 rounded-full ${section.accent} text-white flex items-center justify-center font-bold`}>{section.title.charAt(0)}</div><h3 className="text-xl font-bold text-[#1E3557]">{section.title}</h3></div>
+                <RecentProfilePicker
+                  buttonLabel={`Choose recent ${section.title.startsWith("Boy") ? "boy" : "girl"} profile`}
+                  onSelect={(profile) => applyRecentProfile(section.setState, profile)}
+                />
                 <input required type="text" value={section.state.name} onChange={(e) => section.setState((prev) => ({ ...prev, name: e.target.value }))} placeholder={`Enter ${section.title.toLowerCase().replace(" details", "")}`} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input required type="date" value={section.state.dob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => section.setState((prev) => ({ ...prev, dob: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl" />

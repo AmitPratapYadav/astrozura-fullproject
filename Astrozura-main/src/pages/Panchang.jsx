@@ -87,6 +87,38 @@ const valueFrom = (...values) => {
   return "-";
 };
 
+const elementWithDetails = (name, end, details, fields) => {
+  const detailMap = details && typeof details === "object" ? details : {};
+  const meta = fields
+    .filter(([key]) => key !== "summary" && key !== "meaning")
+    .map(([key, label]) => ({ label, value: detailMap[key] }))
+    .filter((item) => item.value !== null && item.value !== undefined && item.value !== "");
+  const summary = detailMap.summary || detailMap.meaning || "";
+
+  return {
+    name: name || "-",
+    end: end ? formatTime(end) : "",
+    meta,
+    summary: summary ? displayValue(summary) : "",
+  };
+};
+
+const festivalTextFromPayload = (...payloads) => {
+  for (const payload of payloads) {
+    if (!payload) continue;
+    const source = payload.festivals || payload.festival || payload.vrat || payload;
+    if (Array.isArray(source) && source.length > 0) {
+      return source.map((item) => displayValue(item)).filter(Boolean).join(", ");
+    }
+    if (typeof source === "string" && source.trim()) return source;
+    if (source && typeof source === "object") {
+      const rendered = displayValue(source);
+      if (rendered && rendered !== "-") return rendered;
+    }
+  }
+  return "No festival returned";
+};
+
 const timeRange = (period) => {
   if (!period || typeof period !== "object") return null;
   if (!period.start || !period.end) return null;
@@ -139,8 +171,8 @@ const chaughadiyaClass = (name) => {
 
 function FieldShell({ label, children }) {
   return (
-    <div>
-      <label className="mb-2 block text-sm font-bold text-slate-600">{label}</label>
+    <div className="min-w-0">
+      <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-700 md:mb-2 md:text-sm md:normal-case md:tracking-normal">{label}</label>
       {children}
     </div>
   );
@@ -165,7 +197,7 @@ function MuhurtaTable({ title, rows, rowClass = () => "bg-slate-50/50 border-l-4
   );
 }
 
-function InfoTable({ title, rows }) {
+function InfoTable({ title, rows, columnsClass = "grid-cols-2" }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
       {title ? (
@@ -173,10 +205,10 @@ function InfoTable({ title, rows }) {
           {title}
         </h2>
       ) : null}
-      <div className="grid grid-cols-2 divide-x divide-y divide-slate-100">
+      <div className={`grid ${columnsClass} divide-x divide-y divide-slate-100`}>
         {rows.map(([label, value]) => (
           <div key={label} className="p-4 bg-white transition hover:bg-slate-50/60 border-t border-l border-slate-100 first:border-t-0 odd:border-l-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
+            <p className="text-xs font-black uppercase tracking-wider text-slate-600">{label}</p>
             <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value || "-"}</p>
           </div>
         ))}
@@ -204,6 +236,13 @@ const tableValue = (value) => {
   return String(value);
 };
 
+const firstFilled = (...values) =>
+  values.find((value) => {
+    if (value === null || value === undefined || value === "") return false;
+    if (Array.isArray(value) && value.length === 0) return false;
+    return true;
+  });
+
 const firstArrayFrom = (payload, keys = []) => {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return [];
@@ -219,15 +258,26 @@ const firstArrayFrom = (payload, keys = []) => {
   return nestedArray || [];
 };
 
+const motionFromPlanet = (item = {}) => {
+  const raw = item.isRetro ?? item.is_retro ?? item.retrograde ?? item.isRetrograde;
+  const normalised = String(raw).toLowerCase();
+  if (raw === true || raw === 1 || normalised === "true" || normalised === "1" || normalised === "yes") return "Retrograde";
+  if (raw === false || raw === 0 || normalised === "false" || normalised === "0" || normalised === "no") return "Direct";
+  if (item.motion) return item.motion;
+  if (Number(item.speed) < 0) return "Retrograde";
+  if (Number(item.speed) >= 0) return "Direct";
+  return "-";
+};
+
 const normalizePlanetRows = (payload) =>
   firstArrayFrom(payload, ["planets", "planet_details", "planetary_positions", "planet_panchang", "data"]).map((item, index) => ({
     id: `${item.name || item.planet || item.full_name || "planet"}-${index}`,
     planet: tableValue(item.name || item.planet || item.full_name),
     sign: tableValue(item.sign || item.zodiac || item.rashi),
-    degree: tableValue(item.degree || item.normDegree || item.full_degree || item.longitude),
+    degree: tableValue(firstFilled(item.degree, item.normDegree, item.norm_degree, item.fullDegree, item.full_degree, item.local_degree, item.longitude)),
     nakshatra: tableValue(item.nakshatra || item.nakshatra_name || item.nak_name),
     house: tableValue(item.house || item.house_id),
-    motion: tableValue(item.isRetro === true || item.is_retro === true ? "Retrograde" : item.isRetro === false || item.is_retro === false ? "Direct" : item.motion),
+    motion: tableValue(motionFromPlanet(item)),
   }));
 
 const objectRows = (payload) => {
@@ -237,7 +287,32 @@ const objectRows = (payload) => {
     .map(([key, value]) => [cleanLabel(key), tableValue(value)]);
 };
 
+const normalizePanchangChartRows = (payload) => {
+  const source = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.chart)
+      ? payload.chart
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.panchang_chart)
+          ? payload.panchang_chart
+          : [];
+
+  return source.map((item, index) => ({
+    id: `${item.sign || item.sign_name || "sign"}-${index}`,
+    sign: tableValue(item.sign ?? index + 1),
+    signName: tableValue(item.sign_name || item.rashi || item.zodiac || item.name),
+    planet: tableValue(item.planet),
+    planetSmall: tableValue(item.planet_small),
+    degree: tableValue(firstFilled(item.planet_degree, item.degree)),
+  }));
+};
+
 function PanchangDataTable({ title, rows, columns }) {
+  const visibleColumns = columns.filter(
+    (column) => !column.hideWhenEmpty || rows.some((row) => row[column.key] && row[column.key] !== "-")
+  );
+
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
       <h3 className="border-b border-[#D7AF4B] bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557]">{title}</h3>
@@ -245,7 +320,7 @@ function PanchangDataTable({ title, rows, columns }) {
         <table className="min-w-full border-collapse text-left text-sm">
           <thead className="bg-[#1E3557] text-white">
             <tr>
-              {columns.map((column) => (
+              {visibleColumns.map((column) => (
                 <th key={column.key} className="px-4 py-3 font-semibold uppercase tracking-wider text-xs">
                   {column.label}
                 </th>
@@ -255,7 +330,7 @@ function PanchangDataTable({ title, rows, columns }) {
           <tbody className="divide-y divide-slate-100">
             {(rows.length ? rows : [{ id: "empty" }]).map((row, index) => (
               <tr key={row.id || index} className="hover:bg-slate-50/80 transition odd:bg-white even:bg-slate-50/40">
-                {columns.map((column) => (
+                {visibleColumns.map((column) => (
                   <td key={column.key} className="px-4 py-3.5 text-slate-700 font-medium">
                     {row[column.key] || "-"}
                   </td>
@@ -269,12 +344,73 @@ function PanchangDataTable({ title, rows, columns }) {
   );
 }
 
+function PanchangChartBlock({ chartData }) {
+  const chartSvg = chartData?.svg || chartData?.chart_svg || (typeof chartData?.chart === "string" ? chartData.chart : null);
+  const chartRows = normalizePanchangChartRows(chartData);
+
+  if (chartSvg && String(chartSvg).includes("<svg")) {
+    return (
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+        <h2 className="bg-[#D7AF4B] px-5 py-4 text-lg font-bold text-[#1E3557]">Panchang Chart</h2>
+        <div className="mx-auto max-w-xl p-5 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: chartSvg }} />
+      </section>
+    );
+  }
+
+  return (
+    <PanchangDataTable
+      title="Panchang Chart"
+      rows={chartRows}
+      columns={[
+        { key: "sign", label: "Sign" },
+        { key: "signName", label: "Sign Name" },
+        { key: "planet", label: "Planet" },
+        { key: "planetSmall", label: "Planet Short" },
+        { key: "degree", label: "Degree", hideWhenEmpty: true },
+      ]}
+    />
+  );
+}
+
+function PanchangElementsTable({ rows }) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">Panchang Elements</h2>
+      <div className="divide-y divide-slate-100">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid gap-0 bg-white transition hover:bg-slate-50/60 md:grid-cols-[150px_1fr]">
+            <div className="border-b border-slate-100 bg-slate-50/60 p-4 md:border-b-0 md:border-r">
+              <p className="text-xs font-black uppercase tracking-wider text-slate-600">{label}</p>
+            </div>
+            <div className="space-y-3 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-base font-black text-[#1E3557]">{value.name || "-"}</p>
+                {value.end ? (
+                  <span className="rounded-full bg-[#fff8df] px-3 py-1 text-xs font-bold text-[#8a650d]">Upto {value.end}</span>
+                ) : null}
+              </div>
+              {value.meta?.length ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {value.meta.map((item) => (
+                    <div key={`${label}-${item.label}`} className="rounded-xl border border-slate-100 bg-white px-3 py-2">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">{item.label}</p>
+                      <p className="mt-1 text-sm font-semibold text-[#1E3557]">{displayValue(item.value)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {value.summary ? <p className="text-sm font-medium leading-6 text-slate-600">{value.summary}</p> : null}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
   const planetaryRows = normalizePlanetRows(extrasData?.planetary_positions);
   const sunriseRows = normalizePlanetRows(extrasData?.sunrise_planetary_positions);
-  const chartPayload = extrasData?.panchang_chart;
-  const chartSvg = chartPayload?.svg || chartPayload?.chart_svg || chartPayload?.chart;
-  const chartRows = objectRows(chartPayload);
   const planetColumns = [
     { key: "planet", label: "Planet" },
     { key: "sign", label: "Sign" },
@@ -287,7 +423,7 @@ function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
       <h2 className="bg-[#D7AF4B] px-5 py-4 text-lg font-bold text-[#1E3557]">
-        Planetary Positions & Panchang Chart
+        Planetary Positions
       </h2>
       <div className="space-y-6 p-5">
           {extrasLoading ? <p className="rounded-md bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">Loading planetary details...</p> : null}
@@ -296,21 +432,6 @@ function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
             <>
               <PanchangDataTable title="Planetary Positions" rows={planetaryRows} columns={planetColumns} />
               <PanchangDataTable title="Sunrise Planetary Positions" rows={sunriseRows} columns={planetColumns} />
-              {chartSvg && String(chartSvg).includes("<svg") ? (
-                <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-                  <h3 className="border-b border-[#D7AF4B] bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557]">Panchang Chart</h3>
-                  <div className="mx-auto max-w-xl p-5 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: chartSvg }} />
-                </section>
-              ) : (
-                <PanchangDataTable
-                  title="Panchang Chart"
-                  rows={chartRows.map(([label, value]) => ({ id: label, label, value }))}
-                  columns={[
-                    { key: "label", label: "Attribute" },
-                    { key: "value", label: "Value" },
-                  ]}
-                />
-              )}
             </>
           ) : null}
       </div>
@@ -392,7 +513,7 @@ export default function Panchang() {
         mode === "daily"
           ? getPanchangExtras(datetime, coords, 1, {
               la: nextLanguage,
-              extras: ["planetary_positions", "sunrise_planetary_positions", "panchang_chart"],
+              extras: ["planetary_positions", "sunrise_planetary_positions"],
             }).catch((error) => ({
               status: "error",
               message: error?.response?.data?.message || "Unable to load planetary details.",
@@ -495,6 +616,14 @@ export default function Panchang() {
   const panchang = data?.panchang || {};
   const basic = panchang.basic || {};
   const advanced = panchang.advanced || {};
+  const panchangChart = panchang.chart || data?.provider_payload?.panchang_chart || extrasData?.panchang_chart;
+  const festivalText = festivalTextFromPayload(
+    panchang.festival,
+    data?.provider_payload?.panchang_festival,
+    advanced.festivals,
+    advanced.vrat,
+    basic.festivals
+  );
   const hinduMaah = advanced.hindu_maah || {};
   const horaRows = splitMuhurtaRows(panchang.hora, ["hora", "planet", "name"]);
   const chaughadiyaRows = splitMuhurtaRows(panchang.chaughadiya, ["muhurta", "name"]);
@@ -511,10 +640,37 @@ export default function Panchang() {
   ];
 
   const elementRows = [
-    ["Tithi", `${valueFrom(summary.current_tithi?.name, advanced.tithi?.details?.tithi_name)}${summary.current_tithi?.end ? ` upto ${formatTime(summary.current_tithi.end)}` : ""}`],
-    ["Nakshatra", `${valueFrom(summary.current_nakshatra?.name, advanced.nakshatra?.details?.nak_name)}${summary.current_nakshatra?.end ? ` upto ${formatTime(summary.current_nakshatra.end)}` : ""}`],
-    ["Yog", `${valueFrom(summary.current_yoga?.name, advanced.yog?.details?.yog_name)}${summary.current_yoga?.end ? ` upto ${formatTime(summary.current_yoga.end)}` : ""}`],
-    ["Karan", `${valueFrom(summary.current_karana?.name, advanced.karan?.details?.karan_name)}${summary.current_karana?.end ? ` upto ${formatTime(summary.current_karana.end)}` : ""}`],
+    [
+      "Tithi",
+      elementWithDetails(valueFrom(summary.current_tithi?.name, advanced.tithi?.details?.tithi_name), summary.current_tithi?.end, advanced.tithi?.details, [
+        ["special", "Special"],
+        ["deity", "Deity"],
+        ["summary", "Summary"],
+      ]),
+    ],
+    [
+      "Nakshatra",
+      elementWithDetails(valueFrom(summary.current_nakshatra?.name, advanced.nakshatra?.details?.nak_name), summary.current_nakshatra?.end, advanced.nakshatra?.details, [
+        ["ruler", "Ruler"],
+        ["deity", "Deity"],
+        ["special", "Special"],
+        ["summary", "Summary"],
+      ]),
+    ],
+    [
+      "Yog",
+      elementWithDetails(valueFrom(summary.current_yoga?.name, advanced.yog?.details?.yog_name), summary.current_yoga?.end, advanced.yog?.details, [
+        ["special", "Special"],
+        ["meaning", "Meaning"],
+      ]),
+    ],
+    [
+      "Karan",
+      elementWithDetails(valueFrom(summary.current_karana?.name, advanced.karan?.details?.karan_name), summary.current_karana?.end, advanced.karan?.details, [
+        ["special", "Special"],
+        ["deity", "Deity"],
+      ]),
+    ],
   ];
 
   const monthYearRows = [
@@ -536,21 +692,17 @@ export default function Panchang() {
     ["Rahu Kaal", valueFrom(timeRange(advanced.rahukaal))],
     ["Yamghant Kaal", valueFrom(timeRange(advanced.yamghant_kaal))],
     ["Gulika Kaal", valueFrom(timeRange(advanced.guliKaal), timeRange(advanced.gulikaal), timeRange(advanced.gulika_kaal))],
-    ["Dur Muhurtam", valueFrom(timeRange(advanced.dur_muhurat), timeRange(advanced.durmuhurat))],
-    ["Varjyam", valueFrom(timeRange(advanced.varjyam))],
   ];
 
   const auspiciousRows = [
     ["Abhijit Muhurta", valueFrom(timeRange(advanced.abhijit_muhurta))],
     ["Amrit Kalam", valueFrom(timeRange(advanced.amrit_kalam))],
-    ["Panchang Yog", valueFrom(advanced.panchang_yog)],
+    ["Panchang Yog", valueFrom(advanced.panchang_yog, advanced.panchang_yoga, advanced.panchangYog, basic.panchang_yog, basic.panchang_yoga)],
   ];
 
   const directionalRows = [
     ["Disha Shool", valueFrom(advanced.disha_shool)],
-    ["Disha Shool Remedies", valueFrom(advanced.disha_shool_remedies)],
     ["Nakshatra Shool", valueFrom(advanced.nak_shool?.direction, advanced.nakshatra_shool)],
-    ["Nakshatra Shool Remedies", valueFrom(advanced.nak_shool?.remedies)],
     ["Moon Nivas", valueFrom(advanced.moon_nivas, advanced.moon_nivash)],
   ];
 
@@ -574,14 +726,14 @@ export default function Panchang() {
       <section className="border-b border-slate-200 bg-white">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto grid max-w-6xl gap-5 px-4 py-5 md:px-8 lg:grid-cols-[180px_170px_minmax(260px,1fr)_170px_250px]"
+          className="mx-auto grid max-w-6xl gap-3 px-3 py-4 md:gap-5 md:px-8 md:py-5 lg:grid-cols-[180px_170px_minmax(260px,1fr)_170px_250px]"
         >
           <FieldShell label="Select Date">
             <input
               type="date"
               value={selectedDate}
               onChange={(event) => void handleDateChange(event.target.value)}
-              className="h-12 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#D4A73C]"
+              className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#D4A73C] md:h-12"
             />
           </FieldShell>
 
@@ -589,7 +741,7 @@ export default function Panchang() {
             <select
               value="India"
               disabled
-              className="h-12 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700"
+              className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 md:h-12"
             >
               <option>India</option>
             </select>
@@ -602,7 +754,7 @@ export default function Panchang() {
                 value={place}
                 onChange={(event) => void handleSearchLocation(event.target.value)}
                 placeholder="Search city"
-                className="h-12 w-full rounded-md border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none focus:border-[#D4A73C]"
+                className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-[#D4A73C] md:h-12 md:px-4 md:text-base"
               />
               {loadingLocation && <div className="absolute right-4 top-4 h-4 w-4 animate-spin rounded-full border-b-2 border-[#D4A73C]" />}
               {locationResults.length > 0 && (
@@ -626,7 +778,7 @@ export default function Panchang() {
             <select
               value={language}
               onChange={(event) => void handleLanguageChange(event)}
-              className="h-12 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#D4A73C]"
+              className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#D4A73C] md:h-12"
             >
               {LANGUAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -637,10 +789,10 @@ export default function Panchang() {
           </FieldShell>
 
           <div className="grid grid-cols-2 gap-2 self-end">
-            <button type="button" onClick={() => void moveDate(-1)} className="h-12 rounded-md bg-[#1E3557] px-4 text-sm font-bold text-white hover:bg-[#172a46]">
+            <button type="button" onClick={() => void moveDate(-1)} className="h-11 rounded-md bg-[#1E3557] px-4 text-sm font-bold text-white hover:bg-[#172a46] md:h-12">
               Previous
             </button>
-            <button type="button" onClick={() => void moveDate(1)} className="h-12 rounded-md bg-[#1E3557] px-4 text-sm font-bold text-white hover:bg-[#172a46]">
+            <button type="button" onClick={() => void moveDate(1)} className="h-11 rounded-md bg-[#1E3557] px-4 text-sm font-bold text-white hover:bg-[#172a46] md:h-12">
               Next
             </button>
           </div>
@@ -652,7 +804,7 @@ export default function Panchang() {
 
         {activeView === "daily" ? (
           <div className="space-y-8">
-            <div className="grid gap-8 lg:grid-cols-3">
+            <div className="grid gap-8 lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.6fr)]">
               <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
                 <div className="bg-[#D7AF4B] p-5 text-[#1E3557]">
                   <h2 className="text-xl font-bold">{selectedInputLabel}</h2>
@@ -662,32 +814,22 @@ export default function Panchang() {
                 <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 border-t border-[#D7AF4B]">
                   {dailyCardRows.map(([label, value]) => (
                     <div key={label} className="p-4 bg-white transition hover:bg-slate-50/60 border-t border-l border-slate-100 first:border-t-0 odd:border-l-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                      <p className="text-xs font-black uppercase tracking-wider text-slate-600">{label}</p>
                       <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
-              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-                <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">Panchang Elements</h2>
-                <div className="divide-y divide-slate-100">
-                  {elementRows.map(([label, value]) => (
-                    <div key={label} className="grid grid-cols-[118px_1fr] bg-white transition hover:bg-slate-50/60 items-center">
-                      <p className="border-r border-slate-100 p-4 text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
-                      <p className="p-4 text-sm font-semibold text-[#1E3557]">{value}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <InfoTable title="Hindu Month & Year" rows={monthYearRows} />
+              <PanchangElementsTable rows={elementRows} />
             </div>
+
+            <InfoTable title="Hindu Month & Year" rows={monthYearRows} columnsClass="grid-cols-2 md:grid-cols-3 xl:grid-cols-4" />
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
               <div className="grid md:grid-cols-[290px_1fr] items-center">
                 <div className="bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557] h-full flex items-center">Today's Festival & Vratas</div>
-                <div className="px-5 py-4 text-base font-semibold text-[#1E3557]">{valueFrom(advanced.festivals, advanced.vrat, basic.festivals, "No festival returned")}</div>
+                <div className="px-5 py-4 text-base font-semibold text-[#1E3557]">{festivalText}</div>
               </div>
             </section>
 
@@ -696,16 +838,11 @@ export default function Panchang() {
               <InfoTable title="Auspicious Timing" rows={auspiciousRows} />
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-[1fr_2fr]">
-              <InfoTable
-                title="Other Yoga"
-                rows={[
-                  ["Anandadi Yog", valueFrom(advanced.anandadi_yog, advanced.anandadi_yoga)],
-                  ["Panchang Yog", valueFrom(advanced.panchang_yog)],
-                ]}
-              />
+            <div className="grid gap-8">
               <InfoTable title="Shool & Nivas" rows={directionalRows} />
             </div>
+
+            <PanchangChartBlock chartData={panchangChart} />
 
             <PanchangExtraBlocks
               extrasData={extrasData}

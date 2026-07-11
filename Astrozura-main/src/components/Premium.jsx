@@ -66,6 +66,13 @@ export default function Premium() {
 
   useEffect(() => {
     const loadHoroscope = async () => {
+      if (activePeriod === "yearly") {
+        setHoroscope(null);
+        setHoroscopeError("");
+        setLoadingHoroscope(false);
+        return;
+      }
+
       try {
         setLoadingHoroscope(true);
         setHoroscopeError("");
@@ -103,10 +110,11 @@ export default function Premium() {
     setMessage(text);
   };
 
+  const fallbackScore = (metric) => 58 + (Math.abs(Array.from(`${activeSign}-${activePeriod}-${metric}`).reduce((sum, char) => sum + char.charCodeAt(0), 0)) % 33);
   const scoreRows = [
-    { label: t("premium.love_relationship"), value: horoscope?.scores?.love ?? 0 },
-    { label: t("premium.career_wealth"), value: horoscope?.scores?.career ?? 0 },
-    { label: t("premium.health_wellness"), value: horoscope?.scores?.health ?? 0 },
+    { label: t("premium.love_relationship"), value: horoscope?.scores?.love ?? fallbackScore("love") },
+    { label: t("premium.career_wealth"), value: horoscope?.scores?.career ?? fallbackScore("career") },
+    { label: t("premium.health_wellness"), value: horoscope?.scores?.health ?? fallbackScore("health") },
   ];
 
   return (
@@ -134,7 +142,14 @@ export default function Premium() {
               onClick={() => setActivePeriod("monthly")}
               className={`transition-colors ${activePeriod === "monthly" ? "text-[#D4A73C] underline underline-offset-8" : "text-gray-400 hover:text-[#2B2B2B]"}`}
             >
-              {t("premium.monthly")}
+              {t("premium.monthly")} <span className="ml-1 text-[10px] font-black text-[#C05D17]">Rs 10</span>
+            </button>
+            <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+            <button
+              onClick={() => setActivePeriod("yearly")}
+              className={`transition-colors ${activePeriod === "yearly" ? "text-[#D4A73C] underline underline-offset-8" : "text-gray-400 hover:text-[#2B2B2B]"}`}
+            >
+              {t("horoscope.yearly")} <span className="ml-1 text-[10px] font-black text-[#C05D17]">Rs 25</span>
             </button>
           </div>
 
@@ -148,7 +163,7 @@ export default function Premium() {
                 <div
                   className={`w-[60px] h-[60px] md:w-[72px] md:h-[72px] mx-auto flex items-center justify-center rounded-[18px] transition-all duration-300 ${
                     activeSign === z.sign
-                      ? "bg-gradient-to-br from-[#D4A73C] to-[#C29630] shadow-xl text-white"
+                      ? "bg-white border-2 border-[#D4A73C] shadow-lg shadow-[#D4A73C]/20"
                       : "bg-white border border-gray-100 text-[#1E3557] group-hover:border-[#D4A73C]/50"
                   }`}
                 >
@@ -165,7 +180,7 @@ export default function Premium() {
             
             {/* Left Card */}
             <div className="bg-[#FCF9F2] rounded-2xl p-6 lg:p-8 w-full lg:w-[280px] text-center border border-[#F6EFE2] shrink-0">
-              <div className="w-[100px] h-[100px] mx-auto bg-[#F1DEBE] rounded-full flex items-center justify-center text-[#B58C36] mb-5 border border-[#E9D1A7]">
+              <div className="w-[100px] h-[100px] mx-auto bg-white rounded-full flex items-center justify-center text-[#B58C36] mb-5 border-2 border-[#E9D1A7] shadow-sm">
                 <img src={getZodiacIcon(activeSignMeta.sign)} alt="" className="h-20 w-20 object-contain" />
               </div>
 
@@ -204,11 +219,32 @@ export default function Premium() {
                   {t("premium.forecast")}
                 </h3>
                 <span className="bg-[#FAEED6] text-[#D4A73C] text-[11px] font-bold px-3 py-1.5 rounded-md">
-                  {activePeriod === "monthly" ? t("premium.monthly_reading") : t("premium.daily_reading")}
+                  {activePeriod === "yearly" ? "Yearly Reading" : activePeriod === "monthly" ? t("premium.monthly_reading") : t("premium.daily_reading")}
                 </span>
               </div>
 
-              {loadingHoroscope ? (
+              {activePeriod === "yearly" ? (
+                <div className="rounded-[1.5rem] border border-[#EEE7D6] bg-[#FCF9F2] p-6">
+                  <p className="text-sm leading-7 text-gray-600">
+                    Unlock a zodiac-based yearly horoscope for {activeSignMeta.id}. The reading opens on the horoscope page after payment.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <span className="rounded-full bg-white px-4 py-2 text-sm font-black text-[#1E3557] shadow-sm">
+                      <span className="mr-2 text-gray-400 line-through">Rs 50</span> Rs 25
+                    </span>
+                    <span className="rounded-full bg-[#D4A73C] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#1E3557]">
+                      50% Off
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/rashifal?period=yearly")}
+                    className="mt-6 rounded-xl bg-[#1E3557] px-5 py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-[#162943]"
+                  >
+                    Unlock Yearly Horoscope
+                  </button>
+                </div>
+              ) : loadingHoroscope ? (
                 <div className="space-y-4">
                   <div className="h-4 bg-gray-100 rounded-full animate-pulse w-3/4"></div>
                   <div className="h-4 bg-gray-100 rounded-full animate-pulse w-1/2"></div>
@@ -220,6 +256,16 @@ export default function Premium() {
                   <p className="text-sm md:text-base text-gray-600 leading-relaxed">
                     {readablePrediction(horoscope?.daily_prediction?.personal, t("premium.default_personal"))}
                   </p>
+
+                  {activePeriod === "monthly" && (
+                    <div className="my-5 flex flex-wrap items-center gap-3 rounded-2xl border border-[#EEE7D6] bg-[#FCF9F2] px-4 py-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-[#1E3557]">Monthly Offer</span>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#1E3557]">
+                        <span className="mr-2 text-gray-400 line-through">Rs 20</span> Rs 10
+                      </span>
+                      <span className="rounded-full bg-[#D4A73C] px-3 py-1 text-[10px] font-black uppercase text-[#1E3557]">50% Off</span>
+                    </div>
+                  )}
 
                   <div className="grid gap-8">
                     {scoreRows.map((item) => (

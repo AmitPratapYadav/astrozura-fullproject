@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { getMatchingCalculator, searchLocation } from "../api/prokeralaApi";
+import { saveRecentProfile } from "../api/recentProfilesApi";
+import { useAuth } from "../context/AuthContext";
+import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 import {
   AYANAMSA_OPTIONS,
   NAKSHATRA_OPTIONS,
@@ -85,6 +89,7 @@ function ResultTree({ value, label }) {
 }
 
 export default function MatchingCalculators() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const toolKey = searchParams.get("tool") || "kundli-matching";
   const tool = getMatchingCalculatorTool(toolKey);
@@ -161,6 +166,35 @@ export default function MatchingCalculators() {
     setResults([]);
   };
 
+  const applyRecentProfile = (setPerson, profile) => {
+    setPerson((current) => ({
+      ...current,
+      name: profile.person_name || current.name,
+      dob: profile.date_of_birth || current.dob,
+      time: profileTime(profile.time_of_birth) || current.time,
+      place: profile.place_of_birth || current.place,
+      coordinates: profile.coordinates || current.coordinates,
+    }));
+  };
+
+  const rememberProfile = async (person, relationRole) => {
+    if (!user || !person?.dob) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: person.name,
+        gender: relationRole === "girl" ? "Female" : "Male",
+        date: person.dob,
+        time: person.time,
+        place: person.place,
+        coordinates: person.coordinates,
+        sourceModule: tool.key,
+        relationRole,
+      }));
+    } catch {
+      // Keep the calculator result independent from profile storage.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -204,6 +238,10 @@ export default function MatchingCalculators() {
       const response = await getMatchingCalculator(tool.key, payload);
       if (response?.status === "success") {
         setResult(response);
+        if (tool.usesBirthProfiles) {
+          void rememberProfile(girl, "girl");
+          void rememberProfile(boy, "boy");
+        }
         setToast("Matching calculator result generated successfully.");
         return;
       }
@@ -339,6 +377,10 @@ export default function MatchingCalculators() {
                     </>
                   ) : (
                     <>
+                      <RecentProfilePicker
+                        buttonLabel={`Choose recent ${section.label.toLowerCase()} profile`}
+                        onSelect={(profile) => applyRecentProfile(section.setPerson, profile)}
+                      />
                       <input
                         type="text"
                         value={section.person.name}

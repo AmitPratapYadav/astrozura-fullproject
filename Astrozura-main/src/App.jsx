@@ -40,6 +40,7 @@ import UserDashboard from "./pages/user/UserDashboard";
 import UserProfile from "./pages/user/UserProfile";
 import MyBookings from "./pages/user/MyBookings";
 import UserNotifications from "./pages/user/Notifications";
+import UserRecentProfiles from "./pages/user/UserRecentProfiles";
 import { AuthProvider } from "./context/AuthContext";
 import { PushNotificationsProvider } from "./context/PushNotificationsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -131,6 +132,11 @@ function App() {
           <Route path="/notifications" element={
             <ProtectedRoute>
               <UserNotifications />
+            </ProtectedRoute>
+          } />
+          <Route path="/recent-profiles" element={
+            <ProtectedRoute>
+              <UserRecentProfiles />
             </ProtectedRoute>
           } />
           <Route path="/consultation/:astrologerId" element={

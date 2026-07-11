@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { 
   generateKundli, 
   getDivisionalCharts, 
@@ -17,8 +18,11 @@ import {
   MangalDoshaReport,
   PitraDoshaReport,
   RudrakshaSuggestionReport,
+  VimshottariDashaReport,
 } from "../components/report/SpecializedVedicReports";
 import { getServiceIcon } from "../data/serviceIcons";
+import { saveRecentProfile } from "../api/recentProfilesApi";
+import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const initialForm = {
   name: "",
@@ -300,6 +304,36 @@ export default function DetailedKundali() {
     setSearchResults([]);
   };
 
+  const applyRecentProfile = (profile) => {
+    setForm((current) => ({
+      ...current,
+      name: profile.person_name || current.name,
+      gender: profile.gender || current.gender,
+      date_of_birth: profile.date_of_birth || current.date_of_birth,
+      time_of_birth: profileTime(profile.time_of_birth) || current.time_of_birth,
+      place_of_birth: profile.place_of_birth || current.place_of_birth,
+      coordinates: profile.coordinates || current.coordinates,
+    }));
+  };
+
+  const rememberCurrentProfile = async () => {
+    if (!user || !form.date_of_birth) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: form.name,
+        gender: form.gender,
+        date: form.date_of_birth,
+        time: form.time_of_birth,
+        place: form.place_of_birth,
+        coordinates: form.coordinates,
+        sourceModule: "detailed-kundali",
+        relationRole: "self",
+      }));
+    } catch {
+      // Recent-profile persistence must not block report rendering.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.date_of_birth || !form.time_of_birth) {
@@ -365,6 +399,7 @@ export default function DetailedKundali() {
       });
 
       setLoadedCharts(defaultCharts);
+      void rememberCurrentProfile();
       setToast("Premium Kundli generated successfully.");
     } catch (error) {
       setToast(error?.response?.data?.message || "Failed to compile full premium Kundli.");
@@ -551,6 +586,9 @@ export default function DetailedKundali() {
               <p className="mt-2 text-sm text-slate-500">
                 Lal Kitab and detailed natal models require precise time and location details.
               </p>
+              <div className="mt-4">
+                <RecentProfilePicker onSelect={applyRecentProfile} />
+              </div>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-5">
                 <div>
@@ -868,59 +906,7 @@ export default function DetailedKundali() {
 
                   {/* Dashas Tab Content */}
                   {activeDossierTab === "dashas" && (
-                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
-                      <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3557]">Maha Dasha & Transit Timelines</h3>
-                      <div className="p-6 mt-0 pt-0 space-y-6">
-                        <p className="text-xs text-gray-400">The planetary timeline cycles active in your natal chart:</p>
-
-                        <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                          <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                              <tr className="bg-[#D7AF4B] font-bold text-[#1E3557]">
-                                <th className="p-3 border-b border-[#EFE3D1]">Lord / Planet</th>
-                                <th className="p-3 border-b border-[#EFE3D1]">Active Stage</th>
-                                <th className="p-3 border-b border-[#EFE3D1]">Start Date</th>
-                                <th className="p-3 border-b border-[#EFE3D1]">End Date</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {reportData.kundli?.dasha_summary?.current_mahadasha && (
-                                <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
-                                  <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_mahadasha.name}</td>
-                                  <td className="p-3 text-amber-600 font-bold">Current Maha Dasha</td>
-                                  <td className="p-3">{reportData.kundli.dasha_summary.current_mahadasha.start || "-"}</td>
-                                  <td className="p-3">{reportData.kundli.dasha_summary.current_mahadasha.end || "-"}</td>
-                                </tr>
-                              )}
-                              {reportData.kundli?.dasha_summary?.current_antardasha && (
-                                <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
-                                  <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_antardasha.name}</td>
-                                  <td className="p-3 text-emerald-600 font-bold">Current Antar Dasha</td>
-                                  <td className="p-3">{reportData.kundli.dasha_summary.current_antardasha.start || "-"}</td>
-                                  <td className="p-3">{reportData.kundli.dasha_summary.current_antardasha.end || "-"}</td>
-                                </tr>
-                              )}
-                              {reportData.kundli?.dasha_summary?.current_pratyantardasha && (
-                                <tr className="hover:bg-slate-50 border-b border-gray-50 text-gray-600 font-semibold">
-                                  <td className="p-3 font-extrabold text-[#1E3C72]">{reportData.kundli.dasha_summary.current_pratyantardasha.name}</td>
-                                  <td className="p-3 text-blue-600 font-bold">Current Pratyantar Dasha</td>
-                                  <td className="p-3">{reportData.kundli.dasha_summary.current_pratyantardasha.start || "-"}</td>
-                                  <td className="p-3">{reportData.kundli.dasha_summary.current_pratyantardasha.end || "-"}</td>
-                                </tr>
-                              )}
-                              {reportData.kundli?.dasha_summary?.next_mahadasha?.map((dasha, idx) => (
-                                <tr key={idx} className="hover:bg-slate-50 border-b border-gray-50 text-gray-500">
-                                  <td className="p-3 font-semibold">{dasha.name}</td>
-                                  <td className="p-3">Upcoming Maha Dasha</td>
-                                  <td className="p-3">{dasha.start || "-"}</td>
-                                  <td className="p-3">{dasha.end || "-"}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
+                    <VimshottariDashaReport result={{ data: { provider_payload: reportData.kundli?.provider_payload || {} } }} />
                   )}
 
                   {/* Gemstone / Rudraksha Tab Content */}

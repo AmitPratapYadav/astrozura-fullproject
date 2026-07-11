@@ -385,6 +385,309 @@ const normalizeDashaRows = (value) =>
     .filter((item) => isObject(item))
     .map((item, index) => ({ id: index + 1, ...item }));
 
+const zodiacNames = [
+  "Aries",
+  "Taurus",
+  "Gemini",
+  "Cancer",
+  "Leo",
+  "Virgo",
+  "Libra",
+  "Scorpio",
+  "Sagittarius",
+  "Capricorn",
+  "Aquarius",
+  "Pisces",
+];
+
+const normalizeChartSignRows = (value) => {
+  const parsed = parseMaybeJson(value);
+  const source = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed?.chart)
+      ? parsed.chart
+      : Array.isArray(parsed?.data)
+        ? parsed.data
+        : findNestedArray(parsed, ["chart", "sign"]);
+
+  return source
+    .filter((item) => isObject(item))
+    .map((item, index) => {
+      const signNumber = Number(getAny(item, ["sign", "sign_id", "rashi_id"])) || index + 1;
+      return {
+        id: index + 1,
+        sign: signNumber,
+        signName: getAny(item, ["sign_name", "rashi", "zodiac", "name"]) || zodiacNames[(signNumber - 1 + 12) % 12] || `Sign ${signNumber}`,
+        planet: getAny(item, ["planet", "planets", "graha"]) || "-",
+        planetSmall: getAny(item, ["planet_small", "planet_short", "short"]) || "-",
+        degree: getAny(item, ["planet_degree", "degree", "degrees"]) || "-",
+      };
+    });
+};
+
+const chartColumns = [
+  { key: "sign", label: "Sign", render: (row) => renderCleanValue(row.sign) },
+  { key: "signName", label: "Sign Name", render: (row) => renderCleanValue(row.signName) },
+  { key: "planet", label: "Planet", render: (row) => renderCleanValue(row.planet) },
+  { key: "planetSmall", label: "Short", render: (row) => renderCleanValue(row.planetSmall) },
+  { key: "degree", label: "Degree", render: (row) => renderCleanValue(row.degree) },
+];
+
+const signNameToId = (value) => {
+  const index = zodiacNames.findIndex((name) => name.toLowerCase() === String(value || "").toLowerCase());
+  return index >= 0 ? index + 1 : null;
+};
+
+const planetShortName = (name = "") => {
+  const map = {
+    Sun: "Su",
+    Moon: "Mo",
+    Mars: "Ma",
+    Mercury: "Me",
+    Jupiter: "Ju",
+    Venus: "Ve",
+    Saturn: "Sa",
+    Rahu: "Ra",
+    Ketu: "Ke",
+    Ascendant: "Asc",
+  };
+  return map[name] || String(name).slice(0, 2);
+};
+
+const formatDmsDegree = (value) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return renderCleanValue(value);
+  const normalized = ((number % 30) + 30) % 30;
+  const degrees = Math.floor(normalized);
+  const minutesFloat = (normalized - degrees) * 60;
+  const minutes = Math.floor(minutesFloat);
+  return `${degrees}° ${String(minutes).padStart(2, "0")}'`;
+};
+
+const normalizeKpCusps = (value) =>
+  findNestedArray(value, ["cusp", "house"])
+    .filter((item) => isObject(item))
+    .map((item, index) => {
+      const signId = Number(getAny(item, ["sign_id", "signId"])) || signNameToId(getAny(item, ["sign"])) || null;
+      const fullDegree = getAny(item, ["cusp_full_degree", "full_degree", "degree"]);
+      return {
+        id: index + 1,
+        houseId: Number(getAny(item, ["house_id", "houseId", "house"])) || index + 1,
+        signId,
+        sign: getAny(item, ["sign", "sign_name"]) || zodiacNames[(signId || 1) - 1] || "-",
+        cuspFullDegree: fullDegree,
+        formattedDegree: getAny(item, ["formatted_degree", "degree_text"]) || renderCleanValue(fullDegree),
+        localDegree: formatDmsDegree(fullDegree),
+        signLord: getAny(item, ["sign_lord"]),
+        nakshatra: getAny(item, ["nakshatra"]),
+        subLord: getAny(item, ["sub_lord"]),
+      };
+    })
+    .sort((a, b) => a.houseId - b.houseId);
+
+const birthChartPlanetsBySign = (birthChart) => {
+  const rows = Array.isArray(birthChart) ? birthChart : findNestedArray(birthChart, ["chart", "birth"]);
+  const planets = [];
+  rows.forEach((row) => {
+    const names = Array.isArray(row?.planets) ? row.planets : [];
+    const shorts = Array.isArray(row?.planets_small) ? row.planets_small : [];
+    const signs = Array.isArray(row?.planet_signs) ? row.planet_signs : [];
+    names.forEach((name, index) => {
+      planets.push({
+        name,
+        shortName: String(shorts[index] || planetShortName(name)).trim(),
+        signId: Number(signs[index]) || null,
+      });
+    });
+  });
+  return planets;
+};
+
+const normalizeKpPlanets = (value) =>
+  findNestedArray(value, ["planet"])
+    .filter((item) => isObject(item))
+    .map((item) => ({
+      name: getAny(item, ["planet_name", "name", "planet"]) || "-",
+      shortName: planetShortName(getAny(item, ["planet_name", "name", "planet"]) || ""),
+      houseId: Number(getAny(item, ["house", "house_id", "houseId"])) || null,
+      signId: signNameToId(getAny(item, ["sign"])) || null,
+      degree: getAny(item, ["formatted_norm_degree", "norm_degree", "formatted_degree", "degree"]),
+      isRetro: getAny(item, ["is_retro"]) === true,
+    }));
+
+const buildKpHouseChartRows = ({ birthChart, cusps, planets }) => {
+  const cuspRows = normalizeKpCusps(cusps);
+  const kpPlanetRows = normalizeKpPlanets(planets);
+  const birthPlanets = birthChartPlanetsBySign(birthChart);
+
+  return cuspRows.map((cusp) => {
+    const byHouse = kpPlanetRows.filter((planet) => planet.houseId === cusp.houseId);
+    const byBirthSign = birthPlanets
+      .filter((planet) => planet.signId === cusp.signId)
+      .map((planet) => {
+        const detailed = kpPlanetRows.find((item) => String(item.name).toLowerCase() === String(planet.name).toLowerCase());
+        return { ...planet, ...detailed, signId: planet.signId };
+      });
+
+    const merged = [...byHouse, ...byBirthSign].reduce((items, planet) => {
+      if (!planet?.name || items.some((item) => String(item.name).toLowerCase() === String(planet.name).toLowerCase())) {
+        return items;
+      }
+      return [...items, planet];
+    }, []);
+
+    return {
+      ...cusp,
+      planets: merged,
+    };
+  });
+};
+
+const romanHouse = (value) =>
+  ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"][Number(value)] || String(value);
+
+const kpHousePositions = {
+  1: { left: "50%", top: "26%" },
+  2: { left: "28%", top: "11%" },
+  3: { left: "17%", top: "28%" },
+  4: { left: "28%", top: "50%" },
+  5: { left: "17%", top: "72%" },
+  6: { left: "28%", top: "89%" },
+  7: { left: "50%", top: "74%" },
+  8: { left: "72%", top: "89%" },
+  9: { left: "83%", top: "72%" },
+  10: { left: "72%", top: "50%" },
+  11: { left: "83%", top: "28%" },
+  12: { left: "72%", top: "11%" },
+};
+
+const KpCuspBhavChart = ({ rows = [] }) => {
+  const houses = Array.from({ length: 12 }, (_, index) => {
+    const houseId = index + 1;
+    return rows.find((row) => row.houseId === houseId) || { houseId, planets: [] };
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="relative aspect-square border border-gray-900 bg-white">
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
+            <line x1="0" y1="0" x2="100" y2="100" stroke="currentColor" strokeWidth="0.35" />
+            <line x1="100" y1="0" x2="0" y2="100" stroke="currentColor" strokeWidth="0.35" />
+            <line x1="50" y1="0" x2="100" y2="50" stroke="currentColor" strokeWidth="0.35" />
+            <line x1="100" y1="50" x2="50" y2="100" stroke="currentColor" strokeWidth="0.35" />
+            <line x1="50" y1="100" x2="0" y2="50" stroke="currentColor" strokeWidth="0.35" />
+            <line x1="0" y1="50" x2="50" y2="0" stroke="currentColor" strokeWidth="0.35" />
+            <line x1="50" y1="0" x2="50" y2="100" stroke="currentColor" strokeWidth="0.25" opacity="0.25" />
+            <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" strokeWidth="0.25" opacity="0.25" />
+          </svg>
+          {houses.map((house) => {
+            const position = kpHousePositions[house.houseId] || { left: "50%", top: "50%" };
+            const planetText = house.planets?.length
+              ? house.planets.map((planet) => `${planet.shortName || planetShortName(planet.name)}${planet.isRetro ? "R" : ""}${planet.degree ? ` ${formatDmsDegree(planet.degree)}` : ""}`).join("  ")
+              : "-";
+            return (
+              <div
+                key={house.houseId}
+                className="absolute w-[22%] -translate-x-1/2 -translate-y-1/2 text-center text-[9px] font-semibold leading-tight text-[#001f4d] sm:text-xs"
+                style={position}
+              >
+                <p className="font-black text-slate-900">{planetText}</p>
+                <p className="mt-1 text-[9px] text-slate-700 sm:text-[11px]">
+                  {romanHouse(house.houseId)} {house.signId ? `| Sign ${house.signId}` : ""}
+                </p>
+                <p className="text-[9px] text-slate-600 sm:text-[11px]">{house.localDegree || house.formattedDegree || "-"}</p>
+              </div>
+            );
+          })}
+        </div>
+        <h4 className="mt-4 text-center text-xl font-black text-[#1E3557]">KP Cusp Bhav Chart</h4>
+      </div>
+      <ReportTable
+        columns={[
+          { key: "houseId", label: "House Id", render: (row) => renderCleanValue(row.houseId) },
+          { key: "signId", label: "Sign Id", render: (row) => renderCleanValue(row.signId) },
+          { key: "sign", label: "Sign", render: (row) => renderCleanValue(row.sign) },
+          { key: "localDegree", label: "Cusp Degree", render: (row) => renderCleanValue(row.localDegree) },
+          { key: "planets", label: "Planets", render: (row) => row.planets?.length ? row.planets.map((planet) => `${planet.name}${planet.degree ? ` (${formatDmsDegree(planet.degree)})` : ""}`).join(", ") : "-" },
+        ]}
+        rows={rows}
+        compact
+      />
+    </div>
+  );
+};
+
+const ChartLikeGrid = ({ rows = [], title = "Chart" }) => {
+  const cells = Array.from({ length: 12 }, (_, index) => {
+    const signNumber = index + 1;
+    return rows.find((row) => Number(row.sign) === signNumber) || {
+      id: signNumber,
+      sign: signNumber,
+      signName: zodiacNames[index],
+      planet: "-",
+      planetSmall: "-",
+      degree: "-",
+    };
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="grid overflow-hidden rounded-sm border border-[#D7AF4B] bg-white sm:grid-cols-3 lg:grid-cols-4">
+        {cells.map((cell) => (
+          <div key={`${title}-${cell.sign}`} className="min-h-[126px] border-b border-r border-[#ead79d] p-4 last:border-r-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="rounded-full bg-[#D7AF4B] px-2.5 py-1 text-xs font-black text-[#1E3557]">{cell.sign}</span>
+              <span className="text-xs font-black uppercase tracking-wider text-slate-400">{renderCleanValue(cell.signName)}</span>
+            </div>
+            <p className="mt-4 text-sm font-black text-[#1E3557]">{renderCleanValue(cell.planet)}</p>
+            <p className="mt-2 text-xs font-semibold text-slate-500">{renderCleanValue(cell.planetSmall)}</p>
+            <p className="mt-1 text-xs text-slate-400">Degree: {renderCleanValue(cell.degree)}</p>
+          </div>
+        ))}
+      </div>
+      <ReportTable columns={chartColumns} rows={rows} compact />
+    </div>
+  );
+};
+
+const payloadPanel = (title, payload, omitKeys = []) => {
+  const rows = buildRowsFromArray(payload);
+  if (rows.length > 0) {
+    return (
+      <ReportPanel title={title}>
+        <ReportTable columns={buildColumnsFromRows(rows)} rows={rows} compact />
+      </ReportPanel>
+    );
+  }
+
+  return (
+    <ReportPanel title={title}>
+      <AttributeTable rows={objectRows(payload, omitKeys)} />
+    </ReportPanel>
+  );
+};
+
+const monthChartEntries = (payload) => {
+  const parsed = parseMaybeJson(payload);
+  const source = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed?.months)
+      ? parsed.months
+      : Array.isArray(parsed?.month_chart)
+        ? parsed.month_chart
+        : Array.isArray(parsed?.data)
+          ? parsed.data
+          : findNestedArray(parsed, ["month"]);
+
+  return source
+    .filter((item) => isObject(item))
+    .map((item, index) => ({
+      id: getAny(item, ["month_id", "monthId", "month", "id"]) || index + 1,
+      chart: normalizeChartSignRows(getAny(item, ["chart", "month_chart"]) || item.chart || item),
+    }));
+};
+
 const dashaTableColumns = [
   { key: "dasha", label: "Dasha Planet", render: (row) => getDashaName(row) },
   { key: "start", label: "Start Date", render: (row) => getStartDate(row) },
@@ -874,6 +1177,82 @@ export function YoginiDashaReport({ result }) {
   );
 }
 
+export function VarshaphalReport({ result }) {
+  const providerPayload = result?.data?.provider_payload || {};
+  const yearChart = getSuccessData(providerPayload, "varshaphal_year_chart");
+  const monthChart = getSuccessData(providerPayload, "varshaphal_month_chart");
+  const yearChartRows = normalizeChartSignRows(yearChart);
+  const monthEntries = monthChartEntries(monthChart);
+  const detailEntries = [
+    ["varshaphal_details", "Varshaphal Details"],
+    ["varshaphal_planets", "Varshaphal Planets"],
+    ["varshaphal_muntha", "Muntha"],
+    ["varshaphal_mudda_dasha", "Mudda Dasha"],
+    ["varshaphal_panchavargeeya_bala", "Panchavargeeya Bala"],
+    ["varshaphal_harsha_bala", "Harsha Bala"],
+    ["varshaphal_saham_points", "Saham Points"],
+    ["varshaphal_yoga", "Varshaphal Yoga"],
+  ]
+    .map(([key, title]) => ({ key, title, data: getSuccessData(providerPayload, key) }))
+    .filter((item) => item.data);
+
+  return (
+    <div className="space-y-6">
+      <ReportPanel title="Varshaphal Year Chart" subtitle="Annual sign and planet placement for the selected reference year.">
+        <ChartLikeGrid rows={yearChartRows} title="Varshaphal Year Chart" />
+      </ReportPanel>
+
+      <ReportPanel title="Varshaphal Month Chart" subtitle="Month-wise chart values organized sign by sign.">
+        <div className="space-y-6">
+          {monthEntries.length > 0 ? (
+            monthEntries.map((entry) => (
+              <section key={entry.id} className="overflow-hidden rounded-sm border border-[#D7AF4B] bg-white">
+                <h4 className="bg-[#D7AF4B] px-4 py-3 text-sm font-black text-[#1E3557]">Month {entry.id}</h4>
+                <div className="p-4">
+                  <ChartLikeGrid rows={entry.chart} title={`Varshaphal Month ${entry.id}`} />
+                </div>
+              </section>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">No month chart data returned.</p>
+          )}
+        </div>
+      </ReportPanel>
+
+      {detailEntries.map((entry) => (
+        <React.Fragment key={entry.key}>{payloadPanel(entry.title, entry.data)}</React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+export function KrishnamurtiPaddhatiReport({ result }) {
+  const providerPayload = result?.data?.provider_payload || {};
+  const birthChart = getSuccessData(providerPayload, "kp_birth_chart");
+  const houseCusps = getSuccessData(providerPayload, "kp_house_cusps");
+  const kpPlanets = getSuccessData(providerPayload, "kp_planets");
+  const chartRows = buildKpHouseChartRows({ birthChart, cusps: houseCusps, planets: kpPlanets });
+  const detailEntries = [
+    ["kp_planets", "KP Planets"],
+    ["kp_house_cusps", "KP House Cusps"],
+    ["kp_house_significator", "KP House Significator"],
+  ]
+    .map(([key, title]) => ({ key, title, data: getSuccessData(providerPayload, key) }))
+    .filter((item) => item.data);
+
+  return (
+    <div className="space-y-6">
+      <ReportPanel title="KP Birth Chart" subtitle="House cusp chart matched by house id, sign id, cusp degree and KP planet placements.">
+        <KpCuspBhavChart rows={chartRows} />
+      </ReportPanel>
+
+      {detailEntries.map((entry) => (
+        <React.Fragment key={entry.key}>{payloadPanel(entry.title, entry.data)}</React.Fragment>
+      ))}
+    </div>
+  );
+}
+
 export function PujaSuggestionReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const data = getSuccessData(providerPayload, "puja_suggestion") || result?.data;
@@ -911,8 +1290,15 @@ export function VimshottariDashaReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const current = getSuccessData(providerPayload, "current_vdasha_all") || getSuccessData(providerPayload, "current_vdasha") || {};
   const major = getSuccessData(providerPayload, "major_vdasha") || {};
+  const currentDasha = getSuccessData(providerPayload, "current_vdasha");
+  const currentDashaDate = getSuccessData(providerPayload, "current_vdasha_date");
   const majorRows = normalizeDashaRows(major);
   const flowItems = vimshottariDashaItems(current);
+  const detailPanels = [
+    ["current_vdasha", "Current Vimshottari Dasha Details", currentDasha],
+    ["current_vdasha_date", "Current Vimshottari Dasha Dates", currentDashaDate],
+    ["current_vdasha_all", "Complete Current Dasha Hierarchy", getSuccessData(providerPayload, "current_vdasha_all")],
+  ].filter(([, , data]) => data);
 
   return (
     <div className="space-y-6">
@@ -932,6 +1318,10 @@ export function VimshottariDashaReport({ result }) {
       <ReportPanel title="Vimshottari Maha Dasha">
         <ReportTable columns={dashaTableColumns} rows={majorRows} compact />
       </ReportPanel>
+
+      {detailPanels.map(([key, title, data]) => (
+        <React.Fragment key={key}>{payloadPanel(title, data)}</React.Fragment>
+      ))}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, LayoutDashboard, UserRound } from "lucide-react";
+import { Bell, CalendarDays, Clock3, LayoutDashboard, UserRound } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { assetUrl } from "../utils/assetUrl";
@@ -7,6 +7,7 @@ const links = [
   { to: "/dashboard", label: "Dashboard Overview", icon: LayoutDashboard, end: true },
   { to: "/user-profile", label: "My Profile", icon: UserRound },
   { to: "/my-bookings", label: "My Bookings", icon: CalendarDays },
+  { to: "/recent-profiles", label: "Recent Profiles", icon: Clock3 },
   { to: "/notifications", label: "Notifications", icon: Bell },
 ];
 

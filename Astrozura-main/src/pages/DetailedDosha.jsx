@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { getVedicCalculator, searchLocation } from "../api/prokeralaApi";
+import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
 import { FaShieldAlt, FaStar, FaExclamationTriangle, FaCheckCircle, FaSpinner } from "react-icons/fa";
 import { getServiceIcon } from "../data/serviceIcons";
+import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const initialForm = {
   date_of_birth: "",
@@ -81,6 +84,34 @@ export default function DetailedDosha() {
     setSearchResults([]);
   };
 
+  const applyRecentProfile = (profile) => {
+    setForm((current) => ({
+      ...current,
+      date_of_birth: profile.date_of_birth || current.date_of_birth,
+      time_of_birth: profileTime(profile.time_of_birth) || current.time_of_birth,
+      place_of_birth: profile.place_of_birth || current.place_of_birth,
+      coordinates: profile.coordinates || current.coordinates,
+    }));
+  };
+
+  const rememberCurrentProfile = async () => {
+    if (!user || !form.date_of_birth) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: user.name,
+        gender: user.gender,
+        date: form.date_of_birth,
+        time: form.time_of_birth,
+        place: form.place_of_birth,
+        coordinates: form.coordinates,
+        sourceModule: "detailed-dosha",
+        relationRole: "self",
+      }));
+    } catch {
+      // Do not block the report if helper storage fails.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.date_of_birth || !form.time_of_birth) {
@@ -120,6 +151,7 @@ export default function DetailedDosha() {
         pitra: pitra.status === "fulfilled" ? pitra.value.data : null,
       });
 
+      void rememberCurrentProfile();
       setToast("Detailed Dosha report generated successfully.");
     } catch (error) {
       setToast("Failed to fetch all dosha modules.");
@@ -236,6 +268,9 @@ export default function DetailedDosha() {
               <p className="mt-2 text-sm text-slate-500">
                 Input your birth specifics to fetch all active dosha states simultaneously.
               </p>
+              <div className="mt-4">
+                <RecentProfilePicker onSelect={applyRecentProfile} />
+              </div>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-5">
                 <div>

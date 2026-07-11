@@ -87,7 +87,9 @@ export default function MainSections() {
   useEffect(() => {
     const fetchBlogPosts = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/blogs?per_page=4&la=${i18n.language === "hi" ? "hi" : "en"}`);
+        const response = await fetch(`${API_BASE_URL}/blogs?per_page=4&la=${i18n.language === "hi" ? "hi" : "en"}&_=${Date.now()}`, {
+          cache: "no-store",
+        });
         const data = await response.json();
         if (data?.status === "success") {
           setBlogPosts(data.data?.data || data.data || []);

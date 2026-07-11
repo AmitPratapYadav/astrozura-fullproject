@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { getLalKitabReport, searchLocation } from "../api/prokeralaApi";
+import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
 import { getServiceIcon } from "../data/serviceIcons";
+import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const initialForm = {
   date_of_birth: "",
@@ -175,6 +178,34 @@ export default function LalKitabReport() {
     setSearchResults([]);
   };
 
+  const applyRecentProfile = (profile) => {
+    setForm((current) => ({
+      ...current,
+      date_of_birth: profile.date_of_birth || current.date_of_birth,
+      time_of_birth: profileTime(profile.time_of_birth) || current.time_of_birth,
+      place_of_birth: profile.place_of_birth || current.place_of_birth,
+      coordinates: profile.coordinates || current.coordinates,
+    }));
+  };
+
+  const rememberCurrentProfile = async () => {
+    if (!user || !form.date_of_birth) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: user.name,
+        gender: user.gender,
+        date: form.date_of_birth,
+        time: form.time_of_birth,
+        place: form.place_of_birth,
+        coordinates: form.coordinates,
+        sourceModule: "lal-kitab-report",
+        relationRole: "self",
+      }));
+    } catch {
+      // Saved profiles are auxiliary.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -200,6 +231,7 @@ export default function LalKitabReport() {
           ...response.data,
           requested_datetime: datetime,
         });
+        void rememberCurrentProfile();
         setToast("Lal Kitab report generated successfully.");
         return;
       }
@@ -248,6 +280,9 @@ export default function LalKitabReport() {
             <p className="mt-2 text-sm text-slate-500">
               Lal Kitab requires the exact birth date, birth time, and a verified birthplace selection.
             </p>
+            <div className="mt-4">
+              <RecentProfilePicker onSelect={applyRecentProfile} />
+            </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               <div>

@@ -4,6 +4,7 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import InlineInfoPopover from "../components/InlineInfoPopover";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { ProviderSections, ReportDataBlock } from "../components/report/ReportDataRenderer";
 import { KeyValueTable, ReportPanel } from "../components/report/ReportTables";
 import {
@@ -11,10 +12,12 @@ import {
   CharDashaReport,
   GemstoneSuggestionReport,
   KaalSarpDoshaReport,
+  KrishnamurtiPaddhatiReport,
   PitraDoshaReport,
   PujaSuggestionReport,
   RudrakshaSuggestionReport,
   SadeSatiReport,
+  VarshaphalReport,
   VimshottariDashaReport,
   YoginiDashaReport,
 } from "../components/report/SpecializedVedicReports";
@@ -29,6 +32,8 @@ import {
 } from "../data/astrologyTools";
 import { groupedServices } from "../data/serviceCatalog";
 import { getServiceIcon } from "../data/serviceIcons";
+import { saveRecentProfile } from "../api/recentProfilesApi";
+import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const initialForm = {
   date_of_birth: "",
@@ -159,6 +164,34 @@ export default function VedicCalculators() {
     setSearchResults([]);
   };
 
+  const applyRecentProfile = (profile) => {
+    setForm((current) => ({
+      ...current,
+      date_of_birth: profile.date_of_birth || current.date_of_birth,
+      time_of_birth: profileTime(profile.time_of_birth) || current.time_of_birth,
+      place_of_birth: profile.place_of_birth || current.place_of_birth,
+      coordinates: profile.coordinates || current.coordinates,
+    }));
+  };
+
+  const rememberCurrentProfile = async () => {
+    if (!user || !tool.requiresDate || !form.date_of_birth) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: user.name,
+        gender: user.gender,
+        date: form.date_of_birth,
+        time: form.time_of_birth,
+        place: form.place_of_birth,
+        coordinates: form.coordinates,
+        sourceModule: tool.key,
+        relationRole: "self",
+      }));
+    } catch {
+      // Recent-profile storage should never block calculator results.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -202,6 +235,7 @@ export default function VedicCalculators() {
       const response = await getVedicCalculator(tool.key, payload);
       if (response?.status === "success") {
         setResult(response);
+        void rememberCurrentProfile();
         setToast("Calculator result generated successfully.");
         return;
       }
@@ -227,6 +261,8 @@ export default function VedicCalculators() {
     "vimshottari-dasha",
     "char-dasha",
     "sarvashtakavarga",
+    "varshaphal",
+    "kp",
   ].includes(tool.key);
   const selectedPlanetLabel = PLANET_OPTIONS.find((option) => Number(option.value) === Number(form.planet))?.label || "Sun";
 
@@ -266,6 +302,11 @@ export default function VedicCalculators() {
             <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold">Calculator Inputs</h2>
               <p className="mt-2 text-sm text-slate-500">Enter the required details for the selected calculator.</p>
+              {tool.requiresDate ? (
+                <div className="mt-4">
+                  <RecentProfilePicker onSelect={applyRecentProfile} />
+                </div>
+              ) : null}
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-5">
 
@@ -605,6 +646,10 @@ export default function VedicCalculators() {
                   <CharDashaReport result={result} />
                 ) : tool.key === "sarvashtakavarga" ? (
                   <AshtakavargaReport result={result} planetLabel={selectedPlanetLabel} />
+                ) : tool.key === "varshaphal" ? (
+                  <VarshaphalReport result={result} />
+                ) : tool.key === "kp" ? (
+                  <KrishnamurtiPaddhatiReport result={result} />
                 ) : providerSections.length > 0 ? (
                   <ProviderSections sections={providerSections} />
                 ) : (

@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import InlineInfoPopover from "../components/InlineInfoPopover";
+import RecentProfilePicker from "../components/RecentProfilePicker";
 import { ProviderSections, ReportDataBlock } from "../components/report/ReportDataRenderer";
 import { ReportPanel } from "../components/report/ReportTables";
 import { NumerologyReportLayout } from "../components/report/SpecializedVedicReports";
 import { getNumerologyReport } from "../api/prokeralaApi";
+import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
 import { getServiceIcon } from "../data/serviceIcons";
+import { buildRecentProfilePayload } from "../utils/recentProfile";
 
 const initialForm = {
   first_name: "",
@@ -70,6 +73,32 @@ export default function Numerology() {
     }));
   };
 
+  const applyRecentProfile = (profile) => {
+    const names = splitUserName(profile.person_name);
+    setForm((current) => ({
+      ...current,
+      first_name: names.first_name || current.first_name,
+      middle_name: names.middle_name || current.middle_name,
+      last_name: names.last_name || current.last_name,
+      date_of_birth: profile.date_of_birth || current.date_of_birth,
+    }));
+  };
+
+  const rememberCurrentProfile = async () => {
+    if (!user || !form.date_of_birth) return;
+    try {
+      await saveRecentProfile(buildRecentProfilePayload({
+        name: fullName,
+        gender: user.gender,
+        date: form.date_of_birth,
+        sourceModule: "detailed-numerology",
+        relationRole: "self",
+      }));
+    } catch {
+      // Optional profile history only.
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -98,6 +127,7 @@ export default function Numerology() {
 
       if (response?.status === "success") {
         setResult(response);
+        void rememberCurrentProfile();
         setToast("Detailed numerology report generated successfully.");
         return;
       }
@@ -146,6 +176,9 @@ export default function Numerology() {
               <p className="mt-2 text-sm text-slate-500">
                 Enter the name and birth date used for numerology calculations.
               </p>
+            </div>
+            <div className="mt-4">
+              <RecentProfilePicker onSelect={applyRecentProfile} />
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
