@@ -57,3 +57,4 @@ astrozura_mobile/ios/Flutter/Generated.xcconfig
 astrozura_mobile/ios/Flutter/flutter_export_environment.sh
 astrozura_mobile/macos/Pods/
 astrozura_mobile/**/ephemeral/
+AstroZura-client-testing-release.apk
