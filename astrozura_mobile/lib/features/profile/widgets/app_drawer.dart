@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import '../profile_screen.dart';
 import '../edit_profile_page.dart';
 import '../../main_navigation.dart';
+import '../../web/in_app_web_page.dart';
 import '../../../core/contants/app_colors.dart';
 import '../../../core/services/auth_services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const _navy = Color(0xFF0d437b);
@@ -147,12 +147,16 @@ class AppDrawer extends StatelessWidget {
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
-  Future<void> _openWeb(String path) async {
+  Future<void> _openWeb(
+    BuildContext context, {
+    required String title,
+    required String path,
+  }) async {
     onClose();
-    await launchUrl(
-      Uri.parse('https://astrozura.com$path'),
-      mode: LaunchMode.externalApplication,
-    );
+    Future.delayed(const Duration(milliseconds: 220), () {
+      if (!context.mounted) return;
+      InAppWebPage.open(context, title: title, pathOrUrl: path);
+    });
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -192,7 +196,9 @@ class AppDrawer extends StatelessWidget {
           _buildHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -212,7 +218,7 @@ class AppDrawer extends StatelessWidget {
                     icon: Icons.calendar_month_rounded,
                     label: 'My Bookings',
                     isActive: activeRoute == AppDrawerRoute.myBookings,
-                    onTap: () => _switchTab(context, 5),
+                    onTap: () => _switchTab(context, 6),
                   ),
 
                   // My Orders → IndexedStack index 4
@@ -220,7 +226,7 @@ class AppDrawer extends StatelessWidget {
                     icon: Icons.shopping_bag_outlined,
                     label: 'My Orders',
                     isActive: activeRoute == AppDrawerRoute.myOrders,
-                    onTap: () => _switchTab(context, 6),
+                    onTap: () => _switchTab(context, 5),
                   ),
 
                   Padding(
@@ -232,28 +238,45 @@ class AppDrawer extends StatelessWidget {
                   _DrawerTile(
                     icon: Icons.info_outline_rounded,
                     label: 'About Us',
-                    onTap: () => _openWeb('/about-us'),
+                    onTap: () => _openWeb(
+                      context,
+                      title: 'About Us',
+                      path: '/about-us',
+                    ),
                   ),
                   _DrawerTile(
                     icon: Icons.support_agent_rounded,
                     label: 'Contact Support',
-                    onTap: () => _openWeb('/contact-support'),
+                    onTap: () => _openWeb(
+                      context,
+                      title: 'Contact Support',
+                      path: '/contact-support',
+                    ),
                   ),
                   _DrawerTile(
                     icon: Icons.privacy_tip_outlined,
                     label: 'Privacy Policy',
-                    onTap: () => _openWeb('/privacy-policy'),
+                    onTap: () => _openWeb(
+                      context,
+                      title: 'Privacy Policy',
+                      path: '/privacy-policy',
+                    ),
                   ),
                   _DrawerTile(
                     icon: Icons.description_outlined,
                     label: 'Terms & Conditions',
-                    onTap: () => _openWeb('/terms-and-conditions'),
+                    onTap: () => _openWeb(
+                      context,
+                      title: 'Terms & Conditions',
+                      path: '/terms-and-conditions',
+                    ),
                   ),
+                  const SizedBox(height: 12),
+                  _buildFooter(context),
                 ],
               ),
             ),
           ),
-          _buildFooter(context),
         ],
       ),
     );
@@ -380,7 +403,11 @@ class AppDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 13),
           GestureDetector(
-            onTap: () => _openWeb('/contact-support'),
+            onTap: () => _openWeb(
+              context,
+              title: 'Contact Support',
+              path: '/contact-support',
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [

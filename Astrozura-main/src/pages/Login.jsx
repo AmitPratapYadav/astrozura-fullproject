@@ -46,7 +46,8 @@ export default function Login() {
     try {
       const response = await sendOtp(identifier);
       setOtpSent(true);
-      setSuccessMsg(`OTP sent! (DEV OTP: ${response.dev_otp})`);
+      const devOtpText = import.meta.env.DEV && response?.dev_otp ? ` (DEV OTP: ${response.dev_otp})` : "";
+      setSuccessMsg(`${response?.message || "OTP sent successfully."}${devOtpText}`);
       setTimeout(() => { if (otpInputRef.current) otpInputRef.current.focus(); }, 100);
     } catch (err) { setError(err.message || "Failed to send OTP."); }
     finally { setLoading(false); }

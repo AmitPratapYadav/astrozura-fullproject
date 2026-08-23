@@ -201,7 +201,7 @@ export default function Rituals() {
                         <p className="mt-3 text-sm leading-6 text-gray-500">{ritual.short_description}</p>
                         <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
                           <span>{ritual.duration_label}</span>
-                          <span className="font-semibold text-[#1E3557]">Rs {Number(ritual.price || 0).toLocaleString("en-IN")}</span>
+                          <span className="font-semibold text-[#1E3557]">Consultation first</span>
                         </div>
                         <div className="mt-5 grid grid-cols-2 gap-3">
                           <Link to={`/rituals/${ritual.slug}`} className="rounded-xl border border-[#1E3557] px-4 py-2.5 text-center text-sm font-semibold text-[#1E3557] hover:bg-[#1E3557] hover:text-white transition">

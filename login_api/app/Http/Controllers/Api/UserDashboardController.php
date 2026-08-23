@@ -11,7 +11,10 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Support\MediaStorage;
 use App\Services\ShippingQuoteService;
+use App\Services\SmartChatWhatsAppService;
+use App\Services\UltronSmsService;
 use App\Services\UserNotificationService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -200,7 +203,9 @@ class UserDashboardController extends Controller
     public function storeOrder(
         Request $request,
         ShippingQuoteService $shippingQuotes,
-        UserNotificationService $notifications
+        UserNotificationService $notifications,
+        UltronSmsService $sms,
+        SmartChatWhatsAppService $whatsapp
     )
     {
         $validator = Validator::make($request->all(), [
@@ -231,7 +236,7 @@ class UserDashboardController extends Controller
         $user = $request->user();
         
         // Use database transaction
-        return \DB::transaction(function () use ($request, $user, $shippingQuotes, $notifications) {
+        return \DB::transaction(function () use ($request, $user, $shippingQuotes, $notifications, $sms, $whatsapp) {
             $quote = $shippingQuotes->quote($request->items, true);
             $resolvedItems = $quote['resolved_items'];
             $total = $quote['total_amount'];
@@ -287,6 +292,24 @@ class UserDashboardController extends Controller
                 "/dashboard/orders/{$order->id}",
                 ['order_id' => $order->id]
             );
+
+            $orderSmsSent = $sms->sendOrderReceived(
+                (string) ($order->phone ?: $user->phone),
+                (string) ($user->name ?: 'User'),
+                (string) $order->order_number
+            );
+            $orderWhatsAppSent = $whatsapp->sendOrderReceived(
+                (string) ($order->phone ?: $user->phone),
+                (string) ($user->name ?: 'User'),
+                (string) $order->order_number
+            );
+            Log::info('Order received SMS dispatch result.', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'phone_present' => filled($order->phone ?: $user->phone),
+                'sent' => $orderSmsSent,
+                'whatsapp_sent' => $orderWhatsAppSent,
+            ]);
 
             return response()->json([
                 'status' => 'success',

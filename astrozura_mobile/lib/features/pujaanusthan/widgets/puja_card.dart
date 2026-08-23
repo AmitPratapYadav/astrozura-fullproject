@@ -69,31 +69,13 @@ class PujaCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
 
-                    // Price row
-                    Row(
-                      children: [
-                        Text(
-                          '₹${item.price}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFD4A84F),
-                          ),
-                        ),
-                        if (item.originalPrice > item.price) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            '₹${item.originalPrice}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFFAAAAAA),
-                              decoration: TextDecoration.lineThrough,
-                              decorationColor: Color(0xFFAAAAAA),
-                            ),
-                          ),
-                        ],
-                      ],
+                    const Text(
+                      'Consult first, pay later',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFD4A84F),
+                      ),
                     ),
                     const SizedBox(height: 8),
 
@@ -269,9 +251,17 @@ class _PujaImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (_isNetwork) {
+      final dpr = MediaQuery.of(context).devicePixelRatio;
+      final width = (MediaQuery.of(context).size.width / 2 * dpr)
+          .round()
+          .clamp(240, 720)
+          .toInt();
       return Image.network(
         asset,
         fit: BoxFit.cover,
+        cacheWidth: width,
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.medium,
         errorBuilder: (_, __, ___) => _Placeholder(),
         loadingBuilder: (_, child, progress) =>
             progress == null ? child : _LoadingShimmer(),

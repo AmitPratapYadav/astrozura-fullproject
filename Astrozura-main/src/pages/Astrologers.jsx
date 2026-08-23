@@ -3,12 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { FaStar } from "react-icons/fa";
-import img1 from "../assets/img1.png";
-import img2 from "../assets/imge2.png";
-import img3 from "../assets/img3.png";
-import img4 from "../assets/img4.png";
-import img6 from "../assets/imge6.png";
-import img7 from "../assets/img7.png";
 import avatar from "../assets/astrologer-avatar.jpg";
 import AstrologerStatusBadge from "../components/AstrologerStatusBadge";
 import { API_BASE_URL } from "../utils/apiBase";
@@ -25,6 +19,7 @@ const [language, setLanguage] = useState("Language");
 const [exp, setExp] = useState("Experience");
 const [rating, setRating] = useState("Rating");
 const [type, setType] = useState("Consultation");
+const [reader, setReader] = useState("Reader");
 
 const [search, setSearch] = useState("");
 const [showMsg, setShowMsg] = useState("");
@@ -46,11 +41,16 @@ useEffect(() => {
 }, [location]);
 
 useEffect(() => {
-  const queryType = new URLSearchParams(location.search).get("type");
+  const params = new URLSearchParams(location.search);
+  const queryType = params.get("type");
+  const querySpecialty = params.get("specialty");
   if (queryType === "call") {
     setType("Call");
   } else if (queryType === "chat") {
     setType("Chat");
+  }
+  if (querySpecialty === "palm-reading") {
+    setReader("Palm Reading");
   }
 }, [location.search]);
 
@@ -64,6 +64,7 @@ useEffect(() => {
       const params = new URLSearchParams();
       if (search.trim()) params.set("q", search.trim());
       if (type === "Chat" || type === "Call") params.set("type", type.toLowerCase());
+      if (reader === "Palm Reading") params.set("specialty", "palm-reading");
       params.set("la", i18n.language === "hi" ? "hi" : "en");
       const response = await fetch(`${API_BASE_URL}/astrologers?${params.toString()}`);
       const data = await response.json();
@@ -80,15 +81,16 @@ useEffect(() => {
   }, 250);
 
   return () => window.clearTimeout(timeoutId);
-}, [search, type, i18n.language]);
+}, [search, type, reader, i18n.language]);
 
 useEffect(() => {
   setActivePage(1);
-}, [search]);
+}, [search, type, reader]);
 
 const featuredExpert = astrologersList.find(a => a.astrologer_detail?.is_featured) || astrologersList[0];
 const featuredDetails = featuredExpert?.astrologer_detail || {};
 const selectedConsultationType = type === "Call" ? "call" : "chat";
+const selectedServiceContext = reader === "Palm Reading" ? "palm-reading" : undefined;
 const totalPages = Math.max(1, Math.ceil(astrologersList.length / pageSize));
 const currentPage = Math.min(activePage, totalPages);
 const paginatedAstrologers = astrologersList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -127,6 +129,7 @@ const filters = [
   { key: "exp", state: exp, setter: setExp, options: ["1-5 Years", "5-10 Years", "10+ Years"] },
   { key: "rating", state: rating, setter: setRating, options: ["4+ Stars", "4.5+ Stars", "5 Stars"] },
   { key: "type", state: type, setter: setType, options: ["Chat", "Call"] },
+  { key: "reader", state: reader, setter: setReader, options: ["All Readers", "Palm Reading"] },
 ];
 
 return (
@@ -261,7 +264,7 @@ return (
               </Link>
               <button
                 disabled={featuredExpert.availability_status === "unavailable"}
-                onClick={() => navigate(`/consultation/${featuredExpert.id}`, { state: { type: selectedConsultationType, astrologer: featuredExpert } })}
+                onClick={() => navigate(`/consultation/${featuredExpert.id}`, { state: { type: selectedConsultationType, astrologer: featuredExpert, serviceContext: selectedServiceContext } })}
                 className="bg-[#1E3557] text-white px-8 py-3.5 rounded-xl font-black text-sm hover:bg-[#162744] hover:shadow-xl hover:-translate-y-1 transition-all w-full sm:w-auto disabled:cursor-not-allowed disabled:bg-red-600 disabled:hover:translate-y-0"
               >
                 {featuredExpert.availability_status === "unavailable" ? "Unavailable" : "Book a Session"}
@@ -335,7 +338,7 @@ return (
                   </Link>
                   <button
                     disabled={unavailable}
-                    onClick={() => navigate(`/consultation/${astro.id}`, { state: { type: selectedConsultationType, astrologer: astro } })}
+                    onClick={() => navigate(`/consultation/${astro.id}`, { state: { type: selectedConsultationType, astrologer: astro, serviceContext: selectedServiceContext } })}
                     className="flex-1 bg-[#1E3557] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[#162744] hover:shadow-md transition disabled:cursor-not-allowed disabled:bg-red-600"
                   >
                     {unavailable ? "Unavailable" : "Book Now"}
@@ -348,8 +351,14 @@ return (
         </div>
         {!astrologersList.length && (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center mt-8">
-            <p className="text-lg font-bold text-[#1E3557]">No astrologers match this search.</p>
-            <p className="mt-2 text-sm text-gray-500">Try another name, speciality, or language.</p>
+            <p className="text-lg font-bold text-[#1E3557]">
+              {reader === "Palm Reading" ? "No palm reading experts are available right now." : "No astrologers match this search."}
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              {reader === "Palm Reading"
+                ? "Please check again soon, or choose a general astrologer for another consultation."
+                : "Try another name, speciality, or language."}
+            </p>
           </div>
         )}
       </>

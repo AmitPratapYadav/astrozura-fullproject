@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Request;
 
 return tap(
     Application::configure(basePath: dirname(__DIR__))
@@ -12,11 +14,24 @@ return tap(
             commands: __DIR__ . '/../routes/console.php',
             health: '/up',
         )
+        ->withBroadcasting(
+            __DIR__ . '/../routes/channels.php',
+            ['prefix' => 'api', 'middleware' => ['api', 'auth:sanctum']]
+        )
         ->withMiddleware(function (Middleware $middleware): void {
             //
         })
         ->withExceptions(function (Exceptions $exceptions): void {
-            //
+            $exceptions->render(function (AuthenticationException $e, Request $request) {
+                if ($request->expectsJson() || $request->is('api/*')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthenticated.',
+                    ], 401);
+                }
+
+                return null;
+            });
         })
         ->create(),
     function (Application $app): void {

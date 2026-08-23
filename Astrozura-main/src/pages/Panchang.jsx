@@ -180,13 +180,13 @@ function FieldShell({ label, children }) {
 
 function MuhurtaTable({ title, rows, rowClass = () => "bg-slate-50/50 border-l-4 border-l-[#D7AF4B] text-slate-700" }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      <h3 className="bg-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557] border-b border-[#D7AF4B]">{title}</h3>
-      <div className="divide-y divide-slate-100">
+    <section className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm transition hover:shadow-md">
+      <h3 className="bg-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557] border-b border-[#c79d37]">{title}</h3>
+      <div className="divide-y divide-slate-200">
         {(rows.length ? rows : [{ id: "empty", name: "No data returned", time: "-" }]).map((row) => (
           <div
             key={row.id}
-            className={`grid grid-cols-[1fr_1.2fr] px-5 py-3.5 text-center text-sm md:text-base items-center ${rowClass(row.name)}`}
+            className={`grid grid-cols-[1fr_1.2fr] items-center border-x border-transparent px-5 py-3.5 text-center text-sm transition hover:border-[#D7AF4B]/40 hover:bg-[#fff9e8] active:bg-[#fff4d4] md:text-base ${rowClass(row.name)}`}
           >
             <strong className="font-bold">{row.name}</strong>
             <span className="font-mono text-xs md:text-sm font-semibold">{row.time}</span>
@@ -199,16 +199,16 @@ function MuhurtaTable({ title, rows, rowClass = () => "bg-slate-50/50 border-l-4
 
 function InfoTable({ title, rows, columnsClass = "grid-cols-2" }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+    <section className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm transition hover:shadow-md">
       {title ? (
-        <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">
+        <h2 className="bg-[#D7AF4B] border-b border-[#c79d37] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">
           {title}
         </h2>
       ) : null}
-      <div className={`grid ${columnsClass} divide-x divide-y divide-slate-100`}>
+      <div className={`grid ${columnsClass} divide-x divide-y divide-slate-200`}>
         {rows.map(([label, value]) => (
-          <div key={label} className="p-4 bg-white transition hover:bg-slate-50/60 border-t border-l border-slate-100 first:border-t-0 odd:border-l-0">
-            <p className="text-xs font-black uppercase tracking-wider text-slate-600">{label}</p>
+          <div key={label} className="border-slate-200 bg-[#fffdf7] p-4 transition hover:bg-[#fff7df] active:bg-[#fff2c9]">
+            <p className="text-xs font-black uppercase tracking-wider text-slate-700">{label}</p>
             <p className="mt-1 text-sm font-semibold text-[#1E3557]">{value || "-"}</p>
           </div>
         ))}
@@ -280,13 +280,6 @@ const normalizePlanetRows = (payload) =>
     motion: tableValue(motionFromPlanet(item)),
   }));
 
-const objectRows = (payload) => {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return [];
-  return Object.entries(payload)
-    .filter(([, value]) => value !== null && value !== undefined && value !== "")
-    .map(([key, value]) => [cleanLabel(key), tableValue(value)]);
-};
-
 const normalizePanchangChartRows = (payload) => {
   const source = Array.isArray(payload)
     ? payload
@@ -308,30 +301,38 @@ const normalizePanchangChartRows = (payload) => {
   }));
 };
 
+const normalizePanchangLagnaRows = (payload) =>
+  firstArrayFrom(payload, ["lagna_table", "panchang_lagna_table", "data"]).map((item, index) => ({
+    id: `${item.lagna || "lagna"}-${index}`,
+    lagna: tableValue(item.lagna || item.sign || item.rashi),
+    startTime: tableValue(item.start_time || item.startTime || item.start),
+    endTime: tableValue(item.end_time || item.endTime || item.end),
+  }));
+
 function PanchangDataTable({ title, rows, columns }) {
   const visibleColumns = columns.filter(
     (column) => !column.hideWhenEmpty || rows.some((row) => row[column.key] && row[column.key] !== "-")
   );
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      <h3 className="border-b border-[#D7AF4B] bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557]">{title}</h3>
+    <section className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm transition hover:shadow-md">
+      <h3 className="border-b border-[#c79d37] bg-[#D7AF4B] px-5 py-4 text-base font-bold text-[#1E3557]">{title}</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-left text-sm">
           <thead className="bg-[#1E3557] text-white">
             <tr>
               {visibleColumns.map((column) => (
-                <th key={column.key} className="px-4 py-3 font-semibold uppercase tracking-wider text-xs">
+                <th key={column.key} className="border border-[#2d466d] px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                   {column.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {(rows.length ? rows : [{ id: "empty" }]).map((row, index) => (
-              <tr key={row.id || index} className="hover:bg-slate-50/80 transition odd:bg-white even:bg-slate-50/40">
+              <tr key={row.id || index} className="transition odd:bg-white even:bg-[#fffaf0] hover:bg-[#fff3cf] active:bg-[#ffe9a8]">
                 {visibleColumns.map((column) => (
-                  <td key={column.key} className="px-4 py-3.5 text-slate-700 font-medium">
+                  <td key={column.key} className="border border-slate-200 px-4 py-3.5 font-medium text-slate-700">
                     {row[column.key] || "-"}
                   </td>
                 ))}
@@ -374,15 +375,15 @@ function PanchangChartBlock({ chartData }) {
 
 function PanchangElementsTable({ rows }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      <h2 className="bg-[#D7AF4B] border-b border-[#D7AF4B] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">Panchang Elements</h2>
-      <div className="divide-y divide-slate-100">
+    <section className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm transition hover:shadow-md">
+      <h2 className="bg-[#D7AF4B] border-b border-[#c79d37] px-5 py-4 text-center text-lg font-bold text-[#1E3557]">Panchang Elements</h2>
+      <div className="divide-y divide-slate-200">
         {rows.map(([label, value]) => (
-          <div key={label} className="grid gap-0 bg-white transition hover:bg-slate-50/60 md:grid-cols-[150px_1fr]">
-            <div className="border-b border-slate-100 bg-slate-50/60 p-4 md:border-b-0 md:border-r">
-              <p className="text-xs font-black uppercase tracking-wider text-slate-600">{label}</p>
+          <div key={label} className="grid gap-0 bg-white transition hover:bg-[#fff9e8] active:bg-[#fff3cf] md:grid-cols-[150px_1fr]">
+            <div className="border-b border-slate-200 bg-[#f8fafc] p-4 md:border-b-0 md:border-r md:border-slate-200">
+              <p className="text-xs font-black uppercase tracking-wider text-slate-700">{label}</p>
             </div>
-            <div className="space-y-3 p-4">
+            <div className="space-y-3 border-slate-200 bg-[#fffdf8] p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-base font-black text-[#1E3557]">{value.name || "-"}</p>
                 {value.end ? (
@@ -392,8 +393,8 @@ function PanchangElementsTable({ rows }) {
               {value.meta?.length ? (
                 <div className="grid gap-2 sm:grid-cols-2">
                   {value.meta.map((item) => (
-                    <div key={`${label}-${item.label}`} className="rounded-xl border border-slate-100 bg-white px-3 py-2">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">{item.label}</p>
+                    <div key={`${label}-${item.label}`} className="rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-[#D7AF4B]/60 hover:bg-[#fffaf0]">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-700">{item.label}</p>
                       <p className="mt-1 text-sm font-semibold text-[#1E3557]">{displayValue(item.value)}</p>
                     </div>
                   ))}
@@ -408,9 +409,15 @@ function PanchangElementsTable({ rows }) {
   );
 }
 
-function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
+function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError, lagnaData }) {
+  const lagnaRows = normalizePanchangLagnaRows(lagnaData || extrasData?.panchang_lagna_table || extrasData?.provider_payload?.panchang_lagna_table);
   const planetaryRows = normalizePlanetRows(extrasData?.planetary_positions);
   const sunriseRows = normalizePlanetRows(extrasData?.sunrise_planetary_positions);
+  const lagnaColumns = [
+    { key: "lagna", label: "Lagna" },
+    { key: "startTime", label: "Start Time" },
+    { key: "endTime", label: "End Time" },
+  ];
   const planetColumns = [
     { key: "planet", label: "Planet" },
     { key: "sign", label: "Sign" },
@@ -430,6 +437,7 @@ function PanchangExtraBlocks({ extrasData, extrasLoading, extrasError }) {
           {extrasError ? <p className="rounded-md bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{extrasError}</p> : null}
           {!extrasLoading && !extrasError ? (
             <>
+              <PanchangDataTable title="Panchang Lagna Table" rows={lagnaRows} columns={lagnaColumns} />
               <PanchangDataTable title="Planetary Positions" rows={planetaryRows} columns={planetColumns} />
               <PanchangDataTable title="Sunrise Planetary Positions" rows={sunriseRows} columns={planetColumns} />
             </>
@@ -513,7 +521,7 @@ export default function Panchang() {
         mode === "daily"
           ? getPanchangExtras(datetime, coords, 1, {
               la: nextLanguage,
-              extras: ["planetary_positions", "sunrise_planetary_positions"],
+              extras: ["panchang_lagna_table", "planetary_positions", "sunrise_planetary_positions"],
             }).catch((error) => ({
               status: "error",
               message: error?.response?.data?.message || "Unable to load planetary details.",
@@ -614,9 +622,13 @@ export default function Panchang() {
 
   const summary = data?.summary || {};
   const panchang = data?.panchang || {};
-  const basic = panchang.basic || {};
-  const advanced = panchang.advanced || {};
+  const providerPayload = data?.provider_payload || {};
+  const providerBasic = providerPayload.basic_panchang?.data || providerPayload.basic_panchang || {};
+  const providerAdvanced = providerPayload.advanced_panchang?.data || providerPayload.advanced_panchang || {};
+  const basic = Object.keys(panchang.basic || {}).length ? panchang.basic : providerBasic;
+  const advanced = Object.keys(panchang.advanced || {}).length ? panchang.advanced : providerAdvanced;
   const panchangChart = panchang.chart || data?.provider_payload?.panchang_chart || extrasData?.panchang_chart;
+  const panchangLagnaTable = panchang.lagna_table || panchang.panchang_lagna_table || data?.provider_payload?.panchang_lagna_table || extrasData?.panchang_lagna_table;
   const festivalText = festivalTextFromPayload(
     panchang.festival,
     data?.provider_payload?.panchang_festival,
@@ -643,6 +655,8 @@ export default function Panchang() {
     [
       "Tithi",
       elementWithDetails(valueFrom(summary.current_tithi?.name, advanced.tithi?.details?.tithi_name), summary.current_tithi?.end, advanced.tithi?.details, [
+        ["tithi_number", "Tithi Number"],
+        ["tithi_name", "Tithi Name"],
         ["special", "Special"],
         ["deity", "Deity"],
         ["summary", "Summary"],
@@ -651,6 +665,8 @@ export default function Panchang() {
     [
       "Nakshatra",
       elementWithDetails(valueFrom(summary.current_nakshatra?.name, advanced.nakshatra?.details?.nak_name), summary.current_nakshatra?.end, advanced.nakshatra?.details, [
+        ["nak_number", "Nakshatra Number"],
+        ["nak_name", "Nakshatra Name"],
         ["ruler", "Ruler"],
         ["deity", "Deity"],
         ["special", "Special"],
@@ -660,6 +676,8 @@ export default function Panchang() {
     [
       "Yog",
       elementWithDetails(valueFrom(summary.current_yoga?.name, advanced.yog?.details?.yog_name), summary.current_yoga?.end, advanced.yog?.details, [
+        ["yog_number", "Yog Number"],
+        ["yog_name", "Yog Name"],
         ["special", "Special"],
         ["meaning", "Meaning"],
       ]),
@@ -667,6 +685,8 @@ export default function Panchang() {
     [
       "Karan",
       elementWithDetails(valueFrom(summary.current_karana?.name, advanced.karan?.details?.karan_name), summary.current_karana?.end, advanced.karan?.details, [
+        ["karan_number", "Karan Number"],
+        ["karan_name", "Karan Name"],
         ["special", "Special"],
         ["deity", "Deity"],
       ]),
@@ -697,7 +717,19 @@ export default function Panchang() {
   const auspiciousRows = [
     ["Abhijit Muhurta", valueFrom(timeRange(advanced.abhijit_muhurta))],
     ["Amrit Kalam", valueFrom(timeRange(advanced.amrit_kalam))],
-    ["Panchang Yog", valueFrom(advanced.panchang_yog, advanced.panchang_yoga, advanced.panchangYog, basic.panchang_yog, basic.panchang_yoga)],
+    [
+      "Panchang Yog",
+      valueFrom(
+        advanced.panchang_yog,
+        advanced.panchang_yoga,
+        advanced.panchangYog,
+        advanced.panchangYoga,
+        basic.panchang_yog,
+        basic.panchang_yoga,
+        basic.panchangYog,
+        basic.panchangYoga
+      ),
+    ],
   ];
 
   const directionalRows = [
@@ -848,6 +880,7 @@ export default function Panchang() {
               extrasData={extrasData}
               extrasLoading={extrasLoading}
               extrasError={extrasError}
+              lagnaData={panchangLagnaTable}
             />
           </div>
         ) : (

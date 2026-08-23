@@ -6,11 +6,11 @@ import '../../core/models/other_pages/pages_data.dart';
 import '../../core/services/astrologer_service.dart';
 import '../mainwidgets/header.dart';
 import 'widgets/blog_section.dart';
-import 'widgets/categories_section.dart';
 import 'widgets/greeting_search_widget.dart';
-import 'widgets/home_footer.dart';
 import 'widgets/home_banner_carousel.dart';
+import 'widgets/home_footer.dart';
 import 'widgets/horoscope_card.dart';
+import 'widgets/live_session_section.dart';
 import 'widgets/mainastrologer_card.dart';
 import 'widgets/panchang_screen.dart';
 import 'widgets/product_section.dart';
@@ -80,12 +80,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 8),
                   _buildAstrologerSection(),
                   const SizedBox(height: 14),
-                  const CategoriesSection(),
+                  const PanchangSection(),
                   const SizedBox(height: 18),
-                  const HomePujaSection(),
-                  const SizedBox(height: 16),
                   const HoroscopeCard(),
                   const SizedBox(height: 20),
+                  const HomePujaSection(),
+                  const SizedBox(height: 18),
                   const ServiceToolsSection(
                     title: 'Explore Your Cosmic Reports',
                     services: reportServices,
@@ -99,8 +99,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 20),
                   const ProductsSection(),
-                  const SizedBox(height: 26),
-                  const PanchangSection(),
+                  const SizedBox(height: 28),
+                  const HomeLiveSessionSection(),
                   const SizedBox(height: 28),
                   const HomeBlogSection(),
                   const HomeFooter(),

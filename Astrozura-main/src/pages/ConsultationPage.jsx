@@ -38,6 +38,7 @@ export default function ConsultationPage() {
   const [astrologer, setAstrologer] = useState(location.state?.astrologer || null);
   const [loadingAstrologer, setLoadingAstrologer] = useState(!location.state?.astrologer);
   const [consultationType, setConsultationType] = useState(location.state?.type || "chat");
+  const [serviceContext] = useState(location.state?.serviceContext || null);
   const [duration, setDuration] = useState(location.state?.duration || 15);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState("");
@@ -72,6 +73,7 @@ export default function ConsultationPage() {
       const response = await getBookingAvailability({
         astrologer_id: astrologer.id,
         consultation_type: consultationType,
+        service_context: serviceContext,
         duration,
         booking_date: formatDateValue(selectedDate),
       });
@@ -83,7 +85,7 @@ export default function ConsultationPage() {
     } finally {
       setLoadingSlots(false);
     }
-  }, [astrologer?.id, consultationType, duration, selectedDate]);
+  }, [astrologer?.id, consultationType, duration, selectedDate, serviceContext]);
 
   useEffect(() => {
     const loadAstrologer = async () => {
@@ -203,6 +205,7 @@ export default function ConsultationPage() {
       const response = await createBooking({
         astrologer_id: astrologer.id,
         consultation_type: consultationType,
+        service_context: serviceContext,
         duration,
         booking_date: formatDateValue(selectedDate),
         booking_time: selectedSlot,
@@ -216,7 +219,7 @@ export default function ConsultationPage() {
         name: response.booking.user_name,
         email: response.booking.user_email,
         contact: JSON.parse(localStorage.getItem("user") || "{}")?.phone || "",
-        description: `${consultationType === "chat" ? "Chat" : "Call"} consultation with ${astrologer.name}`,
+        description: `${serviceContext === "palm-reading" ? "Palm reading " : ""}${consultationType === "chat" ? "chat" : "call"} consultation with ${astrologer.name}`,
       });
       setConfirmedBooking({ ...response.booking, status: "confirmed", payment_status: "paid" });
       setStep("success");
@@ -278,9 +281,10 @@ export default function ConsultationPage() {
                   <div>
                     <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold text-[#1E3557]">4. Select Time Slot</h2>{loadingSlots && <span className="text-xs font-semibold uppercase text-[#D4A73C]">Loading</span>}</div>
                     <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
                         {availability.map((slot) => <button key={slot.label} type="button" disabled={!slot.is_available} onClick={() => setSelectedSlot(slot.label)} className={`rounded-xl border px-3 py-3 text-sm font-semibold ${selectedSlot === slot.label ? "border-[#D4A73C] bg-[#D4A73C] text-white" : slot.is_available ? "border-gray-200 bg-white text-[#1E3557]" : "cursor-not-allowed border-gray-100 bg-[#F4F4F4] text-gray-300"}`}>{slot.label}</button>)}
                       </div>
+                      {availability.length > 12 && <p className="mt-3 text-xs font-semibold text-gray-400">Scroll inside this box for more slots.</p>}
                       {!loadingSlots && availability.length === 0 && <p className="mt-3 text-sm text-gray-500">No slots available for this date and duration.</p>}
                     </div>
                   </div>

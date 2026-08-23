@@ -57,25 +57,7 @@ const List<SubCategoryItem> reportServices = [
     id: 'detailed_matchmaking',
     title: 'Detailed Matchmaking Report',
     assetPath: 'assets/images/reports/report-detailed-matchmaking.png',
-    targetIndex: 30,
-  ),
-  SubCategoryItem(
-    id: 'matchmaking_report',
-    title: 'Matchmaking Report',
-    assetPath: 'assets/images/reports/report-premium-matchmaking.png',
     targetIndex: 34,
-  ),
-  SubCategoryItem(
-    id: 'kundali_report',
-    title: 'Kundali Report',
-    assetPath: 'assets/images/reports/report-detailed-kundali.png',
-    targetIndex: 31,
-  ),
-  SubCategoryItem(
-    id: 'daily_nakshatra_report',
-    title: 'Daily Nakshatra Predictions',
-    assetPath: 'assets/images/reports/report-daily-nakshatra-predictions.png',
-    targetIndex: 13,
   ),
 ];
 
@@ -155,7 +137,7 @@ const List<SubCategoryItem> calculatorServices = [
   SubCategoryItem(
     id: 'krishnamurti_paddhati',
     title: 'Krishnamurti Paddhati',
-    assetPath: 'assets/images/calculators/daily_nakshatra.png',
+    assetPath: 'assets/images/calculators/krishnamurti_paddhati.png',
     targetIndex: 25,
   ),
   SubCategoryItem(
@@ -177,10 +159,16 @@ const List<SubCategoryItem> calculatorServices = [
     targetIndex: 28,
   ),
   SubCategoryItem(
+    id: 'biorhythm',
+    title: 'Biorhythm',
+    assetPath: 'assets/images/calculators/biorhythm.png',
+    targetIndex: 35,
+  ),
+  SubCategoryItem(
     id: 'palm_reading',
     title: 'Palm Reading',
     assetPath: 'assets/images/calculators/palm_reading.png',
-    targetIndex: 1,
+    targetIndex: 29,
   ),
 ];
 
@@ -244,3 +232,21 @@ final Map<String, WidgetBuilder> categoryRoutes = {
     for (final sub in category.subCategories)
       sub.id: (_) => MainNavigation(initialIndex: sub.targetIndex),
 };
+
+int? categoryTargetIndex(String id) {
+  for (final category in allCategories) {
+    if (category.id == id) return category.targetIndex;
+    for (final sub in category.subCategories) {
+      if (sub.id == id) return sub.targetIndex;
+    }
+  }
+  return null;
+}
+
+bool activateCategoryTarget(String id) {
+  final targetIndex = categoryTargetIndex(id);
+  final navigation = MainNavigationState.instance;
+  if (targetIndex == null || navigation == null) return false;
+  navigation.switchTab(targetIndex);
+  return true;
+}

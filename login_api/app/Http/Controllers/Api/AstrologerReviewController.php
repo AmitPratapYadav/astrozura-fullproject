@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AstrologerDetail;
 use App\Models\AstrologerReview;
 use App\Models\Booking;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AstrologerReviewController extends Controller
@@ -56,6 +57,106 @@ class AstrologerReviewController extends Controller
             'success' => true,
             'message' => 'Rating submitted successfully.',
             'review' => $review->load('user'),
+            'summary' => $summary,
+        ]);
+    }
+
+    public function astrologerIndex(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user?->role === 'astrologer', 403);
+
+        $reviews = AstrologerReview::with(['user:id,name,profile_image', 'booking:id,booking_reference,scheduled_at'])
+            ->where('astrologer_id', $user->id)
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('pinned_at')
+            ->latest()
+            ->paginate((int) $request->query('per_page', 20));
+
+        return response()->json([
+            'success' => true,
+            'reviews' => $reviews,
+        ]);
+    }
+
+    public function pin(Request $request, AstrologerReview $review)
+    {
+        $user = $request->user();
+        abort_unless($user?->role === 'astrologer' && (int) $review->astrologer_id === (int) $user->id, 403);
+
+        $validated = $request->validate([
+            'is_pinned' => 'nullable|boolean',
+        ]);
+
+        $pin = array_key_exists('is_pinned', $validated)
+            ? (bool) $validated['is_pinned']
+            : !$review->is_pinned;
+
+        $review->update([
+            'is_pinned' => $pin,
+            'pinned_at' => $pin ? Carbon::now('UTC') : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'review' => $review->fresh(['user:id,name,profile_image', 'booking:id,booking_reference,scheduled_at']),
+        ]);
+    }
+
+    public function flag(Request $request, AstrologerReview $review)
+    {
+        $user = $request->user();
+        abort_unless($user?->role === 'astrologer' && (int) $review->astrologer_id === (int) $user->id, 403);
+
+        $validated = $request->validate([
+            'flag_reason' => 'nullable|string|max:1000',
+        ]);
+
+        $review->update([
+            'is_flagged' => true,
+            'flag_reason' => trim((string) ($validated['flag_reason'] ?? '')) ?: 'Flagged by astrologer for admin review.',
+            'flagged_at' => Carbon::now('UTC'),
+            'flagged_by' => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'review' => $review->fresh(['user:id,name,profile_image', 'booking:id,booking_reference,scheduled_at']),
+        ]);
+    }
+
+    public function adminIndex(Request $request)
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        $query = AstrologerReview::with([
+                'user:id,name,email,profile_image',
+                'astrologer:id,name,email',
+                'booking:id,booking_reference,scheduled_at,status',
+            ])
+            ->latest();
+
+        if ($request->boolean('flagged')) {
+            $query->where('is_flagged', true);
+        }
+
+        return response()->json([
+            'success' => true,
+            'reviews' => $query->paginate((int) $request->query('per_page', 30)),
+        ]);
+    }
+
+    public function adminDestroy(Request $request, AstrologerReview $review)
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        $astrologerId = (int) $review->astrologer_id;
+        $review->delete();
+        $summary = $this->refreshAstrologerReviewSummary($astrologerId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review deleted.',
             'summary' => $summary,
         ]);
     }

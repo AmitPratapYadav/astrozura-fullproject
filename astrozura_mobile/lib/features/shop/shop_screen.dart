@@ -10,6 +10,7 @@ import '../../core/contants/app_colors.dart';
 import '../../core/services/cart_service.dart';
 import '../../core/models/product/product.model.dart';
 import '../../core/models/shop_category/shop_category_model.dart';
+import '../../core/services/product_wishlist_service.dart';
 import '../../core/services/shop_service.dart';
 
 import '../mainwidgets/header.dart';
@@ -17,6 +18,7 @@ import '../mainwidgets/search_widget.dart';
 import 'widgets/product_chip.dart';
 import './widgets/category_section_widget.dart';
 import './cart_screen.dart';
+import './wishlist_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -29,6 +31,7 @@ class _ShopScreenState extends State<ShopScreen> {
   // ── Service ────────────────────────────────────────────────────────────────
   final ShopService _shopService = ShopService();
   final CartService _cart = CartService();
+  final ProductWishlistService _wishlist = ProductWishlistService();
 
   // ── Data ───────────────────────────────────────────────────────────────────
   List<ProductModel> _allProducts = [];
@@ -50,6 +53,7 @@ class _ShopScreenState extends State<ShopScreen> {
   void initState() {
     super.initState();
     _fetchAll();
+    _wishlist.load();
   }
 
   Future<void> _fetchAll() async {
@@ -216,8 +220,15 @@ class _ShopScreenState extends State<ShopScreen> {
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
-                    children:
-                        ['Recommended', 'Trending', 'New Arrival'].map((sort) {
+                    children: [
+                      'Recommended',
+                      'Trending',
+                      'New Arrival',
+                      'Old to New',
+                      'New to Old',
+                      'Price Low to High',
+                      'Price High to Low',
+                    ].map((sort) {
                       final isSelected = sort == tempSort;
                       return GestureDetector(
                         onTap: () => setSheetState(() => tempSort = sort),
@@ -322,6 +333,18 @@ class _ShopScreenState extends State<ShopScreen> {
       case 'New Arrival':
         list = list.where((p) => p.isNew).toList();
         break;
+      case 'Old to New':
+        list.sort((a, b) => _compareProductDate(a, b));
+        break;
+      case 'New to Old':
+        list.sort((a, b) => _compareProductDate(b, a));
+        break;
+      case 'Price Low to High':
+        list.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'Price High to Low':
+        list.sort((a, b) => b.price.compareTo(a.price));
+        break;
       default:
         break;
     }
@@ -339,6 +362,13 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
+
+  int _compareProductDate(ProductModel a, ProductModel b) {
+    final aDate = DateTime.tryParse(a.createdAt ?? '');
+    final bDate = DateTime.tryParse(b.createdAt ?? '');
+    if (aDate != null && bDate != null) return aDate.compareTo(bDate);
+    return a.id.compareTo(b.id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -375,10 +405,14 @@ class _ShopScreenState extends State<ShopScreen> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 500),
                         child: GlobalSearchWidget(
-                          hintText: "Search products...",
-                          // onChanged: _onSearch,           // ← live search
-                          // onSubmitted: _onSearch,         // ← keyboard enter
-                          onFilterTap: _showFilterSheet, // ← filter sheet
+                          productsOnly: true,
+                          animatedHints: const [
+                            'Find Pooja Products',
+                            'Find Ritual Kits',
+                            'Find Gemstones',
+                          ],
+                          onChanged: _onSearch,
+                          onFilterTap: _showFilterSheet,
                         ),
                       ),
                     ),
@@ -549,6 +583,56 @@ class _ShopScreenState extends State<ShopScreen> {
 
   // ── WIDGETS ────────────────────────────────────────────────────────────────
 
+  Widget _buildWishlistButton() {
+    return ListenableBuilder(
+      listenable: _wishlist,
+      builder: (context, _) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ProductWishlistScreen()),
+                );
+              },
+              icon: const Icon(
+                Icons.favorite_border_rounded,
+                size: 25,
+                color: Colors.black87,
+              ),
+            ),
+            if (_wishlist.count > 0)
+              Positioned(
+                right: 4,
+                top: 4,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  constraints: const BoxConstraints(minWidth: 18),
+                  decoration: const BoxDecoration(
+                    color: Colors.amber,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    _wishlist.count.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildTitleRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -567,51 +651,58 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           Align(
             alignment: Alignment.centerRight,
-            child: ListenableBuilder(
-              listenable: _cart,
-              builder: (context, _) {
-                final cart = _cart;
-                return Stack(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CartScreen()),
-                        );
-                      },
-                      icon: const Icon(
-                        Icons.shopping_cart_outlined,
-                        size: 26,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    if (cart.totalItems > 0)
-                      Positioned(
-                        right: 4,
-                        top: 4,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          constraints: const BoxConstraints(minWidth: 18),
-                          decoration: const BoxDecoration(
-                            color: Colors.amber,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            cart.totalItems.toString(),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildWishlistButton(),
+                ListenableBuilder(
+                  listenable: _cart,
+                  builder: (context, _) {
+                    final cart = _cart;
+                    return Stack(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const CartScreen()),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.shopping_cart_outlined,
+                            size: 26,
+                            color: Colors.black87,
                           ),
                         ),
-                      ),
-                  ],
-                );
-              },
+                        if (cart.totalItems > 0)
+                          Positioned(
+                            right: 4,
+                            top: 4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              constraints: const BoxConstraints(minWidth: 18),
+                              decoration: const BoxDecoration(
+                                color: Colors.amber,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                cart.totalItems.toString(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -631,6 +722,12 @@ class _ShopScreenState extends State<ShopScreen> {
             DropdownMenuItem(value: 'Recommended', child: Text('Recommended')),
             DropdownMenuItem(value: 'Trending', child: Text('Trending')),
             DropdownMenuItem(value: 'New Arrival', child: Text('New Arrival')),
+            DropdownMenuItem(value: 'Old to New', child: Text('Old to New')),
+            DropdownMenuItem(value: 'New to Old', child: Text('New to Old')),
+            DropdownMenuItem(
+                value: 'Price Low to High', child: Text('Price Low to High')),
+            DropdownMenuItem(
+                value: 'Price High to Low', child: Text('Price High to Low')),
           ],
           onChanged: (value) {
             if (value != null) setState(() => _selectedSort = value);

@@ -15,6 +15,26 @@ export const createRitualBooking = async (ritualId, payload) => {
   return response.data;
 };
 
+export const getRitualConsultationAvailability = async (ritualId, params) => {
+  const response = await api.get(`/rituals/${ritualId}/consultation-availability`, { params });
+  return response.data;
+};
+
+export const getRitualContextForBooking = async (bookingId) => {
+  const response = await api.get(`/bookings/${bookingId}/ritual-context`);
+  return response.data;
+};
+
+export const sendRitualAstrologerResponse = async (ritualBookingId, payload) => {
+  const response = await api.post(`/ritual-bookings/${ritualBookingId}/astrologer-response`, payload);
+  return response.data;
+};
+
+export const sendRitualPaymentRequest = async (ritualBookingId, payload) => {
+  const response = await api.post(`/ritual-bookings/${ritualBookingId}/payment-request`, payload);
+  return response.data;
+};
+
 export const getMyBookings = async () => {
   const response = await api.get("/my-bookings");
   return response.data;

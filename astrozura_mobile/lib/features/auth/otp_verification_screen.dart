@@ -169,7 +169,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new,
               size: 18, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.maybePop(context),
         ),
         centerTitle: true,
         title: const Text(
@@ -220,7 +220,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
               const SizedBox(height: 8),
               GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: () => Navigator.maybePop(context),
                 child: const Text(
                   'Edit Phone Number',
                   style: TextStyle(

@@ -14,6 +14,7 @@ class Booking extends Model
     protected $fillable = [
         'booking_reference',
         'session_room_id',
+        'chat_encryption_secret',
         'user_id',
         'astrologer_id',
         'reassigned_from_astrologer_id',
@@ -22,6 +23,7 @@ class Booking extends Model
         'user_email',
         'astrologer_name',
         'consultation_type',
+        'service_context',
         'duration',
         'booking_date',
         'booking_time',
@@ -50,7 +52,7 @@ class Booking extends Model
     ];
 
     protected $casts = [
-        'booking_date' => 'date',
+        'booking_date' => 'date:Y-m-d',
         'scheduled_at' => 'datetime',
         'ends_at' => 'datetime',
         'completed_at' => 'datetime',

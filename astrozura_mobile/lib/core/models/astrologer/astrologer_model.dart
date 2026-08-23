@@ -69,6 +69,11 @@ class AstrologerModel {
 
   final String profileImage;
   final bool isFeatured;
+  final bool supportsChat;
+  final bool supportsCall;
+  final bool supportsPalmReading;
+  final bool isOnline;
+  final String availabilityStatus;
   final List<AstrologerReview> receivedReviews;
 
   const AstrologerModel({
@@ -85,6 +90,11 @@ class AstrologerModel {
     this.totalReviews = 0,
     this.profileImage = '',
     this.isFeatured = false,
+    this.supportsChat = true,
+    this.supportsCall = true,
+    this.supportsPalmReading = false,
+    this.isOnline = true,
+    this.availabilityStatus = 'available',
     this.receivedReviews = const [],
   });
 
@@ -100,6 +110,58 @@ class AstrologerModel {
     if (v == null) return 0;
     if (v is int) return v;
     return int.tryParse(v.toString()) ?? 0;
+  }
+
+  static bool _toBool(dynamic v, {bool defaultValue = false}) {
+    if (v == null) return defaultValue;
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    final text = v.toString().trim().toLowerCase();
+    if (['1', 'true', 'yes', 'y', 'on'].contains(text)) return true;
+    if (['0', 'false', 'no', 'n', 'off'].contains(text)) return false;
+    return defaultValue;
+  }
+
+  static List<AstrologerReview> _parseReviews(
+    Map<String, dynamic> json,
+    Map<String, dynamic>? detail,
+  ) {
+    final raw = json['received_reviews'] ??
+        json['reviews'] ??
+        json['user_reviews'] ??
+        json['ratings'] ??
+        detail?['received_reviews'] ??
+        const [];
+
+    if (raw is! List) return const [];
+
+    return raw.whereType<Map>().map((review) {
+      final user = review['user'] ?? review['customer'] ?? review['reviewer'];
+      final userName = user is Map
+          ? (user['name'] ?? user['full_name'] ?? user['email'] ?? 'User')
+              .toString()
+          : (review['user_name'] ??
+                  review['customer_name'] ??
+                  review['reviewer_name'] ??
+                  review['name'] ??
+                  'User')
+              .toString();
+
+      final comment = (review['review'] ??
+              review['comment'] ??
+              review['message'] ??
+              review['feedback'] ??
+              review['description'] ??
+              '')
+          .toString();
+
+      return AstrologerReview(
+        userName: userName,
+        rating:
+            _toDouble(review['rating'] ?? review['stars'] ?? review['score']),
+        comment: comment,
+      );
+    }).toList();
   }
 
   // ── fromJson ──────────────────────────────────────────────────────────────
@@ -139,20 +201,33 @@ class AstrologerModel {
           detail?['is_featured'] == 1 ||
           json['is_featured'] == true ||
           json['is_featured'] == 1,
-      receivedReviews: (json['received_reviews'] is List
-              ? json['received_reviews'] as List
-              : const [])
-          .whereType<Map>()
-          .map(
-            (review) => AstrologerReview(
-              userName: review['user'] is Map
-                  ? (review['user']['name']?.toString() ?? 'User')
-                  : 'User',
-              rating: _toDouble(review['rating']),
-              comment: review['comment']?.toString() ?? '',
-            ),
-          )
-          .toList(),
+      supportsChat: _toBool(
+        detail?['supports_chat'] ?? json['supports_chat'],
+        defaultValue: true,
+      ),
+      supportsCall: _toBool(
+        detail?['supports_call'] ?? json['supports_call'],
+        defaultValue: true,
+      ),
+      supportsPalmReading: _toBool(
+        detail?['supports_palm_reading'] ?? json['supports_palm_reading'],
+      ),
+      isOnline: _toBool(
+        detail?['is_online'] ?? json['is_online'],
+        defaultValue: true,
+      ),
+      availabilityStatus:
+          (json['availability_status'] ?? detail?['availability_status'] ?? '')
+                  .toString()
+                  .trim()
+                  .isNotEmpty
+              ? (json['availability_status'] ?? detail?['availability_status'])
+                  .toString()
+              : (_toBool(detail?['is_online'] ?? json['is_online'],
+                      defaultValue: true)
+                  ? 'available'
+                  : 'unavailable'),
+      receivedReviews: _parseReviews(json, detail),
     );
   }
 
@@ -180,11 +255,34 @@ class AstrologerModel {
 
   /// Consultation plans derived from chat/call price × duration
   List<ConsultationPlan> get consultationPlans => [
-        ConsultationPlan(duration: 10, price: chatPrice * 10, type: 'chat'),
-        ConsultationPlan(duration: 15, price: chatPrice * 15, type: 'chat'),
-        ConsultationPlan(duration: 20, price: chatPrice * 20, type: 'chat'),
-        ConsultationPlan(duration: 30, price: chatPrice * 30, type: 'chat'),
+        if (supportsChat) ...[
+          ConsultationPlan(duration: 10, price: chatPrice * 10, type: 'chat'),
+          ConsultationPlan(duration: 15, price: chatPrice * 15, type: 'chat'),
+          ConsultationPlan(duration: 20, price: chatPrice * 20, type: 'chat'),
+          ConsultationPlan(duration: 30, price: chatPrice * 30, type: 'chat'),
+        ],
+        if (supportsCall) ...[
+          ConsultationPlan(duration: 10, price: callPrice * 10, type: 'call'),
+          ConsultationPlan(duration: 15, price: callPrice * 15, type: 'call'),
+          ConsultationPlan(duration: 20, price: callPrice * 20, type: 'call'),
+          ConsultationPlan(duration: 30, price: callPrice * 30, type: 'call'),
+        ],
       ];
+
+  bool get isBusy =>
+      availabilityStatus == 'on_chat' || availabilityStatus == 'on_call';
+
+  bool get isPalmReadingExpert {
+    if (supportsPalmReading) return true;
+    final text = specialities.toLowerCase();
+    return text.contains('palm') || text.contains('palmistry');
+  }
+
+  String get availabilityLabel {
+    if (!isOnline || availabilityStatus == 'unavailable') return 'Offline';
+    if (isBusy) return 'Busy';
+    return 'Available';
+  }
 
   /// Placeholder reviews — replace when API has reviews endpoint
   List<AstrologerReview> get reviewsList => receivedReviews;

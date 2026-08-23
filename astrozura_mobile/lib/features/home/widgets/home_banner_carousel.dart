@@ -41,6 +41,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
       HomeBannerDestination.pooja => 7,
       HomeBannerDestination.horoscope => 11,
     };
+    if (MainNavigationState.activateIndex(index)) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => MainNavigation(initialIndex: index)),
@@ -59,7 +60,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     return Column(
       children: [
         AspectRatio(
-          aspectRatio: 2.15,
+          aspectRatio: 2.85,
           child: PageView.builder(
             controller: _controller,
             itemCount: homeBanners.length,

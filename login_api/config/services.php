@@ -64,7 +64,19 @@ return [
             'otp' => env('ULTRON_SMS_TEMPLATE_OTP'),
             'call_booking' => env('ULTRON_SMS_TEMPLATE_CALL_BOOKING'),
             'chat_booking' => env('ULTRON_SMS_TEMPLATE_CHAT_BOOKING'),
+            'payment_success' => env('ULTRON_SMS_TEMPLATE_PAYMENT_SUCCESS', '1707178352575305636'),
+            'order_received' => env('ULTRON_SMS_TEMPLATE_ORDER_RECEIVED', '1707178352544649787'),
         ],
+    ],
+
+    'smartchat_whatsapp' => [
+        'enabled' => env('SMARTCHAT_WHATSAPP_ENABLED', false),
+        'template_url' => env('SMARTCHAT_WHATSAPP_TEMPLATE_URL', 'https://smartchatapi.live/portal/Api/send_template_message'),
+        'auth_template_url' => env('SMARTCHAT_WHATSAPP_AUTH_TEMPLATE_URL', 'https://smartchatapi.live/portal/Api/send_template_message_auth'),
+        'token' => env('SMARTCHAT_WHATSAPP_TOKEN'),
+        'broadcast_name' => env('SMARTCHAT_WHATSAPP_BROADCAST_NAME', 'AstroZura'),
+        'timeout' => env('SMARTCHAT_WHATSAPP_TIMEOUT', 15),
+        'verify_ssl' => env('SMARTCHAT_WHATSAPP_VERIFY_SSL', true),
     ],
 
 ];

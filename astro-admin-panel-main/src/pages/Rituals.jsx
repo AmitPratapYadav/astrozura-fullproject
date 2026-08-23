@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pencil, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiRequest, assetUrl } from "../lib/api";
+import { formatDate, formatTime, toDateInputValue, toTimeInputValue } from "../lib/dateTime";
 
 const initialForm = {
   name: "",
@@ -14,7 +15,6 @@ const initialForm = {
   ideal_timing: "",
   duration_label: "",
   mode: "Online/Offline",
-  price: "",
   assigned_astrologer_id: "",
   steps: "",
   materials: "",
@@ -52,8 +52,8 @@ const toFaqMultiline = (value) => {
 const buildBookingDraft = (booking) => ({
   status: booking.status || "pending",
   admin_response: booking.admin_response || "",
-  confirmed_date: booking.confirmed_date || "",
-  confirmed_time: booking.confirmed_time || "",
+  confirmed_date: toDateInputValue(booking.confirmed_date),
+  confirmed_time: toTimeInputValue(booking.confirmed_time),
 });
 
 const formatVenue = (booking) =>
@@ -142,7 +142,6 @@ export default function Rituals() {
       ideal_timing: ritual.ideal_timing || "",
       duration_label: ritual.duration_label || "",
       mode: ritual.mode || "Online/Offline",
-      price: ritual.price || "",
       assigned_astrologer_id: ritual.assigned_astrologer_id || "",
       steps: toMultiline(ritual.steps),
       materials: toMultiline(ritual.materials),
@@ -307,7 +306,6 @@ export default function Rituals() {
           <input name="duration_label" value={form.duration_label} onChange={handleChange} placeholder="Duration" className="rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" required />
           <input name="ideal_timing" value={form.ideal_timing} onChange={handleChange} placeholder="Ideal Timing" className="rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" />
           <input name="mode" value={form.mode} onChange={handleChange} placeholder="Mode" className="rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" />
-          <input name="price" value={form.price} onChange={handleChange} placeholder="Price" className="rounded-xl border px-4 py-3 outline-none focus:border-yellow-500" />
           <select name="assigned_astrologer_id" value={form.assigned_astrologer_id} onChange={handleChange} className="rounded-xl border px-4 py-3 outline-none focus:border-yellow-500">
             <option value="">Assign Astrologer (Optional)</option>
             {astrologers.map((astrologer) => (
@@ -395,7 +393,7 @@ export default function Rituals() {
 
                 <div className="text-sm text-gray-500">
                   <p>{ritual.duration_label}</p>
-                  <p className="mt-1 font-semibold text-[#1E3557]">Rs {Number(ritual.price || 0).toLocaleString("en-IN")}</p>
+                  <p className="mt-1 font-semibold text-[#1E3557]">Consultation-first pricing</p>
                 </div>
 
                 <div className="flex gap-3">
@@ -470,8 +468,8 @@ export default function Rituals() {
 
                       <div className="rounded-2xl bg-[#F8F9FC] p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">Requested Schedule</p>
-                        <p className="mt-2 font-semibold text-[#1E3557]">{booking.preferred_date || "-"}</p>
-                        <p className="mt-1 text-sm text-gray-500">{booking.preferred_time || "-"}</p>
+                        <p className="mt-2 font-semibold text-[#1E3557]">{formatDate(booking.preferred_date)}</p>
+                        <p className="mt-1 text-sm text-gray-500">{formatTime(booking.preferred_time)}</p>
                         <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">Amount</p>
                         <p className="mt-1 font-semibold text-[#1E3557]">Rs {Number(booking.amount || 0).toLocaleString("en-IN")}</p>
                       </div>

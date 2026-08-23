@@ -12,6 +12,10 @@ export default function Navbar() {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const location = useLocation();
+  const isAppView = useMemo(
+    () => new URLSearchParams(location.search).get("app_view") === "1",
+    [location.search]
+  );
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -334,6 +338,8 @@ export default function Navbar() {
       </>
     );
   };
+
+  if (isAppView) return null;
 
   return (
     <>

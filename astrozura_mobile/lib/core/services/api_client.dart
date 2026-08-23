@@ -17,8 +17,11 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  ApiClient({http.Client? client}) : _client = client ?? http.Client();
+  ApiClient({http.Client? client}) : _client = client ?? _sharedClient;
 
+  static final http.Client _sharedClient = http.Client();
+  static final Map<String, _CachedApiResponse> _getCache = {};
+  static const Duration cacheTtl = Duration(minutes: 3);
   final http.Client _client;
 
   static const Duration timeout = Duration(seconds: 20);
@@ -31,11 +34,25 @@ class ApiClient {
     final uri = Uri.parse(url).replace(
       queryParameters: query?.isEmpty == true ? null : query,
     );
+    final cacheKey = uri.toString();
+    final cached = auth ? null : _freshCache(cacheKey);
+    if (cached != null) return Map<String, dynamic>.from(cached);
+
     final headers = await _headers(auth: auth);
-    final response = await _withRetry(
-      () => _client.get(uri, headers: headers).timeout(timeout),
-    );
-    return _decodeResponse(response);
+    try {
+      final response = await _withRetry(
+        () => _client.get(uri, headers: headers).timeout(timeout),
+      );
+      final decoded = _decodeResponse(response);
+      if (!auth) {
+        _getCache[cacheKey] = _CachedApiResponse(decoded, DateTime.now());
+      }
+      return decoded;
+    } catch (_) {
+      final stale = auth ? null : _getCache[cacheKey]?.data;
+      if (stale != null) return Map<String, dynamic>.from(stale);
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> post(
@@ -45,9 +62,26 @@ class ApiClient {
   }) async {
     final headers = await _headers(auth: auth);
     final encodedBody = jsonEncode(body ?? <String, dynamic>{});
-    final response = await _client
-        .post(Uri.parse(url), headers: headers, body: encodedBody)
-        .timeout(timeout);
+    final response = await _withRetry(
+      () => _client
+          .post(Uri.parse(url), headers: headers, body: encodedBody)
+          .timeout(timeout),
+    );
+    return _decodeResponse(response);
+  }
+
+  Future<Map<String, dynamic>> put(
+    String url, {
+    Map<String, dynamic>? body,
+    bool auth = false,
+  }) async {
+    final headers = await _headers(auth: auth);
+    final encodedBody = jsonEncode(body ?? <String, dynamic>{});
+    final response = await _withRetry(
+      () => _client
+          .put(Uri.parse(url), headers: headers, body: encodedBody)
+          .timeout(timeout),
+    );
     return _decodeResponse(response);
   }
 
@@ -138,4 +172,18 @@ class ApiClient {
 
     return fallback;
   }
+
+  static Map<String, dynamic>? _freshCache(String key) {
+    final cached = _getCache[key];
+    if (cached == null) return null;
+    if (DateTime.now().difference(cached.createdAt) > cacheTtl) return null;
+    return cached.data;
+  }
+}
+
+class _CachedApiResponse {
+  final Map<String, dynamic> data;
+  final DateTime createdAt;
+
+  const _CachedApiResponse(this.data, this.createdAt);
 }

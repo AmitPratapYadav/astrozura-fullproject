@@ -60,6 +60,8 @@ class _HomeAstrologerCarouselState extends State<HomeAstrologerCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.astrologers.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -76,7 +78,7 @@ class _HomeAstrologerCarouselState extends State<HomeAstrologerCarousel> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 196,
+          height: 154,
           child: PageView.builder(
             controller: _controller,
             itemCount: widget.astrologers.length,
@@ -128,11 +130,15 @@ class _HomeAstrologerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final speciality = astrologer.specialityList.isEmpty
+        ? 'Vedic Astrology Expert'
+        : astrologer.specialityList.take(2).join(' - ');
+
     return GestureDetector(
       onTap: () => _open(context),
       child: Container(
         margin: const EdgeInsets.only(right: 10, bottom: 10),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFFDFDEFF), Color(0xFF8B88E6)],
@@ -148,109 +154,89 @@ class _HomeAstrologerCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
+        child: Row(
           children: [
-            Row(
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                RemoteAvatar(
+                  radius: 39,
+                  backgroundColor: Colors.white70,
+                  imageUrl: astrologer.fullImageUrl,
+                  name: astrologer.name,
+                ),
+                const SizedBox(height: 8),
+                _RatingPill(rating: astrologer.rating),
+              ],
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    astrologer.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E2360),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    speciality,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFF1E2360).withValues(alpha: 0.78),
+                      fontWeight: FontWeight.w700,
+                      height: 1.24,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
                     children: [
-                      Column(
-                        children: [
-                          RemoteAvatar(
-                            radius: 38,
-                            backgroundColor: Colors.white70,
-                            imageUrl: astrologer.fullImageUrl,
-                            name: astrologer.name,
-                          ),
-                          if (astrologer.isFeatured)
-                            Container(
-                              margin: const EdgeInsets.only(top: 4),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.amber,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                'FEATURED',
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(width: 14),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 5,
                           children: [
-                            Text(
-                              astrologer.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF1E2360),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                _Stat(
-                                  label: 'EXPERIENCE',
-                                  value: '${astrologer.experienceYears} Years',
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 30,
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 14),
-                                  color: Colors.white38,
-                                ),
-                                _Stat(
-                                  label: 'RATING',
-                                  value:
-                                      '${astrologer.rating.toStringAsFixed(1)}  ★',
-                                ),
-                              ],
+                            _InfoPill(
+                              label: '${astrologer.experienceYears} yrs exp',
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 34,
+                        child: ElevatedButton(
+                          onPressed: () => _open(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4A73C),
+                            foregroundColor: const Color(0xFF1E3557),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                          ),
+                          child: const Text(
+                            'Book Session',
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SizedBox(
-                height: 36,
-                child: ElevatedButton(
-                  onPressed: () => _open(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4A73C),
-                    foregroundColor: const Color(0xFF1E3557),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Book Session',
-                    maxLines: 1,
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
+                ],
               ),
             ),
           ],
@@ -260,39 +246,66 @@ class _HomeAstrologerCard extends StatelessWidget {
   }
 }
 
-class _Stat extends StatelessWidget {
-  final String label;
-  final String value;
+class _RatingPill extends StatelessWidget {
+  final double rating;
 
-  const _Stat({required this.label, required this.value});
+  const _RatingPill({required this.rating});
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final rounded = rating.round().clamp(0, 5);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.86),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            label,
-            maxLines: 1,
+            rating.toStringAsFixed(1),
             style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E3557),
+              fontWeight: FontWeight.w900,
+              fontSize: 10.5,
             ),
           ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
+          const SizedBox(width: 3),
+          ...List.generate(
+            5,
+            (index) => Icon(
+              index < rounded ? Icons.star_rounded : Icons.star_border_rounded,
+              size: 10,
+              color: const Color(0xFFD4A73C),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  final String label;
+
+  const _InfoPill({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.86),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF1E3557),
+          fontWeight: FontWeight.w900,
+          fontSize: 10.5,
+        ),
       ),
     );
   }

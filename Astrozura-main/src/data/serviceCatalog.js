@@ -76,7 +76,7 @@ const staticServices = [
     description:
       "This page routes users into the palm reading service path and is ready for chat image uploads and astrologer-side interpretation support.",
     ctaLabel: "Book Palm Reading",
-    ctaTo: "/astrologers",
+    ctaTo: "/astrologers?specialty=palm-reading&type=chat",
     accent: "from-[#6B4E2E] to-[#D49B53]",
   },
   {
@@ -132,11 +132,6 @@ export const groupedServices = {
   reports: [
     { label: "Lal Kitab Reports", to: "/services/lal-kitab-report", icon: getServiceIcon("lal-kitab-report", "Lal Kitab Reports") },
     { label: "Detailed Dosha Analysis", to: "/services/detailed-dosha", icon: getServiceIcon("detailed-dosha", "Detailed Dosha Analysis") },
-    {
-      label: "Daily Nakshatra Predictions",
-      to: "/vedic-calculators?tool=daily-nakshatra-predictions",
-      icon: getServiceIcon("daily-nakshatra-predictions", "Daily Nakshatra Predictions"),
-    },
   ],
   calculators: [
     ...vedicCalculatorTools

@@ -249,6 +249,8 @@ class BlogController extends Controller
             }
         }
 
+        $blocks = array_map(fn ($block) => $this->sanitizeContentBlock($block), $blocks);
+
         $validated['content_blocks'] = array_values(array_filter($blocks, function ($block) {
             return is_array($block) && !empty($block['type']);
         }));
@@ -263,6 +265,39 @@ class BlogController extends Controller
         unset($validated['block_images']);
 
         return $validated;
+    }
+
+    private function sanitizeContentBlock($block): array
+    {
+        if (!is_array($block)) {
+            return [];
+        }
+
+        $type = (string) ($block['type'] ?? '');
+        if ($type !== 'image') {
+            $sanitizedHtml = $this->sanitizeRichHtml($block['html'] ?? $block['text'] ?? '');
+            $block['html'] = $sanitizedHtml;
+            $block['text'] = trim(strip_tags($sanitizedHtml));
+        }
+
+        if ($type === 'image') {
+            $block['alt'] = strip_tags((string) ($block['alt'] ?? ''));
+            $block['caption'] = strip_tags((string) ($block['caption'] ?? ''));
+        }
+
+        return $block;
+    }
+
+    private function sanitizeRichHtml(?string $html): string
+    {
+        $html = (string) $html;
+        $html = preg_replace('#<(script|iframe|object|embed|style)[^>]*>.*?</\1>#is', '', $html) ?? '';
+        $html = strip_tags($html, '<p><br><strong><b><em><i><u><span><font><ul><ol><li><h1><h2><h3><h4><blockquote><a>');
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $html) ?? '';
+        $html = preg_replace('/\s+(href|src)\s*=\s*("|\')?\s*javascript:[^"\'>\s]+("|\')?/i', '', $html) ?? '';
+        $html = preg_replace('/\s+style\s*=\s*("|\')?[^"\'>]*("|\')?/i', '', $html) ?? '';
+
+        return trim($html);
     }
 
     private function uniqueSlug(string $modelClass, string $source, ?int $ignoreId = null): string

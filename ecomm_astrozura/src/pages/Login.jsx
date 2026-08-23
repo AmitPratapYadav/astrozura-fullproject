@@ -15,6 +15,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [devOtp, setDevOtp] = useState("");
 
+  const resolveShopFrontendOrigin = () => {
+    const productionOrigin = "https://shop.astrozura.com";
+    const stalePreviewHost = ["astrozura", "cloud"].join(".");
+    const configured = import.meta.env.VITE_FRONTEND_PUBLIC_URL || import.meta.env.VITE_ECOMM_FRONTEND_URL;
+    const candidate = (configured || window.location.origin || productionOrigin).replace(/\/+$/, "");
+    if (import.meta.env.PROD && (/\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(candidate) || candidate.includes(stalePreviewHost))) {
+      return productionOrigin;
+    }
+    return candidate;
+  };
+
   const handleSendOtp = async (e) => {
     e.preventDefault();
     if (!identifier) {
@@ -24,11 +35,12 @@ export default function Login() {
 
     setLoading(true);
     setError("");
+    setDevOtp("");
     try {
       const response = await sendOtp(identifier);
       if (response.success) {
         setStep("otp");
-        if (response.dev_otp) {
+        if (import.meta.env.DEV && response.dev_otp) {
           setDevOtp(response.dev_otp);
         }
       } else {
@@ -91,7 +103,7 @@ export default function Login() {
     const apiBase = import.meta.env.VITE_API_BASE_URL || "https://astrozura.com/apigateway/index.php/api";
     const params = new URLSearchParams({
       frontend: "ecomm",
-      frontend_url: window.location.origin,
+      frontend_url: resolveShopFrontendOrigin(),
     });
     window.location.href = `${apiBase.replace(/\/+$/, "")}/auth/google?${params.toString()}`;
   };
@@ -132,9 +144,9 @@ export default function Login() {
             </div>
           )}
 
-          {devOtp && step === "otp" && (
+          {import.meta.env.DEV && devOtp && step === "otp" && (
             <div className="bg-green-500/20 border border-green-500/40 text-green-300 text-xs px-4 py-3 rounded-lg mb-6 text-center">
-              Dev OTP: <span className="font-bold tracking-widest">{devOtp}</span>
+              OTP: <span className="font-bold tracking-widest">{devOtp}</span>
             </div>
           )}
 

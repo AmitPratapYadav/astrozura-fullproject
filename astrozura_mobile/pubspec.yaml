@@ -37,6 +37,7 @@ dependencies:
   provider: ^6.1.2
   share_plus: ^7.2.1
   image_picker: ^1.0.7
+  file_picker: ^10.3.10
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -46,9 +47,10 @@ dependencies:
   zego_uikit_prebuilt_call: ^4.19.0
   flutter_svg: ^2.3.0
   url_launcher: ^6.3.1
-  zego_express_engine: 3.22.0
-  zego_plugin_adapter: 2.13.12
-  zego_zim: 2.21.1+1
+  webview_flutter: ^4.10.0
+  videosdk: ^3.5.0
+  dart_webrtc: 1.5.3+hotfix.2
+  webrtc_interface: 1.2.2+hotfix.2
 
 dev_dependencies:
   flutter_test:
@@ -78,6 +80,7 @@ flutter:
     - assets/images/calculators/
     - assets/images/reports/
     - assets/images/banners/
+    - assets/images/tarot/cards/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

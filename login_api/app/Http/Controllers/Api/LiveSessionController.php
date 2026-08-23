@@ -6,9 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\LiveSession;
 use App\Models\LiveSessionComment;
 use App\Services\FirebaseCloudMessagingService;
-use App\Support\Zego\ZegoTokenService;
+use App\Support\VideoSdk\VideoSdkTokenService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class LiveSessionController extends Controller
@@ -45,7 +46,7 @@ class LiveSessionController extends Controller
             'session' => $this->serializeSession($session),
             'viewer' => [
                 'role' => (int) $session->astrologer_id === (int) $user->id ? 'host' : 'viewer',
-                'zego' => $this->buildLiveZegoPayload($user->id, (int) $session->astrologer_id === (int) $user->id ? 'host' : 'viewer'),
+                'provider' => $this->buildLiveProviderPayload($session, $user->id, (int) $session->astrologer_id === (int) $user->id ? 'host' : 'viewer'),
             ],
         ]);
     }
@@ -73,7 +74,7 @@ class LiveSessionController extends Controller
                 'session' => $this->serializeSession($existing),
                 'viewer' => [
                     'role' => 'host',
-                    'zego' => $this->buildLiveZegoPayload($user->id, 'host'),
+                    'provider' => $this->buildLiveProviderPayload($existing, $user->id, 'host'),
                 ],
             ]);
         }
@@ -84,12 +85,13 @@ class LiveSessionController extends Controller
         ]);
 
         $sessionKey = $this->generateSessionKey();
+        $roomId = $this->createVideoSdkRoomId();
 
         $session = LiveSession::create([
             'astrologer_id' => $user->id,
             'title' => $validated['title'] ?? ($user->name . "'s Live Guidance Session"),
             'description' => $validated['description'] ?? 'Join the live spiritual session and interact in real time.',
-            'room_id' => "astrozura-live-room-{$user->id}-{$sessionKey}",
+            'room_id' => $roomId,
             'stream_id' => "astrozura-live-stream-{$user->id}-{$sessionKey}",
             'status' => 'live',
             'started_at' => Carbon::now('Asia/Kolkata'),
@@ -107,7 +109,7 @@ class LiveSessionController extends Controller
             'session' => $this->serializeSession($session),
             'viewer' => [
                 'role' => 'host',
-                'zego' => $this->buildLiveZegoPayload($user->id, 'host'),
+                'provider' => $this->buildLiveProviderPayload($session, $user->id, 'host'),
             ],
         ]);
     }
@@ -225,30 +227,76 @@ class LiveSessionController extends Controller
         ];
     }
 
-    private function buildLiveZegoPayload(int $userId, string $role): array
+    private function buildLiveProviderPayload(LiveSession $session, int $userId, string $role): array
     {
-        $project = config('zego.live');
-        $appId = (int) ($project['app_id'] ?? 0);
-        $secret = (string) ($project['server_secret'] ?? '');
-
-        if ($appId <= 0 || $secret === '') {
-            abort(500, 'ZEGO live project is not configured.');
+        if (!(bool) config('videosdk.live.enabled')) {
+            abort(500, 'VideoSDK live streaming is not enabled.');
         }
 
-        $zegoUserId = substr("az-live-{$role}-{$userId}", 0, 32);
-        $ttl = (int) config('zego.token_ttl', 6 * 60 * 60);
+        return [
+            'name' => 'videosdk',
+            'videosdk' => $this->buildLiveVideoSdkPayload($session, $userId, $role),
+        ];
+    }
+
+    private function buildLiveVideoSdkPayload(LiveSession $session, int $userId, string $role): array
+    {
+        $apiKey = (string) config('videosdk.live.api_key');
+        $secret = (string) config('videosdk.live.secret');
+        if ($apiKey === '' || $secret === '') {
+            abort(500, 'VideoSDK live project is not configured.');
+        }
+
+        $ttl = (int) config('videosdk.live.token_ttl', 2 * 60 * 60);
+        $participantId = substr("az-live-{$role}-{$userId}", 0, 32);
 
         return [
-            'app_id' => $appId,
-            'app_sign' => $project['app_sign'] ?? null,
-            'server_url' => $project['server_url'] ?? null,
-            'secondary_server_url' => $project['secondary_server_url'] ?? null,
-            'token' => ZegoTokenService::generateToken04($appId, $zegoUserId, $secret, $ttl),
-            'token_expires_in' => $ttl,
-            'user_id' => $zegoUserId,
-            'user_name' => "{$role}-{$userId}",
+            'api_base_url' => 'https://api.videosdk.live',
+            'room_id' => $session->room_id,
+            'participant_id' => $participantId,
             'role' => $role,
+            'mode' => $role === 'host' ? 'SEND_AND_RECV' : 'RECV_ONLY',
+            'token' => VideoSdkTokenService::generateToken($apiKey, $secret, $ttl, [
+                'roomId' => $session->room_id,
+                'participantId' => $participantId,
+            ]),
+            'token_expires_in' => $ttl,
         ];
+    }
+
+    private function createVideoSdkRoomId(): string
+    {
+        $apiKey = (string) config('videosdk.live.api_key');
+        $secret = (string) config('videosdk.live.secret');
+
+        if (!(bool) config('videosdk.live.enabled') || $apiKey === '' || $secret === '') {
+            abort(500, 'VideoSDK live project is not configured.');
+        }
+
+        $ttl = (int) config('videosdk.live.token_ttl', 2 * 60 * 60);
+        $token = VideoSdkTokenService::generateToken($apiKey, $secret, $ttl, [
+            'roles' => ['crawler'],
+        ]);
+
+        $response = Http::withHeaders(['Authorization' => $token])
+            ->acceptJson()
+            ->asJson()
+            ->timeout(15)
+            ->post('https://api.videosdk.live/v2/rooms', []);
+
+        if (!$response->successful()) {
+            report(new \RuntimeException('VideoSDK room creation failed: ' . $response->body()));
+            abort(502, 'VideoSDK live room could not be created.');
+        }
+
+        $roomId = $response->json('roomId') ?? $response->json('room_id') ?? $response->json('id');
+
+        if (!is_string($roomId) || trim($roomId) === '') {
+            report(new \RuntimeException('VideoSDK room creation returned no room id: ' . $response->body()));
+            abort(502, 'VideoSDK live room response was invalid.');
+        }
+
+        return $roomId;
     }
 
     private function assertCanHost($user): void

@@ -14,6 +14,8 @@ class RitualBooking extends Model
         'user_id',
         'ritual_service_id',
         'astrologer_id',
+        'consultation_booking_id',
+        'consultation_status',
         'devotee_name',
         'devotee_email',
         'devotee_phone',
@@ -35,6 +37,10 @@ class RitualBooking extends Model
         'amount',
         'status',
         'payment_status',
+        'payment_requested_at',
+        'payment_requested_by_astrologer_id',
+        'payment_note',
+        'paid_at',
         'payment_method',
         'payment_id',
         'razorpay_order_id',
@@ -42,10 +48,12 @@ class RitualBooking extends Model
     ];
 
     protected $casts = [
-        'preferred_date' => 'date',
-        'confirmed_date' => 'date',
+        'preferred_date' => 'date:Y-m-d',
+        'confirmed_date' => 'date:Y-m-d',
         'expense_acknowledged' => 'boolean',
         'admin_response_at' => 'datetime',
+        'payment_requested_at' => 'datetime',
+        'paid_at' => 'datetime',
         'birth_details' => 'array',
         'amount' => 'decimal:2',
     ];
@@ -63,5 +71,20 @@ class RitualBooking extends Model
     public function astrologer()
     {
         return $this->belongsTo(User::class, 'astrologer_id');
+    }
+
+    public function consultationBooking()
+    {
+        return $this->belongsTo(Booking::class, 'consultation_booking_id');
+    }
+
+    public function paymentRequestedBy()
+    {
+        return $this->belongsTo(User::class, 'payment_requested_by_astrologer_id');
+    }
+
+    public function updates()
+    {
+        return $this->hasMany(RitualBookingUpdate::class);
     }
 }

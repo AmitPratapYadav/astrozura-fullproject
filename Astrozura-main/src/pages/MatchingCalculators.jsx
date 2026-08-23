@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import RecentProfilePicker from "../components/RecentProfilePicker";
+import { RelatedToolTabs, ToolInputPanel } from "../components/tool/ToolLayout";
 import { getMatchingCalculator, searchLocation } from "../api/prokeralaApi";
 import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
@@ -114,6 +115,15 @@ export default function MatchingCalculators() {
     () => matchingCalculatorTools.filter((item) => item.key !== toolKey).slice(0, 4),
     [toolKey]
   );
+  const matchingTabs = useMemo(
+    () =>
+      matchingCalculatorTools.map((item) => ({
+        label: item.title,
+        to: item.route,
+        isActive: item.key === toolKey,
+      })),
+    [toolKey]
+  );
 
   useEffect(() => {
     setResult(null);
@@ -221,7 +231,6 @@ export default function MatchingCalculators() {
             girl_nakshatra_pada: Number(girl.nakshatra_pada),
             boy_nakshatra: Number(boy.nakshatra),
             boy_nakshatra_pada: Number(boy.nakshatra_pada),
-            detailed_report: tool.supportsAdvanced ? settings.detailed_report : undefined,
             la: settings.language,
           }
         : {
@@ -231,7 +240,6 @@ export default function MatchingCalculators() {
             boy_dob: `${boy.dob}T${boy.time || "12:00"}:00+05:30`,
             ayanamsa: Number(settings.ayanamsa),
             system: tool.requiresSystem ? settings.system : undefined,
-            detailed_report: tool.supportsAdvanced ? settings.detailed_report : undefined,
             la: settings.language,
           };
 
@@ -276,10 +284,11 @@ export default function MatchingCalculators() {
       </section>
 
       <section className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-16 md:-mt-16 md:px-8">
-        <div className="grid gap-8 xl:grid-cols-[440px_minmax(0,1fr)]">
-          <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold">Matching Inputs</h2>
-            <p className="mt-2 text-sm text-slate-500">Enter both birth profiles carefully so the compatibility report can be calculated accurately.</p>
+        <div className="space-y-8">
+          <ToolInputPanel
+            title="Matching Inputs"
+            description={`${tool.title} compares the selected profiles with the required matching parameters.`}
+          >
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-6">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -329,17 +338,7 @@ export default function MatchingCalculators() {
                 </div>
               )}
 
-              {tool.supportsAdvanced && (
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-4 text-sm font-medium text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={settings.detailed_report}
-                    onChange={(event) => setSettings((current) => ({ ...current, detailed_report: event.target.checked }))}
-                  />
-                  Use advanced detailed report
-                </label>
-              )}
-
+              <div className="grid gap-5 lg:grid-cols-2">
               {[{ label: "Girl", person: girl, setPerson: setGirl, results: girlResults, setResults: setGirlResults, setLoadingPlaces: setLoadingGirlPlaces, loadingPlaces: loadingGirlPlaces }, { label: "Boy", person: boy, setPerson: setBoy, results: boyResults, setResults: setBoyResults, setLoadingPlaces: setLoadingBoyPlaces, loadingPlaces: loadingBoyPlaces }].map((section) => (
                 <div key={section.label} className="space-y-4 rounded-3xl border border-slate-100 bg-[#fbfcfe] p-5">
                   <h3 className="text-lg font-bold">{section.label} Profile</h3>
@@ -438,6 +437,7 @@ export default function MatchingCalculators() {
                   )}
                 </div>
               ))}
+              </div>
 
               <button
                 type="submit"
@@ -447,7 +447,9 @@ export default function MatchingCalculators() {
                 {loading ? "Calculating..." : `Run ${tool.title}`}
               </button>
             </form>
-          </aside>
+          </ToolInputPanel>
+
+          <RelatedToolTabs title="Matching Tools" items={matchingTabs} />
 
           <main className="space-y-6">
             {!result ? (

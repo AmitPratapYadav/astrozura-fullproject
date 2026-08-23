@@ -75,12 +75,15 @@ class _ProductsSectionState extends State<ProductsSection> {
                 ),
               ),
               GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MainNavigation(initialIndex: 3),
-                  ),
-                ),
+                onTap: () {
+                  if (MainNavigationState.activateIndex(3)) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MainNavigation(initialIndex: 3),
+                    ),
+                  );
+                },
                 child: Row(
                   children: const [
                     Text(

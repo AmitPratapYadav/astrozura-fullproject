@@ -128,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.maybePop(context),
         ),
         centerTitle: true,
         title: const Text(
@@ -227,8 +227,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Min. 6 characters',
                     controller: _passwordCtrl,
                     obscure: _obscurePassword,
-                    onToggle: () => setState(
-                        () => _obscurePassword = !_obscurePassword),
+                    onToggle: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
 
                   const SizedBox(height: 14),
@@ -249,8 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             // ── TERMS ─────────────────────────────────────────────────
             GestureDetector(
-              onTap: () =>
-                  setState(() => _agreedToTerms = !_agreedToTerms),
+              onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -280,9 +279,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: RichText(
                       text: const TextSpan(
                         style: TextStyle(
-                            fontSize: 12.5,
-                            color: Colors.black54,
-                            height: 1.5),
+                            fontSize: 12.5, color: Colors.black54, height: 1.5),
                         children: [
                           TextSpan(text: 'I agree to Astro Zura\'s '),
                           TextSpan(
@@ -374,7 +371,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             // ── SIGN IN LINK ──────────────────────────────────────────
             GestureDetector(
-              onTap: () => Navigator.pop(context),
+              onTap: () => Navigator.maybePop(context),
               child: RichText(
                 text: const TextSpan(
                   style: TextStyle(fontSize: 13.5, color: Colors.black45),
@@ -458,8 +455,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hintText: hint,
               hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
               border: InputBorder.none,
-              prefixIcon:
-                  Icon(icon, size: 16, color: const Color(0xFF9090C0)),
+              prefixIcon: Icon(icon, size: 16, color: const Color(0xFF9090C0)),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
             ),

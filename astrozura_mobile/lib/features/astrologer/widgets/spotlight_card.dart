@@ -32,7 +32,7 @@ class SpotlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = astrologer.name ?? 'Astrologer';
+    final name = astrologer.name;
     final imageUrl = astrologer.fullImageUrl;
 
     return Stack(
@@ -108,6 +108,10 @@ class SpotlightCard extends StatelessWidget {
                               height: 1.45,
                             ),
                           ),
+
+                          const SizedBox(height: 10),
+
+                          _StatusPill(status: astrologer.availabilityLabel),
 
                           const SizedBox(height: 12),
 
@@ -307,6 +311,49 @@ class _StatColumn extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final String status;
+
+  const _StatusPill({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      'Busy' => const Color(0xFFFFC857),
+      'Offline' => const Color(0xFFFF6B6B),
+      _ => const Color(0xFF38D58A),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.85)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

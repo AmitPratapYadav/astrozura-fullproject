@@ -9,9 +9,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/cart_service.dart';
 import '../../core/contants/app_colors.dart';
 import '../../core/models/product/product.model.dart';
+import '../../core/services/product_wishlist_service.dart';
 import '../../core/services/shop_service.dart';
 import 'widgets/product_chip.dart';
 import './cart_screen.dart';
+import './wishlist_screen.dart';
 
 class ProductListingPage extends StatefulWidget {
   final String categoryName;
@@ -33,6 +35,7 @@ class ProductListingPage extends StatefulWidget {
 class _ProductListingPageState extends State<ProductListingPage> {
   // ── Service ──────────────────────────────────────────────────────────────
   final ShopService _shopService = ShopService();
+  final ProductWishlistService _wishlist = ProductWishlistService();
 
   // ── Data ─────────────────────────────────────────────────────────────────
   List<ProductModel> _allProducts = [];
@@ -53,6 +56,7 @@ class _ProductListingPageState extends State<ProductListingPage> {
   @override
   void initState() {
     super.initState();
+    _wishlist.load();
     if (widget.allProducts != null) {
       _allProducts = widget.allProducts!;
       _isLoading = false;
@@ -92,9 +96,7 @@ class _ProductListingPageState extends State<ProductListingPage> {
   List<ProductModel> get _filtered {
     List<ProductModel> list = widget.categoryName == 'All'
         ? [..._allProducts]
-        : _allProducts
-            .where((p) => p.category == widget.categoryName)
-            .toList();
+        : _allProducts.where((p) => p.category == widget.categoryName).toList();
 
     // Badge filter
     if (_selectedBadge == 'Trending') {
@@ -111,15 +113,17 @@ class _ProductListingPageState extends State<ProductListingPage> {
 
     // Sort
     switch (_selectedSort) {
-      case 'Price: Low to High':
+      case 'Price Low to High':
         list.sort((a, b) => a.price.compareTo(b.price));
         break;
-      case 'Price: High to Low':
+      case 'Price High to Low':
         list.sort((a, b) => b.price.compareTo(a.price));
         break;
-      case 'Newest':
-        list = list.where((p) => p.isNew).toList() +
-            list.where((p) => !p.isNew).toList();
+      case 'Old to New':
+        list.sort((a, b) => _compareProductDate(a, b));
+        break;
+      case 'New to Old':
+        list.sort((a, b) => _compareProductDate(b, a));
         break;
     }
 
@@ -127,6 +131,13 @@ class _ProductListingPageState extends State<ProductListingPage> {
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
+
+  int _compareProductDate(ProductModel a, ProductModel b) {
+    final aDate = DateTime.tryParse(a.createdAt ?? '');
+    final bDate = DateTime.tryParse(b.createdAt ?? '');
+    if (aDate != null && bDate != null) return aDate.compareTo(bDate);
+    return a.id.compareTo(b.id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -231,8 +242,8 @@ class _ProductListingPageState extends State<ProductListingPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.sort_rounded, size: 16,
-                      color: Color(0xFF6C63FF)),
+                  const Icon(Icons.sort_rounded,
+                      size: 16, color: Color(0xFF6C63FF)),
                   const SizedBox(width: 4),
                   Text(
                     'Sort',
@@ -246,10 +257,9 @@ class _ProductListingPageState extends State<ProductListingPage> {
               ),
             ),
           ),
-           const SizedBox(width: 8),
-
-    // CART BUTTON
-    _buildCartButton(),
+          const SizedBox(width: 8),
+          _buildWishlistButton(),
+          _buildCartButton(),
         ],
       ),
     );
@@ -319,11 +329,10 @@ class _ProductListingPageState extends State<ProductListingPage> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? const Color(0xFFD4AF37)
-                      : Colors.white,
+                  color: isActive ? const Color(0xFFD4AF37) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isActive
@@ -340,7 +349,8 @@ class _ProductListingPageState extends State<ProductListingPage> {
                         child: Icon(
                           Icons.trending_up_rounded,
                           size: 14,
-                          color: isActive ? Colors.black : const Color(0xFF6C63FF),
+                          color:
+                              isActive ? Colors.black : const Color(0xFF6C63FF),
                         ),
                       ),
                     if (badge == 'New Arrival')
@@ -349,7 +359,8 @@ class _ProductListingPageState extends State<ProductListingPage> {
                         child: Icon(
                           Icons.fiber_new_rounded,
                           size: 14,
-                          color: isActive ? Colors.black : const Color(0xFF6C63FF),
+                          color:
+                              isActive ? Colors.black : const Color(0xFF6C63FF),
                         ),
                       ),
                     Text(
@@ -401,73 +412,115 @@ class _ProductListingPageState extends State<ProductListingPage> {
   }
 
   Widget _buildCartButton() {
-  return ListenableBuilder(
-    listenable: CartService(),
-    builder: (context, _) {
+    return ListenableBuilder(
+      listenable: CartService(),
+      builder: (context, _) {
+        final cart = CartService();
 
-      final cart = CartService();
-
-      return Stack(
-        clipBehavior: Clip.none,
-        children: [
-
-          IconButton(
-            onPressed: () {
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const CartScreen(),
-                ),
-              );
-            },
-
-            icon: const Icon(
-              Icons.shopping_cart_outlined,
-              size: 26,
-              color: Colors.black87,
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CartScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.shopping_cart_outlined,
+                size: 26,
+                color: Colors.black87,
+              ),
             ),
-          ),
 
-          // Badge
-          if (cart.totalItems > 0)
-            Positioned(
-              right: 2,
-              top: 2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 5,
-                  vertical: 2,
-                ),
-
-                constraints: const BoxConstraints(
-                  minWidth: 18,
-                  minHeight: 18,
-                ),
-
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD4AF37),
-                  shape: BoxShape.circle,
-                ),
-
-                child: Center(
-                  child: Text(
-                    cart.totalItems.toString(),
-
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+            // Badge
+            if (cart.totalItems > 0)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD4AF37),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      cart.totalItems.toString(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                 ),
               ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildWishlistButton() {
+    return ListenableBuilder(
+      listenable: _wishlist,
+      builder: (context, _) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ProductWishlistScreen()),
+              ),
+              icon: const Icon(
+                Icons.favorite_border_rounded,
+                size: 25,
+                color: Colors.black87,
+              ),
             ),
-        ],
-      );
-    },
-  );
-}
+            if (_wishlist.count > 0)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  constraints:
+                      const BoxConstraints(minWidth: 18, minHeight: 18),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD4AF37),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _wishlist.count.toString(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildBody() {
     // Loading
@@ -490,8 +543,7 @@ class _ProductListingPageState extends State<ProductListingPage> {
               Text(
                 'Could not load products.\nCheck your connection and try again.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                    fontSize: 13, color: Colors.black45),
+                style: GoogleFonts.poppins(fontSize: 13, color: Colors.black45),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
@@ -527,8 +579,7 @@ class _ProductListingPageState extends State<ProductListingPage> {
               _searchQuery.isNotEmpty
                   ? 'No results for "$_searchQuery"'
                   : 'No products in this category yet.',
-              style: GoogleFonts.poppins(
-                  fontSize: 13, color: Colors.black45),
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black45),
             ),
           ],
         ),
@@ -558,9 +609,10 @@ class _ProductListingPageState extends State<ProductListingPage> {
   void _showSortSheet() {
     final options = [
       ('Recommended', Icons.recommend_outlined),
-      ('Price: Low to High', Icons.arrow_upward_rounded),
-      ('Price: High to Low', Icons.arrow_downward_rounded),
-      ('Newest', Icons.new_releases_outlined),
+      ('Old to New', Icons.history_rounded),
+      ('New to Old', Icons.new_releases_outlined),
+      ('Price Low to High', Icons.arrow_upward_rounded),
+      ('Price High to Low', Icons.arrow_downward_rounded),
     ];
 
     showModalBottomSheet(
@@ -603,9 +655,8 @@ class _ProductListingPageState extends State<ProductListingPage> {
                   leading: Icon(
                     opt.$2,
                     size: 20,
-                    color: isSelected
-                        ? const Color(0xFFD4AF37)
-                        : Colors.black45,
+                    color:
+                        isSelected ? const Color(0xFFD4AF37) : Colors.black45,
                   ),
                   title: Text(
                     opt.$1,
@@ -613,9 +664,8 @@ class _ProductListingPageState extends State<ProductListingPage> {
                       fontSize: 14,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected
-                          ? const Color(0xFF1E3A5F)
-                          : Colors.black87,
+                      color:
+                          isSelected ? const Color(0xFF1E3A5F) : Colors.black87,
                     ),
                   ),
                   trailing: isSelected

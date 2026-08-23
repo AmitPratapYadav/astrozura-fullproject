@@ -40,7 +40,7 @@ class CustomBottomNavbar extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _navItem(Icons.home_outlined, 'Home', 0),
-                    _navItem(Icons.chat_bubble_outline_rounded, 'Chat', 1),
+                    _navItem(Icons.chat_bubble_outline_rounded, 'Chat/Call', 1),
                     const SizedBox(width: 64),
                     _navItem(Icons.shopping_bag_outlined, 'Shop', 3),
                     _navItem(Icons.person_outline, 'Profile', 4),
@@ -92,7 +92,7 @@ class CustomBottomNavbar extends StatelessWidget {
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 65,
+        width: 72,
         height: 64,
         child: Column(
           mainAxisSize: MainAxisSize.max,
@@ -106,15 +106,23 @@ class CustomBottomNavbar extends StatelessWidget {
                   : const Color(0xFFD4A84F),
             ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                height: 1,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected
-                    ? const Color(0xFF0D437B)
-                    : const Color(0xFF000000),
+            SizedBox(
+              width: 68,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected
+                        ? const Color(0xFF0D437B)
+                        : const Color(0xFF000000),
+                  ),
+                ),
               ),
             ),
           ],

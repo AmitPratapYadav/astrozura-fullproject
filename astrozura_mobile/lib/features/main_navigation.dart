@@ -28,6 +28,8 @@ import '../features/other_pages/lal_kitab_report.dart';
 import './other_pages/calculators/live_vedic_calculator_screen.dart';
 import './other_pages/calculators/live_numerology_screen.dart';
 import './other_pages/calculators/live_tarot_screen.dart';
+import './other_pages/detailed_dosha_report_screen.dart';
+import './other_pages/detailed_kundali_mobile_screen.dart';
 import '../features/other_pages/live_matchmaking_report_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -44,21 +46,49 @@ class MainNavigation extends StatefulWidget {
 
 class MainNavigationState extends State<MainNavigation> {
   late int _currentIndex;
+  late final Set<int> _visitedIndexes;
   DateTime? lastBackPressed;
 
-  static MainNavigationState? _instance;
-  static MainNavigationState? get instance => _instance;
+  static final List<MainNavigationState> _instances = [];
+  static MainNavigationState? get instance {
+    _instances.removeWhere((state) => !state.mounted);
+    return _instances.isEmpty ? null : _instances.last;
+  }
+
+  static bool activateIndex(int index) {
+    final navigation = instance;
+    if (navigation == null) return false;
+    navigation._switchToIndex(index);
+    return true;
+  }
+
+  static bool goHome() {
+    return activateIndex(0);
+  }
+
+  static void returnHome(BuildContext context) {
+    final navigation = instance;
+    if (navigation != null) {
+      navigation._switchToIndex(0);
+    }
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.popUntil((route) => route.isFirst);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _instance = this;
+    _visitedIndexes = {0, _currentIndex};
+    _instances.remove(this);
+    _instances.add(this);
   }
 
   @override
   void dispose() {
-    if (_instance == this) _instance = null;
+    _instances.remove(this);
     super.dispose();
   }
 
@@ -68,10 +98,20 @@ class MainNavigationState extends State<MainNavigation> {
       SparkCategorySheet.show(context);
       return;
     }
-    setState(() => _currentIndex = index);
+    setState(() {
+      _currentIndex = index;
+      _visitedIndexes.add(index);
+    });
   }
 
   void switchTab(int index) => _onTabTapped(index);
+
+  void _switchToIndex(int index) {
+    setState(() {
+      _currentIndex = index;
+      _visitedIndexes.add(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +225,7 @@ class MainNavigationState extends State<MainNavigation> {
       ),
       const LiveNumerologyScreen(),
       const LiveTarotScreen(),
-      const AstrologerScreen(),
+      const AstrologerScreen(palmReadingOnly: true),
       const LiveMatchmakingReportScreen(),
       const LiveVedicCalculatorScreen(
         toolKey: '__kundli__',
@@ -193,40 +233,30 @@ class MainNavigationState extends State<MainNavigation> {
         description:
             'Generate a live Kundali report from birth details and birthplace.',
       ),
-      const LiveVedicCalculatorScreen(
-        toolKey: '__kundli__',
-        title: 'Detailed Kundali Analysis',
-        description:
-            'Generate live chart, planetary, dasha, and interpretation data.',
-      ),
-      const LiveVedicCalculatorScreen(
-        toolKey: 'mangal-dosha',
-        additionalToolKeys: [
-          'kaal-sarp-dosha',
-          'sade-sati',
-          'pitra-dosha',
-        ],
-        title: 'Detailed Dosha Analysis',
-        description:
-            'Review Mangal, Kaal Sarp, Sade-Sati, and Pitra Dosha results.',
-        supportsAdvanced: true,
-      ),
+      const DetailedKundaliMobileScreen(),
+      const DetailedDoshaReportScreen(),
       const LiveMatchmakingReportScreen(),
+      const LiveVedicCalculatorScreen(
+        toolKey: 'biorhythm',
+        title: 'Biorhythm',
+        description:
+            'Generate physical, emotional, intellectual, and moon biorhythm readings.',
+      ),
     ];
 
     return WillPopScope(
       onWillPop: () async {
         if (_currentIndex == 5 || _currentIndex == 6) {
-          setState(() => _currentIndex = 4);
+          _switchToIndex(4);
           return false;
         }
         if (_currentIndex == 7) {
-          setState(() => _currentIndex = 0); // back to Home
+          _switchToIndex(0); // back to Home
           return false;
         }
 
         if (_currentIndex != 0) {
-          setState(() => _currentIndex = 0);
+          _switchToIndex(0);
           return false;
         }
         final now = DateTime.now();
@@ -253,7 +283,12 @@ class MainNavigationState extends State<MainNavigation> {
       child: Scaffold(
         body: IndexedStack(
           index: _currentIndex,
-          children: screens,
+          children: [
+            for (var i = 0; i < screens.length; i++)
+              i == 0 || i == _currentIndex || _visitedIndexes.contains(i)
+                  ? screens[i]
+                  : const SizedBox.shrink(),
+          ],
         ),
         bottomNavigationBar:
             (_currentIndex != 5 && _currentIndex != 6) ? sharedNavbar : null,

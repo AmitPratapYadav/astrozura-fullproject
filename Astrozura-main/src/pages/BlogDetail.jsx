@@ -30,7 +30,12 @@ const formatDate = (value) => {
 function ContentBlock({ block, index }) {
   if (!block || !block.type) return null;
 
+  const richHtml = block.html || "";
+
   if (block.type === "heading") {
+    if (richHtml) {
+      return <div className="mt-10 text-3xl font-black leading-tight text-slate-950 [&_*]:font-inherit" dangerouslySetInnerHTML={{ __html: richHtml }} />;
+    }
     return <h2 className="mt-10 text-3xl font-black text-slate-950">{block.text}</h2>;
   }
 
@@ -40,6 +45,15 @@ function ContentBlock({ block, index }) {
         <img src={assetUrl(block.url)} alt={block.alt || `Blog image ${index + 1}`} className="max-h-[520px] w-full object-cover" />
         {block.caption ? <figcaption className="px-5 py-3 text-sm text-slate-500">{block.caption}</figcaption> : null}
       </figure>
+    );
+  }
+
+  if (richHtml) {
+    return (
+      <div
+        className="mt-5 text-lg leading-9 text-slate-600 [&_a]:font-bold [&_a]:text-[#D4A73C] [&_li]:my-1 [&_ol]:ml-6 [&_ol]:list-decimal [&_strong]:text-slate-900 [&_ul]:ml-6 [&_ul]:list-disc"
+        dangerouslySetInnerHTML={{ __html: richHtml }}
+      />
     );
   }
 
@@ -54,7 +68,6 @@ export default function BlogDetail() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
     getBlog(slug)
       .then((response) => {
         if (!mounted) return;

@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import RecentProfilePicker from "../components/RecentProfilePicker";
+import { RelatedToolTabs, ToolInputPanel } from "../components/tool/ToolLayout";
 import { getLalKitabReport, searchLocation } from "../api/prokeralaApi";
 import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
+import { serviceCatalog } from "../data/serviceCatalog";
 import { getServiceIcon } from "../data/serviceIcons";
 import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
@@ -29,6 +31,14 @@ const formatDateTime = (value) => {
 };
 
 const pageIcon = getServiceIcon("lal-kitab-report");
+const reportTabs = serviceCatalog
+  .filter((item) => item.category === "Reports")
+  .map((item) => ({
+    label: item.title,
+    to: item.ctaTo,
+    icon: item.icon,
+    isActive: item.slug === "lal-kitab-report",
+  }));
 
 const displayValue = (value) => {
   if (value === null || value === undefined || value === "") return "-";
@@ -274,17 +284,13 @@ export default function LalKitabReport() {
       </section>
 
       <section className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-16 md:px-10">
-        <div className="grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <aside className="rounded-[2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold">Birth Inputs</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Lal Kitab requires the exact birth date, birth time, and a verified birthplace selection.
-            </p>
-            <div className="mt-4">
-              <RecentProfilePicker onSelect={applyRecentProfile} />
-            </div>
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <div className="space-y-8">
+          <ToolInputPanel
+            title="Birth Inputs"
+            description="Lal Kitab Report requires the exact birth date, birth time, and verified birthplace."
+            action={<RecentProfilePicker onSelect={applyRecentProfile} />}
+          >
+            <form onSubmit={handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-600">Date of Birth</label>
                 <input
@@ -335,7 +341,7 @@ export default function LalKitabReport() {
               </div>
 
               {form.coordinates && (
-                <div className="rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-xs text-slate-500">
+                <div className="rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-xs text-slate-500 md:col-span-2 xl:col-span-4">
                   Coordinates: {form.coordinates}
                 </div>
               )}
@@ -343,12 +349,14 @@ export default function LalKitabReport() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-[#1E3557] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#162744] disabled:opacity-60"
+                className="w-full rounded-2xl bg-[#1E3557] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#162744] disabled:opacity-60 md:col-span-2 xl:col-span-4"
               >
                 {loading ? "Generating..." : "Generate Lal Kitab Report"}
               </button>
             </form>
-          </aside>
+          </ToolInputPanel>
+
+          <RelatedToolTabs title="Reports" items={reportTabs} />
 
           <main className="space-y-6">
             {!report ? (

@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { createRitualBooking } from "../api/bookingApi";
-import { ensureRazorpayConfigured, payWithRazorpay } from "../api/paymentApi";
+import { createRitualBooking, getRitualConsultationAvailability } from "../api/bookingApi";
 import poojaRitual from "../assets/pooja ritual.png";
 import bhagwat from "../assets/bhagwat.png";
 import lamp from "../assets/lamp.png";
@@ -64,6 +63,8 @@ export default function RitualBooking() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState(initialForm);
+  const [availability, setAvailability] = useState({ slots: [], astrologer: null, duration: 30 });
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   useEffect(() => {
     const loadRitual = async () => {
@@ -108,9 +109,41 @@ export default function RitualBooking() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!ritual?.id || !form.preferred_date) {
+      setAvailability({ slots: [], astrologer: null, duration: 30 });
+      return;
+    }
+
+    const loadAvailability = async () => {
+      try {
+        setAvailabilityLoading(true);
+        const response = await getRitualConsultationAvailability(ritual.id, {
+          booking_date: form.preferred_date,
+        });
+        setAvailability({
+          slots: response?.slots || [],
+          astrologer: response?.astrologer || null,
+          duration: response?.duration || 30,
+        });
+      } catch (error) {
+        setAvailability({ slots: [], astrologer: null, duration: 30 });
+        setMessage(error?.response?.data?.message || "No ritual consultation expert is available for this date.");
+      } finally {
+        setAvailabilityLoading(false);
+      }
+    };
+
+    void loadAvailability();
+  }, [ritual?.id, form.preferred_date]);
+
   const selectedVenue = useMemo(
     () => venueOptions.find((item) => item.value === form.venue_type) || venueOptions[0],
     [form.venue_type]
+  );
+  const availableSlots = useMemo(
+    () => availability.slots.filter((slot) => slot.is_available).slice(0, 24),
+    [availability.slots]
   );
 
   const handleChange = (event) => {
@@ -165,21 +198,12 @@ export default function RitualBooking() {
       setSubmitting(true);
       setMessage("");
 
-      await ensureRazorpayConfigured();
       const response = await createRitualBooking(ritual.id, form);
 
       if (response?.success) {
-        await payWithRazorpay({
-          purpose: "ritual",
-          recordId: response.booking.id,
-          name: form.devotee_name,
-          email: form.devotee_email,
-          contact: form.devotee_phone,
-          description: ritual.name,
-        });
         navigate("/my-bookings", {
           state: {
-            message: `Ritual booking ${response.booking.booking_reference} paid and submitted successfully.`,
+            message: `Ritual consultation ${response.booking.booking_reference} scheduled successfully.`,
           },
         });
       }
@@ -232,7 +256,7 @@ export default function RitualBooking() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#D4A73C]">Dedicated Ritual Booking</p>
           <h1 className="mt-4 max-w-3xl text-4xl font-black md:text-5xl">{ritual.name}</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-200 md:text-base">
-            Share your preferred date, time, and location so our team can review the ritual request and confirm the arrangement from the admin desk.
+            Share your ritual details and schedule a free 30-minute consultation with our ritual expert. Final ritual amount is confirmed only after consultation.
           </p>
         </div>
       </section>
@@ -243,7 +267,7 @@ export default function RitualBooking() {
             <div className="border-b border-[#efe4d2] pb-6">
               <h2 className="text-3xl font-black">Book This Ritual</h2>
               <p className="mt-2 text-sm leading-6 text-gray-500">
-                Submit your ritual preference here. The booking will be visible in the admin panel, and the admin team will respond with confirmation, scheduling updates, or special instructions.
+                Submit your ritual preference here, then choose a consultation slot. No payment is collected until the ritual expert confirms the final amount after your chat.
               </p>
             </div>
 
@@ -282,7 +306,7 @@ export default function RitualBooking() {
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-semibold">Preferred Date</span>
+                <span className="text-sm font-semibold">Consultation Date</span>
                 <input
                   type="date"
                   name="preferred_date"
@@ -292,16 +316,40 @@ export default function RitualBooking() {
                   className="w-full rounded-2xl border border-[#eadac2] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
                 />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-semibold">Preferred Time</span>
-                <input
-                  type="time"
-                  name="preferred_time"
-                  value={form.preferred_time}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-[#eadac2] px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
-                />
-              </label>
+              <div className="space-y-2">
+                <span className="text-sm font-semibold">Consultation Time</span>
+                <div className="rounded-2xl border border-[#eadac2] bg-[#fffaf0] p-3">
+                  {availabilityLoading ? (
+                    <p className="text-sm text-gray-500">Checking expert availability...</p>
+                  ) : availableSlots.length ? (
+                    <div className="grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2">
+                      {availableSlots.map((slot) => (
+                        <button
+                          type="button"
+                          key={slot.start}
+                          onClick={() => setForm((current) => ({ ...current, preferred_time: slot.label }))}
+                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                            form.preferred_time === slot.label
+                              ? "border-[#D4A73C] bg-[#D4A73C] text-[#1E3557]"
+                              : "border-[#eadac2] bg-white text-[#1E3557] hover:border-[#D4A73C]"
+                          }`}
+                        >
+                          {slot.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      {form.preferred_date ? "No available slots for this date. Please choose another date." : "Select a date to view available 30-minute consultation slots."}
+                    </p>
+                  )}
+                </div>
+                {availability.astrologer?.name && (
+                  <p className="text-xs font-semibold text-[#D4A73C]">
+                    Assigned ritual expert: {availability.astrologer.name}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -497,17 +545,17 @@ export default function RitualBooking() {
                   <span className="text-right font-semibold text-[#1E3557]">{ritual.ideal_timing || "-"}</span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span>Base Ritual Amount</span>
-                  <span className="font-bold text-[#1E3557]">Rs {Number(ritual.price || 0).toLocaleString("en-IN")}</span>
+                  <span>Consultation</span>
+                  <span className="font-bold text-[#1E3557]">Free 30 min chat</span>
                 </div>
               </div>
 
               <div className="mt-5 rounded-2xl border border-[#efe4d2] p-4">
                 <p className="text-sm font-semibold">What happens next</p>
                 <div className="mt-3 space-y-2 text-sm leading-6 text-gray-500">
-                  <p>1. Your ritual booking is recorded in the admin panel.</p>
-                  <p>2. Admin reviews the request and replies with confirmation or clarifications.</p>
-                  <p>3. The final ritual schedule appears under your bookings page.</p>
+                  <p>1. Your ritual consultation is scheduled with an expert.</p>
+                  <p>2. Chat opens when the expert starts the session.</p>
+                  <p>3. Final amount is requested only after consultation.</p>
                 </div>
               </div>
             </div>

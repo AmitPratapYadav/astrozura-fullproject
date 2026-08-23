@@ -65,7 +65,7 @@ class _HoroscopeCardState extends State<HoroscopeCard> {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 158,
+          height: 150,
           child: PageView.builder(
             controller: _controller,
             itemCount: zodiacSigns.length,
@@ -78,7 +78,7 @@ class _HoroscopeCardState extends State<HoroscopeCard> {
                   borderRadius: BorderRadius.circular(22),
                   onTap: () => _openHoroscope(rashi),
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFDFDEFF), Color(0xFF8B88E6)],
@@ -110,9 +110,20 @@ class _HoroscopeCardState extends State<HoroscopeCard> {
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 5),
+                              Text(
+                                _todayLabel(),
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: const Color(0xFF1E2360)
+                                      .withValues(alpha: 0.72),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const Spacer(),
                               SizedBox(
-                                height: 38,
+                                height: 34,
                                 child: ElevatedButton(
                                   onPressed: () => _openHoroscope(rashi),
                                   style: ElevatedButton.styleFrom(
@@ -120,7 +131,7 @@ class _HoroscopeCardState extends State<HoroscopeCard> {
                                     foregroundColor: const Color(0xFF1E3557),
                                     elevation: 0,
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
+                                      horizontal: 14,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(11),
@@ -140,9 +151,9 @@ class _HoroscopeCardState extends State<HoroscopeCard> {
                         ),
                         const SizedBox(width: 14),
                         Container(
-                          width: 82,
-                          height: 82,
-                          padding: const EdgeInsets.all(8),
+                          width: 88,
+                          height: 88,
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.7),
                             shape: BoxShape.circle,
@@ -162,5 +173,24 @@ class _HoroscopeCardState extends State<HoroscopeCard> {
         ),
       ],
     );
+  }
+
+  String _todayLabel() {
+    final now = DateTime.now();
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
 }

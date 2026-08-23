@@ -349,13 +349,18 @@ class AstrologyController extends Controller
             $birthDetails = $this->requestOrFail('birth_details', $birthPayload, $language);
             $astroDetails = $this->requestOrFail('astro_details', $birthPayload, $language);
             $planets = $this->requestOrFail('planets', $birthPayload, $language);
-            $dashaAll = $this->requestOrFail('current_vdasha_all', $birthPayload, $language);
+            $currentVdasha = $this->requestOrFail('current_vdasha', $birthPayload, $language);
+            $majorVdasha = $this->requestOrFail('major_vdasha', $birthPayload, $language);
             $manglik = null;
             try {
                 $manglik = $this->requestOrFail('manglik', $birthPayload, $language);
             } catch (\Throwable $exception) {
                 $warnings[] = 'Mangal Dosha analysis is not available right now, so the chart was generated without that module.';
             }
+            $pitraDosha = $this->requestOrFail('pitra_dosha_report', $birthPayload, $language);
+            $kalsarpaDetails = $this->requestOrFail('kalsarpa_details', $birthPayload, $language);
+            $gemSuggestion = $this->requestOrFail('basic_gem_suggestion', $birthPayload, $language);
+            $rudrakshaSuggestion = $this->requestOrFail('rudraksha_suggestion', $birthPayload, $language);
 
             $chartTypes = $request->input('chart_types');
             if (!is_array($chartTypes) || empty($chartTypes)) {
@@ -375,14 +380,27 @@ class AstrologyController extends Controller
             $chartSvg = $primaryChart['chart_svg'] ?? $fallbackChart['chart_svg'] ?? null;
             $sunPlanet = $this->findPlanetByName($planets, 'Sun');
             $moonPlanet = $this->findPlanetByName($planets, 'Moon');
-            $dashaSummary = $this->formatCurrentVdashaSummary($dashaAll);
+            $dashaSummary = $this->formatLimitedVdashaSummary($currentVdasha, $majorVdasha);
             $detailedReport = $this->buildDetailedKundliReport($birthPayload, $language, $chartStyle, $chartSeries, [
                 'birth_details' => $birthDetails,
                 'astro_details' => $astroDetails,
                 'planets' => $planets,
-                'current_vdasha_all' => $dashaAll,
+                'current_vdasha' => $currentVdasha,
+                'major_vdasha' => $majorVdasha,
                 'manglik' => $manglik,
+                'pitra_dosha_report' => $pitraDosha,
+                'kalsarpa_details' => $kalsarpaDetails,
+                'basic_gem_suggestion' => $gemSuggestion,
+                'rudraksha_suggestion' => $rudrakshaSuggestion,
             ]);
+            $additionalProviderPayload = [];
+            foreach ($detailedReport as $section) {
+                foreach (($section['items'] ?? []) as $key => $item) {
+                    if (in_array($key, ['bhav_madhya', 'bhavabala', 'shadbala', 'ayanamsha', 'ghat_chakra', 'biorhythm', 'moon_biorhythm'], true)) {
+                        $additionalProviderPayload[$key] = $item;
+                    }
+                }
+            }
 
             $kundli = [
                 'nakshatra_details' => [
@@ -453,13 +471,18 @@ class AstrologyController extends Controller
                     'detailed_report' => $detailedReport,
                     'language' => $language,
                     'supported_languages' => ['en', 'hi', 'ma', 'bn', 'ta', 'te', 'ml', 'kn'],
-                    'provider_payload' => [
+                    'provider_payload' => array_merge($additionalProviderPayload, [
                         'birth_details' => $birthDetails,
                         'astro_details' => $astroDetails,
                         'planets' => $planets,
-                        'current_vdasha_all' => $dashaAll,
+                        'current_vdasha' => $currentVdasha,
+                        'major_vdasha' => $majorVdasha,
                         'manglik' => $manglik,
-                    ],
+                        'pitra_dosha_report' => $pitraDosha,
+                        'kalsarpa_details' => $kalsarpaDetails,
+                        'basic_gem_suggestion' => $gemSuggestion,
+                        'rudraksha_suggestion' => $rudrakshaSuggestion,
+                    ]),
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -593,17 +616,14 @@ class AstrologyController extends Controller
             $birth = $this->requestOrFail('match_birth_details', $matchPayload, $language);
             $astro = $this->requestOrFail('match_astro_details', $matchPayload, $language);
             $points = $this->requestOrFail('match_ashtakoot_points', $matchPayload, $language);
-            $report = $this->requestOrFail('match_making_detailed_report', $matchPayload, $language);
+            $dashakootPoints = $this->requestOrFail('match_dashakoot_points', $matchPayload, $language);
+            $obstructions = $this->requestOrFail('match_obstructions', $matchPayload, $language);
             $manglik = $this->requestOrFail('match_manglik_report', $matchPayload, $language);
-            $obstructions = $this->safeAstrologyRequest('match_obstructions', $matchPayload, $language);
-            $planetDetails = $this->safeAstrologyRequest('match_planet_details', $matchPayload, $language);
-            $makingReport = $this->safeAstrologyRequest('match_making_report', $matchPayload, $language);
-            $dashakootPoints = $this->safeAstrologyRequest('match_dashakoot_points', $matchPayload, $language);
-            $percentage = $this->safeAstrologyRequest('match_percentage', $matchPayload, $language);
+            $planetDetails = $this->requestOrFail('match_planet_details', $matchPayload, $language);
 
             $gunaRows = [];
             foreach (['varna', 'vashya', 'tara', 'yoni', 'maitri', 'gan', 'bhakut', 'nadi'] as $key) {
-                $item = $report['ashtakoota'][$key] ?? $points[$key] ?? null;
+                $item = $points[$key] ?? null;
                 if (!$item) {
                     continue;
                 }
@@ -619,10 +639,9 @@ class AstrologyController extends Controller
                 ];
             }
 
-            $receivedPoints = $report['ashtakoota']['total']['received_points'] ?? null;
-            $maximumPoints = $report['ashtakoota']['total']['total_points'] ?? 36;
-            $messageText = $report['conclusion']['match_report']
-                ?? $report['ashtakoota']['conclusion']['report']
+            $receivedPoints = $points['total']['received_points'] ?? null;
+            $maximumPoints = $points['total']['total_points'] ?? 36;
+            $messageText = $points['conclusion']['report']
                 ?? null;
 
             return response()->json([
@@ -639,14 +658,16 @@ class AstrologyController extends Controller
                         'female'
                     ),
                     'boy_mangal_dosha_details' => [
-                        'has_dosha' => ($manglik['male_percentage'] ?? 0) > 0,
+                        'has_dosha' => (bool) ($manglik['male']['is_present'] ?? false),
                         'dosha_type' => 'Manglik',
-                        'description' => 'Manglik influence score: ' . ($manglik['male_percentage'] ?? 0) . '%',
+                        'description' => $manglik['male']['manglik_report']
+                            ?? ('Manglik influence score: ' . ($manglik['male']['percentage_manglik_present'] ?? 0) . '%'),
                     ],
                     'girl_mangal_dosha_details' => [
-                        'has_dosha' => ($manglik['female_percentage'] ?? 0) > 0,
+                        'has_dosha' => (bool) ($manglik['female']['is_present'] ?? false),
                         'dosha_type' => 'Manglik',
-                        'description' => 'Manglik influence score: ' . ($manglik['female_percentage'] ?? 0) . '%',
+                        'description' => $manglik['female']['manglik_report']
+                            ?? ('Manglik influence score: ' . ($manglik['female']['percentage_manglik_present'] ?? 0) . '%'),
                     ],
                     'guna_milan' => [
                         'total_points' => $receivedPoints,
@@ -658,40 +679,64 @@ class AstrologyController extends Controller
                         'description' => $messageText ?: 'Compatibility analysis generated successfully.',
                     ],
                     'exceptions' => array_values(array_filter([
-                        (($report['rajju_dosha']['status'] ?? true) === false) ? 'Rajju dosha check returned a negative compatibility signal.' : null,
-                        (($report['vedha_dosha']['status'] ?? false) === true) ? 'Vedha dosha is present in this compatibility review.' : null,
-                        (($report['manglik']['status'] ?? true) === false) ? 'Manglik analysis reduced the compatibility outcome.' : null,
+                        ($obstructions['is_present'] ?? false) ? 'Vedha obstruction is present in this compatibility review.' : null,
+                        (($manglik['conclusion']['match'] ?? true) === false) ? ($manglik['conclusion']['report'] ?? 'Manglik analysis reduced the compatibility outcome.') : null,
                     ])),
                     'provider_sections' => [
                         [
-                            'id' => 'match-basic',
-                            'title' => 'Match Birth and Astro Details',
-                            'summary' => 'Birth, astro and planet details generated successfully.',
+                            'id' => 'match-birth-details',
+                            'title' => 'Match Birth Details',
+                            'summary' => 'Birth details returned by AstrologyAPI for both male and female profiles.',
                             'items' => [
                                 'match_birth_details' => ['status' => 'success', 'endpoint' => 'match_birth_details', 'data' => $birth],
-                                'match_astro_details' => ['status' => 'success', 'endpoint' => 'match_astro_details', 'data' => $astro],
-                                'match_planet_details' => $planetDetails,
                             ],
                         ],
                         [
-                            'id' => 'match-scoring',
-                            'title' => 'Match Scoring',
-                            'summary' => 'Ashtakoot, Dashakoot and match percentage modules.',
+                            'id' => 'match-astro-details',
+                            'title' => 'Match Astro Details',
+                            'summary' => 'Astrological birth attributes returned for both profiles.',
+                            'items' => [
+                                'match_astro_details' => ['status' => 'success', 'endpoint' => 'match_astro_details', 'data' => $astro],
+                            ],
+                        ],
+                        [
+                            'id' => 'match-ashtakoot-points',
+                            'title' => 'Match Ashtakoot Points',
+                            'summary' => 'Traditional eight-koot Guna Milan scoring.',
                             'items' => [
                                 'match_ashtakoot_points' => ['status' => 'success', 'endpoint' => 'match_ashtakoot_points', 'data' => $points],
-                                'match_dashakoot_points' => $dashakootPoints,
-                                'match_percentage' => $percentage,
                             ],
                         ],
                         [
-                            'id' => 'match-reports',
-                            'title' => 'Match Reports and Obstructions',
-                            'summary' => 'Detailed compatibility reports, obstruction checks and Manglik report.',
+                            'id' => 'match-dashakoot-points',
+                            'title' => 'Match Dashakoot Points',
+                            'summary' => 'Dashakoot compatibility scoring returned by AstrologyAPI.',
                             'items' => [
-                                'match_obstructions' => $obstructions,
+                                'match_dashakoot_points' => ['status' => 'success', 'endpoint' => 'match_dashakoot_points', 'data' => $dashakootPoints],
+                            ],
+                        ],
+                        [
+                            'id' => 'match-obstructions',
+                            'title' => 'Match Obstructions',
+                            'summary' => 'Vedha and obstruction checks returned by AstrologyAPI.',
+                            'items' => [
+                                'match_obstructions' => ['status' => 'success', 'endpoint' => 'match_obstructions', 'data' => $obstructions],
+                            ],
+                        ],
+                        [
+                            'id' => 'match-manglik-report',
+                            'title' => 'Match Manglik Report',
+                            'summary' => 'Manglik comparison and cancellation details.',
+                            'items' => [
                                 'match_manglik_report' => ['status' => 'success', 'endpoint' => 'match_manglik_report', 'data' => $manglik],
-                                'match_making_report' => $makingReport,
-                                'match_making_detailed_report' => ['status' => 'success', 'endpoint' => 'match_making_detailed_report', 'data' => $report],
+                            ],
+                        ],
+                        [
+                            'id' => 'match-planet-details',
+                            'title' => 'Match Planet Details',
+                            'summary' => 'Planetary positions for both male and female profiles.',
+                            'items' => [
+                                'match_planet_details' => ['status' => 'success', 'endpoint' => 'match_planet_details', 'data' => $planetDetails],
                             ],
                         ],
                     ],
@@ -702,13 +747,10 @@ class AstrologyController extends Controller
                         'match_birth_details' => $birth,
                         'match_astro_details' => $astro,
                         'match_ashtakoot_points' => $points,
-                        'match_obstructions' => $obstructions['data'],
-                        'match_planet_details' => $planetDetails['data'],
-                        'match_making_detailed_report' => $report,
-                        'match_making_report' => $makingReport['data'],
+                        'match_dashakoot_points' => $dashakootPoints,
+                        'match_obstructions' => $obstructions,
                         'match_manglik_report' => $manglik,
-                        'match_dashakoot_points' => $dashakootPoints['data'],
-                        'match_percentage' => $percentage['data'],
+                        'match_planet_details' => $planetDetails,
                     ],
                 ],
             ]);
@@ -862,6 +904,7 @@ class AstrologyController extends Controller
                     'advanced_panchang' => $this->safeAstrologyRequest('advanced_panchang', $birthPayload, $language),
                     'panchang_chart' => $this->safeAstrologyRequest('panchang_chart', $birthPayload, $language),
                     'panchang_festival' => $this->safeAstrologyRequest('panchang_festival', $birthPayload, $language),
+                    'panchang_lagna_table' => $this->safeAstrologyRequest('panchang_lagna_table', $birthPayload, $language),
                 ],
             };
 
@@ -869,6 +912,7 @@ class AstrologyController extends Controller
             $basic = $providerItems['basic_panchang']['data'] ?? [];
             $panchangChart = $providerItems['panchang_chart']['data'] ?? null;
             $panchangFestival = $providerItems['panchang_festival']['data'] ?? null;
+            $panchangLagnaTable = $providerItems['panchang_lagna_table']['data'] ?? null;
             $hora = $providerItems['hora_muhurta']['data'] ?? [];
             $chaughadiya = $providerItems['chaughadiya_muhurta']['data'] ?? [];
 
@@ -923,6 +967,7 @@ class AstrologyController extends Controller
                         'advanced' => $advanced,
                         'chart' => $panchangChart,
                         'festival' => $panchangFestival,
+                        'lagna_table' => $panchangLagnaTable,
                     ],
                     'provider_sections' => [
                         [
@@ -964,6 +1009,7 @@ class AstrologyController extends Controller
                 'sunrise_planetary_positions' => 'planet_panchang/sunrise',
                 'panchang_chart' => 'panchang_chart',
                 'panchang_festival' => 'panchang_festival',
+                'panchang_lagna_table' => 'panchang_lagna_table',
             ];
 
             $requested = $request->input('extras', array_keys($allowed));
@@ -984,6 +1030,7 @@ class AstrologyController extends Controller
                     'sunrise_planetary_positions' => $providerItems['sunrise_planetary_positions']['data'] ?? null,
                     'panchang_chart' => $providerItems['panchang_chart']['data'] ?? null,
                     'panchang_festival' => $providerItems['panchang_festival']['data'] ?? null,
+                    'panchang_lagna_table' => $providerItems['panchang_lagna_table']['data'] ?? null,
                     'provider_payload' => collect($providerItems)->map(fn ($item) => $item['data'] ?? null)->all(),
                     'provider_status' => collect($providerItems)->map(fn ($item) => [
                         'status' => $item['status'] ?? 'error',
@@ -1033,11 +1080,14 @@ class AstrologyController extends Controller
                 ]),
                 $language
             );
+            $chartSvg = is_string($response) && str_starts_with(trim($response), '<svg')
+                ? $response
+                : ($response['svg'] ?? null);
 
             return response()->json([
                 'status' => 'success',
                 'data' => [
-                    'chart_svg' => $response['svg'] ?? null,
+                    'chart_svg' => $chartSvg,
                     'chart_data' => $response,
                 ],
             ]);
@@ -1085,23 +1135,26 @@ class AstrologyController extends Controller
             $payload = $this->buildBirthPayload($request->input('datetime'), $request->input('coordinates'));
             $nakshatra = $this->requestOrFail('daily_nakshatra_prediction', $payload, $language);
             $type = strtolower((string) $request->input('type'));
+            $prediction = is_array($nakshatra['prediction'] ?? null) ? $nakshatra['prediction'] : $nakshatra;
 
             $mapped = [
-                'career' => ['title' => 'Profession', 'description' => $nakshatra['profession'] ?? null],
-                'love-and-relationship' => ['title' => 'Personal Life', 'description' => $nakshatra['personal_life'] ?? null],
-                'health' => ['title' => 'Health', 'description' => $nakshatra['health'] ?? null],
-                'finance' => ['title' => 'Luck', 'description' => $nakshatra['luck'] ?? null],
-                'education' => ['title' => 'Travel', 'description' => $nakshatra['travel'] ?? null],
+                'health' => ['title' => 'Health', 'description' => $prediction['health'] ?? null],
+                'emotions' => ['title' => 'Emotions', 'description' => $prediction['emotions'] ?? null],
+                'profession' => ['title' => 'Profession', 'description' => $prediction['profession'] ?? null],
+                'luck' => ['title' => 'Luck', 'description' => $prediction['luck'] ?? null],
+                'personal_life' => ['title' => 'Personal Life', 'description' => $prediction['personal_life'] ?? null],
+                'travel' => ['title' => 'Travel', 'description' => $prediction['travel'] ?? null],
             ];
 
             $selected = $mapped[$type] ?? ['title' => 'Prediction', 'description' => $nakshatra['prediction'] ?? null];
+            $responseBlocks = [$selected];
+            if (!empty($nakshatra['prediction_date'])) {
+                $responseBlocks[] = ['title' => 'Prediction Date', 'description' => $nakshatra['prediction_date']];
+            }
 
             return response()->json([
                 'status' => 'success',
-                'data' => [
-                    $selected,
-                    ['title' => 'Emotions', 'description' => $nakshatra['emotions'] ?? null],
-                ],
+                'data' => $responseBlocks,
             ]);
         } catch (\Throwable $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 200);
@@ -1127,9 +1180,85 @@ class AstrologyController extends Controller
                 ];
             $varshaphalYear = (int) ($request->input('varshaphal_year') ?: $request->input('year') ?: now('Asia/Kolkata')->format('Y'));
             $varshaphalPayload = array_merge($payload, [
-                'year' => $varshaphalYear,
                 'varshaphal_year' => $varshaphalYear,
             ]);
+            $buildVimshottariItems = function () use ($request, $payload, $language, $segment, $optionalRequest): array {
+                $currentVdashaAll = $this->safeAstrologyRequest('current_vdasha_all', $payload, $language);
+                $currentData = is_array($currentVdashaAll['data'] ?? null) ? $currentVdashaAll['data'] : [];
+                $hierarchy = $currentData['sub_sub_sub_minor']['planet']
+                    ?? $currentData['sub_sub_minor']['planet']
+                    ?? $currentData['sub_minor']['planet']
+                    ?? $currentData['minor']['planet']
+                    ?? $currentData['major']['planet']
+                    ?? [];
+                $hierarchy = is_array($hierarchy) ? $hierarchy : [];
+
+                $mahadasha = trim((string) ($request->input('mahadasha') ?: ($hierarchy['major'] ?? '')));
+                $antardasha = trim((string) ($request->input('antardasha') ?: ($hierarchy['minor'] ?? '')));
+                $pratyantardasha = trim((string) ($request->input('pratyantardasha') ?: ($hierarchy['sub_minor'] ?? '')));
+                $sookshmaDasha = trim((string) ($request->input('sookshma_dasha') ?: ($hierarchy['sub_sub_minor'] ?? '')));
+
+                return [
+                    'current_vdasha' => $this->safeAstrologyRequest('current_vdasha', $payload, $language),
+                    'current_vdasha_all' => $currentVdashaAll,
+                    'major_vdasha' => $this->safeAstrologyRequest('major_vdasha', $payload, $language),
+                    'current_vdasha_date' => $this->safeAstrologyRequest('current_vdasha_date', $payload, $language),
+                    'sub_vdasha' => $optionalRequest(
+                        'Mahadasha',
+                        'sub_vdasha/' . $segment($mahadasha),
+                        $mahadasha !== ''
+                    ),
+                    'sub_sub_vdasha' => $optionalRequest(
+                        'Mahadasha and Antardasha',
+                        'sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha),
+                        $mahadasha !== '' && $antardasha !== ''
+                    ),
+                    'sub_sub_sub_vdasha' => $optionalRequest(
+                        'Mahadasha, Antardasha and Pratyantardasha',
+                        'sub_sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha) . '/' . $segment($pratyantardasha),
+                        $mahadasha !== '' && $antardasha !== '' && $pratyantardasha !== ''
+                    ),
+                    'sub_sub_sub_sub_vdasha' => $optionalRequest(
+                        'Mahadasha, Antardasha, Pratyantardasha and Sookshma Dasha',
+                        'sub_sub_sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha) . '/' . $segment($pratyantardasha) . '/' . $segment($sookshmaDasha),
+                        $mahadasha !== '' && $antardasha !== '' && $pratyantardasha !== '' && $sookshmaDasha !== ''
+                    ),
+                ];
+            };
+            $buildCharDashaItems = function () use ($request, $payload, $language, $segment, $optionalRequest): array {
+                $currentCharDasha = $this->safeAstrologyRequest('current_chardasha', $payload, $language);
+                $currentData = is_array($currentCharDasha['data'] ?? null) ? $currentCharDasha['data'] : [];
+                $mahadasha = trim((string) (
+                    $request->input('mahadasha')
+                    ?: ($currentData['major_dasha']['sign_name'] ?? $currentData['major_dasha']['name'] ?? $currentData['major_dasha']['dasha_name'] ?? '')
+                ));
+
+                return [
+                    'major_chardasha' => $this->safeAstrologyRequest('major_chardasha', $payload, $language),
+                    'current_chardasha' => $currentCharDasha,
+                    'sub_chardasha' => $optionalRequest(
+                        'Mahadasha',
+                        'sub_chardasha/' . $segment($mahadasha),
+                        $mahadasha !== ''
+                    ),
+                    'sub_sub_chardasha' => $this->safeAstrologyRequest('sub_sub_chardasha', $payload, $language),
+                ];
+            };
+            $buildYoginiItems = function () use ($request, $payload, $language, $segment, $optionalRequest): array {
+                $dashaCycle = trim((string) $request->input('dasha_cycle', ''));
+                $dashaName = trim((string) $request->input('dasha_name', ''));
+
+                return [
+                    'major_yogini_dasha' => $this->safeAstrologyRequest('major_yogini_dasha', $payload, $language),
+                    'sub_yogini_dasha' => $this->safeAstrologyRequest('sub_yogini_dasha', $payload, $language),
+                    'current_yogini_dasha' => $this->safeAstrologyRequest('current_yogini_dasha', $payload, $language),
+                    'sub_yogini_dasha_by_cycle' => $optionalRequest(
+                        'Dasha Cycle and Dasha Name',
+                        'sub_yogini_dasha/' . $segment($dashaCycle) . '/' . $segment($dashaName),
+                        $dashaCycle !== '' && $dashaName !== ''
+                    ),
+                ];
+            };
 
             $sections = match ($calculator) {
                 'mangal-dosha' => [[
@@ -1221,29 +1350,20 @@ class AstrologyController extends Controller
                 'dasha-periods', 'vimshottari-dasha' => [[
                     'id' => 'vimshottari-dasha',
                     'title' => 'Vimshottari Dasha',
-                    'summary' => 'Current Vimshottari dasha hierarchy and major dasha table.',
-                    'items' => [
-                        'current_vdasha_all' => $this->safeAstrologyRequest('current_vdasha_all', $payload, $language),
-                        'major_vdasha' => $this->safeAstrologyRequest('major_vdasha', $payload, $language),
-                    ],
+                    'summary' => 'Current, major, antar, pratyantar, sookshma and pran Vimshottari dasha tables.',
+                    'items' => $buildVimshottariItems(),
                 ]],
                 'char-dasha' => [[
                     'id' => 'char-dasha',
                     'title' => 'Char Dasha',
-                    'summary' => 'Current Char Dasha hierarchy and major dasha table.',
-                    'items' => [
-                        'major_chardasha' => $this->safeAstrologyRequest('major_chardasha', $payload, $language),
-                        'current_chardasha' => $this->safeAstrologyRequest('current_chardasha', $payload, $language),
-                    ],
+                    'summary' => 'Major, current, sub and sub-sub Char Dasha tables.',
+                    'items' => $buildCharDashaItems(),
                 ]],
                 'yogini-dasha' => [[
                     'id' => 'yogini-dasha',
                     'title' => 'Yogini Dasha',
-                    'summary' => 'Current and major Yogini Dasha modules.',
-                    'items' => [
-                        'major_yogini_dasha' => $this->safeAstrologyRequest('major_yogini_dasha', $payload, $language),
-                        'current_yogini_dasha' => $this->safeAstrologyRequest('current_yogini_dasha', $payload, $language),
-                    ],
+                    'summary' => 'Major, sub, current and cycle-specific Yogini Dasha modules.',
+                    'items' => $buildYoginiItems(),
                 ]],
                 'varshaphal' => [[
                     'id' => 'varshaphal',
@@ -1271,6 +1391,16 @@ class AstrologyController extends Controller
                         'kp_house_cusps' => $this->safeAstrologyRequest('kp_house_cusps', $payload, $localizedLanguage),
                         'kp_birth_chart' => $this->safeAstrologyRequest('kp_birth_chart', $payload, $localizedLanguage),
                         'kp_house_significator' => $this->safeAstrologyRequest('kp_house_significator', $payload, $localizedLanguage),
+                        'kp_planet_significator' => $this->safeAstrologyRequest('kp_planet_significator', $payload, $localizedLanguage),
+                    ],
+                ]],
+                'biorhythm' => [[
+                    'id' => 'biorhythm',
+                    'title' => 'Biorhythm',
+                    'summary' => 'Physical, emotional, intellectual and moon biorhythm modules.',
+                    'items' => [
+                        'biorhythm' => $this->safeAstrologyRequest('biorhythm', $payload, $localizedLanguage),
+                        'moon_biorhythm' => $this->safeAstrologyRequest('moon_biorhythm', $payload, $localizedLanguage),
                     ],
                 ]],
                 'planet-relationship' => [[
@@ -1605,7 +1735,7 @@ class AstrologyController extends Controller
             [
                 'id' => 'charts',
                 'title' => 'Horoscope Charts',
-                'summary' => 'D1-D16 horoscope chart images returned together.',
+                'summary' => 'Chalit, Gochar/Transit, Sun, Moon and supported divisional horoscope chart images returned together.',
                 'items' => [
                     'divisional_charts' => [
                         'status' => 'success',
@@ -1617,16 +1747,10 @@ class AstrologyController extends Controller
                     ],
                 ],
             ],
-            $this->buildDetailedKundliSection('ashtakvarga', $payload, $language, $chartStyle, [], false),
             $this->buildDetailedKundliSection('vimshottari-dasha', $payload, $language, $chartStyle, $preloaded),
-            $this->buildDetailedKundliSection('char-yogini-dasha', $payload, $language, $chartStyle, [], false),
-            $this->buildDetailedKundliSection('life-reports', $payload, $language, $chartStyle, [], false),
             $this->buildDetailedKundliSection('dosha', $payload, $language, $chartStyle, $preloaded),
-            $this->buildDetailedKundliSection('suggestions-remedies', $payload, $language, $chartStyle, [], false),
-            $this->buildDetailedKundliSection('lalkitab', $payload, $language, $chartStyle, [], false),
-            $this->buildDetailedKundliSection('kp', $payload, $language, $chartStyle, [], false),
-            $this->buildDetailedKundliSection('biorhythm', $payload, $language, $chartStyle, [], false),
-            $this->buildDetailedKundliSection('varshaphal', $payload, $language, $chartStyle, [], false),
+            $this->buildDetailedKundliSection('biorhythm', $payload, $language, $chartStyle, $preloaded),
+            $this->buildDetailedKundliSection('suggestions-remedies', $payload, $language, $chartStyle, $preloaded),
         ];
     }
 
@@ -1640,6 +1764,56 @@ class AstrologyController extends Controller
             'year' => $currentYear,
             'varshaphal_year' => $currentYear,
         ]);
+        $buildLegacyVimshottariItems = function () use ($payload, $language): array {
+            $currentVdashaAll = $this->safeAstrologyRequest('current_vdasha_all', $payload, $language);
+            $currentData = is_array($currentVdashaAll['data'] ?? null) ? $currentVdashaAll['data'] : [];
+            $hierarchy = $currentData['sub_sub_sub_minor']['planet']
+                ?? $currentData['sub_sub_minor']['planet']
+                ?? $currentData['sub_minor']['planet']
+                ?? $currentData['minor']['planet']
+                ?? $currentData['major']['planet']
+                ?? [];
+            $hierarchy = is_array($hierarchy) ? $hierarchy : [];
+            $mahadasha = trim((string) ($hierarchy['major'] ?? ''));
+            $antardasha = trim((string) ($hierarchy['minor'] ?? ''));
+            $pratyantardasha = trim((string) ($hierarchy['sub_minor'] ?? ''));
+            $sookshmaDasha = trim((string) ($hierarchy['sub_sub_minor'] ?? ''));
+            $segment = fn ($value) => rawurlencode(trim((string) $value));
+            $parameterized = fn (string $endpoint, bool $enabled) => $enabled
+                ? $this->safeAstrologyRequest($endpoint, $payload, $language)
+                : ['status' => 'error', 'endpoint' => $endpoint, 'message' => 'Required current dasha path could not be derived.', 'data' => null];
+
+            return [
+                'current_vdasha' => $this->safeAstrologyRequest('current_vdasha', $payload, $language),
+                'current_vdasha_all' => $currentVdashaAll,
+                'major_vdasha' => $this->safeAstrologyRequest('major_vdasha', $payload, $language),
+                'current_vdasha_date' => $this->safeAstrologyRequest('current_vdasha_date', $payload, $language),
+                'sub_vdasha' => $parameterized('sub_vdasha/' . $segment($mahadasha), $mahadasha !== ''),
+                'sub_sub_vdasha' => $parameterized('sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha), $mahadasha !== '' && $antardasha !== ''),
+                'sub_sub_sub_vdasha' => $parameterized('sub_sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha) . '/' . $segment($pratyantardasha), $mahadasha !== '' && $antardasha !== '' && $pratyantardasha !== ''),
+                'sub_sub_sub_sub_vdasha' => $parameterized('sub_sub_sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha) . '/' . $segment($pratyantardasha) . '/' . $segment($sookshmaDasha), $mahadasha !== '' && $antardasha !== '' && $pratyantardasha !== '' && $sookshmaDasha !== ''),
+            ];
+        };
+        $buildLegacyCharYoginiItems = function () use ($payload, $language): array {
+            $currentCharDasha = $this->safeAstrologyRequest('current_chardasha', $payload, $language);
+            $currentData = is_array($currentCharDasha['data'] ?? null) ? $currentCharDasha['data'] : [];
+            $mahadasha = trim((string) (
+                $currentData['major_dasha']['sign_name'] ?? $currentData['major_dasha']['name'] ?? $currentData['major_dasha']['dasha_name'] ?? ''
+            ));
+            $subCharEndpoint = 'sub_chardasha/' . rawurlencode($mahadasha);
+
+            return [
+                'major_chardasha' => $this->safeAstrologyRequest('major_chardasha', $payload, $language),
+                'current_chardasha' => $currentCharDasha,
+                'sub_chardasha' => $mahadasha !== ''
+                    ? $this->safeAstrologyRequest($subCharEndpoint, $payload, $language)
+                    : ['status' => 'error', 'endpoint' => $subCharEndpoint, 'message' => 'Current Major Char Dasha could not be derived.', 'data' => null],
+                'sub_sub_chardasha' => $this->safeAstrologyRequest('sub_sub_chardasha', $payload, $language),
+                'major_yogini_dasha' => $this->safeAstrologyRequest('major_yogini_dasha', $payload, $language),
+                'sub_yogini_dasha' => $this->safeAstrologyRequest('sub_yogini_dasha', $payload, $language),
+                'current_yogini_dasha' => $this->safeAstrologyRequest('current_yogini_dasha', $payload, $language),
+            ];
+        };
         $pending = fn (string $endpoint) => [
             'status' => 'pending',
             'endpoint' => $endpoint,
@@ -1651,21 +1825,94 @@ class AstrologyController extends Controller
         $preloadedItem = fn (string $key, string $endpoint) => array_key_exists($key, $preloaded)
             ? ['status' => 'success', 'endpoint' => $endpoint, 'data' => $preloaded[$key]]
             : $request($endpoint);
+        $buildDetailedVimshottariItems = function () use ($payload, $language, $request, $preloadedItem, $pending): array {
+            $currentVdashaAll = $preloadedItem('current_vdasha_all', 'current_vdasha_all');
+            $currentData = is_array($currentVdashaAll['data'] ?? null) ? $currentVdashaAll['data'] : [];
+            $hierarchy = $currentData['sub_sub_sub_minor']['planet']
+                ?? $currentData['sub_sub_minor']['planet']
+                ?? $currentData['sub_minor']['planet']
+                ?? $currentData['minor']['planet']
+                ?? $currentData['major']['planet']
+                ?? [];
+            $hierarchy = is_array($hierarchy) ? $hierarchy : [];
+
+            $mahadasha = trim((string) ($hierarchy['major'] ?? ''));
+            $antardasha = trim((string) ($hierarchy['minor'] ?? ''));
+            $pratyantardasha = trim((string) ($hierarchy['sub_minor'] ?? ''));
+            $sookshmaDasha = trim((string) ($hierarchy['sub_sub_minor'] ?? ''));
+            $segment = fn ($value) => rawurlencode(trim((string) $value));
+            $parameterized = fn (string $label, string $endpoint, bool $enabled) => $enabled
+                ? $request($endpoint, $payload, $language)
+                : [
+                    'status' => 'error',
+                    'endpoint' => $endpoint,
+                    'message' => "Current {$label} could not be derived from current_vdasha_all.",
+                    'data' => null,
+                ];
+
+            return [
+                'current_vdasha' => $request('current_vdasha'),
+                'current_vdasha_all' => $currentVdashaAll,
+                'major_vdasha' => $request('major_vdasha'),
+                'current_vdasha_date' => $request('current_vdasha_date'),
+                'sub_vdasha' => $parameterized(
+                    'Mahadasha',
+                    'sub_vdasha/' . $segment($mahadasha),
+                    $mahadasha !== ''
+                ),
+                'sub_sub_vdasha' => $parameterized(
+                    'Mahadasha and Antardasha',
+                    'sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha),
+                    $mahadasha !== '' && $antardasha !== ''
+                ),
+                'sub_sub_sub_vdasha' => $parameterized(
+                    'Mahadasha, Antardasha and Pratyantardasha',
+                    'sub_sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha) . '/' . $segment($pratyantardasha),
+                    $mahadasha !== '' && $antardasha !== '' && $pratyantardasha !== ''
+                ),
+                'sub_sub_sub_sub_vdasha' => $parameterized(
+                    'Mahadasha, Antardasha, Pratyantardasha and Sookshma Dasha',
+                    'sub_sub_sub_sub_vdasha/' . $segment($mahadasha) . '/' . $segment($antardasha) . '/' . $segment($pratyantardasha) . '/' . $segment($sookshmaDasha),
+                    $mahadasha !== '' && $antardasha !== '' && $pratyantardasha !== '' && $sookshmaDasha !== ''
+                ),
+            ];
+        };
+        $buildDetailedCharYoginiItems = function () use ($payload, $language, $request): array {
+            $currentCharDasha = $request('current_chardasha');
+            $currentData = is_array($currentCharDasha['data'] ?? null) ? $currentCharDasha['data'] : [];
+            $mahadasha = trim((string) (
+                $currentData['major_dasha']['sign_name'] ?? $currentData['major_dasha']['name'] ?? $currentData['major_dasha']['dasha_name'] ?? ''
+            ));
+            $segment = fn ($value) => rawurlencode(trim((string) $value));
+            $subCharEndpoint = 'sub_chardasha/' . $segment($mahadasha);
+
+            return [
+                'major_chardasha' => $request('major_chardasha'),
+                'current_chardasha' => $currentCharDasha,
+                'sub_chardasha' => $mahadasha !== ''
+                    ? $request($subCharEndpoint, $payload, $language)
+                    : ['status' => 'error', 'endpoint' => $subCharEndpoint, 'message' => 'Current Major Char Dasha could not be derived.', 'data' => null],
+                'sub_sub_chardasha' => $request('sub_sub_chardasha'),
+                'major_yogini_dasha' => $request('major_yogini_dasha'),
+                'sub_yogini_dasha' => $request('sub_yogini_dasha'),
+                'current_yogini_dasha' => $request('current_yogini_dasha'),
+            ];
+        };
 
         return match ($section) {
             'basic-astro-details' => [
                 'id' => 'basic-astro-details',
                 'title' => 'Basic Astro Details',
-                'summary' => 'Birth details, astro details, planets, bhav madhya, ghat chakra, ayanamsha and planet nature.',
+                'summary' => 'Birth details, astro details and planetary positions.',
                 'items' => [
                     'birth_details' => $preloadedItem('birth_details', 'birth_details'),
                     'astro_details' => $preloadedItem('astro_details', 'astro_details'),
                     'planets' => $preloadedItem('planets', 'planets'),
-                    'planets_extended' => $request('planets/extended'),
-                    'bhav_madhya' => $request('bhav_madhya'),
-                    'ghat_chakra' => $request('ghat_chakra'),
-                    'ayanamsha' => $request('ayanamsha'),
-                    'planet_nature' => $request('planet_nature'),
+                    'bhav_madhya' => $request('bhav_madhya', $payload, $localizedLanguage),
+                    'bhavabala' => $request('bhavabala', $payload, $localizedLanguage),
+                    'shadbala' => $request('shadbala', $payload, $localizedLanguage),
+                    'ayanamsha' => $request('ayanamsha', $payload, $localizedLanguage),
+                    'ghat_chakra' => $request('ghat_chakra', $payload, $localizedLanguage),
                 ],
             ],
             'ashtakvarga' => [
@@ -1682,25 +1929,17 @@ class AstrologyController extends Controller
             'vimshottari-dasha' => [
                 'id' => 'vimshottari-dasha',
                 'title' => 'Vimshottari Dasha',
-                'summary' => 'Current and major Vimshottari dasha periods.',
+                'summary' => 'Current Vimshottari Dasha and complete Maha Dasha periods.',
                 'items' => [
-                    'current_vdasha_all' => $preloadedItem('current_vdasha_all', 'current_vdasha_all'),
-                    'major_vdasha' => $request('major_vdasha'),
-                    'current_vdasha' => $request('current_vdasha'),
-                    'current_vdasha_date' => $request('current_vdasha_date'),
+                    'current_vdasha' => $preloadedItem('current_vdasha', 'current_vdasha'),
+                    'major_vdasha' => $preloadedItem('major_vdasha', 'major_vdasha'),
                 ],
             ],
             'char-yogini-dasha' => [
                 'id' => 'char-yogini-dasha',
                 'title' => 'Char and Yogini Dasha',
-                'summary' => 'Major/current Char Dasha and Yogini Dasha modules.',
-                'items' => [
-                    'major_chardasha' => $request('major_chardasha'),
-                    'current_chardasha' => $request('current_chardasha'),
-                    'major_yogini_dasha' => $request('major_yogini_dasha'),
-                    'sub_yogini_dasha' => $request('sub_yogini_dasha'),
-                    'current_yogini_dasha' => $request('current_yogini_dasha'),
-                ],
+                'summary' => 'Major/current/sub Char Dasha and Yogini Dasha modules.',
+                'items' => $buildDetailedCharYoginiItems(),
             ],
             'life-reports' => [
                 'id' => 'life-reports',
@@ -1720,24 +1959,20 @@ class AstrologyController extends Controller
             'dosha' => [
                 'id' => 'dosha',
                 'title' => 'Dosha Analysis',
-                'summary' => 'Mangal, Kaal Sarp, Sade Sati and Pitra Dosha modules.',
+                'summary' => 'Mangal, Kaal Sarp and Pitra Dosha modules.',
                 'items' => [
                     'manglik' => $preloadedItem('manglik', 'manglik'),
-                    'kalsarpa_details' => $request('kalsarpa_details'),
-                    'sadhesati_current_status' => $request('sadhesati_current_status'),
-                    'sadhesati_life_details' => $request('sadhesati_life_details'),
-                    'pitra_dosha_report' => $request('pitra_dosha_report'),
+                    'kalsarpa_details' => $preloadedItem('kalsarpa_details', 'kalsarpa_details'),
+                    'pitra_dosha_report' => $preloadedItem('pitra_dosha_report', 'pitra_dosha_report'),
                 ],
             ],
             'suggestions-remedies' => [
                 'id' => 'suggestions-remedies',
                 'title' => 'Suggestions and Remedies',
-                'summary' => 'Puja, gemstone, rudraksha and Sadesati remedies.',
+                'summary' => 'Gemstone and Rudraksha recommendations.',
                 'items' => [
-                    'puja_suggestion' => $request('puja_suggestion'),
-                    'basic_gem_suggestion' => $request('basic_gem_suggestion'),
-                    'rudraksha_suggestion' => $request('rudraksha_suggestion'),
-                    'sadhesati_remedies' => $request('sadhesati_remedies'),
+                    'basic_gem_suggestion' => $preloadedItem('basic_gem_suggestion', 'basic_gem_suggestion'),
+                    'rudraksha_suggestion' => $preloadedItem('rudraksha_suggestion', 'rudraksha_suggestion'),
                 ],
             ],
             'lalkitab' => [
@@ -1855,25 +2090,14 @@ class AstrologyController extends Controller
             [
                 'id' => 'vimshottari-dasha',
                 'title' => 'Vimshottari Dasha',
-                'summary' => 'Current and major Vimshottari dasha periods.',
-                'items' => [
-                    'current_vdasha_all' => $this->safeAstrologyRequest('current_vdasha_all', $payload, $language),
-                    'major_vdasha' => $this->safeAstrologyRequest('major_vdasha', $payload, $language),
-                    'current_vdasha' => $this->safeAstrologyRequest('current_vdasha', $payload, $language),
-                    'current_vdasha_date' => $this->safeAstrologyRequest('current_vdasha_date', $payload, $language),
-                ],
+                'summary' => 'Current, major, antar, pratyantar, sookshma and pran Vimshottari dasha periods.',
+                'items' => $buildLegacyVimshottariItems(),
             ],
             [
                 'id' => 'char-yogini-dasha',
                 'title' => 'Char and Yogini Dasha',
-                'summary' => 'Major/current Char Dasha and Yogini Dasha modules.',
-                'items' => [
-                    'major_chardasha' => $this->safeAstrologyRequest('major_chardasha', $payload, $language),
-                    'current_chardasha' => $this->safeAstrologyRequest('current_chardasha', $payload, $language),
-                    'major_yogini_dasha' => $this->safeAstrologyRequest('major_yogini_dasha', $payload, $language),
-                    'sub_yogini_dasha' => $this->safeAstrologyRequest('sub_yogini_dasha', $payload, $language),
-                    'current_yogini_dasha' => $this->safeAstrologyRequest('current_yogini_dasha', $payload, $language),
-                ],
+                'summary' => 'Major/current/sub Char Dasha and Yogini Dasha modules.',
+                'items' => $buildLegacyCharYoginiItems(),
             ],
             [
                 'id' => 'life-reports',
@@ -2158,6 +2382,9 @@ class AstrologyController extends Controller
     private function mapChartId(string $chartType): string
     {
         return match (strtolower($chartType)) {
+            'chalit', 'chalit_chart' => 'chalit',
+            'gochar', 'gochar_chart', 'transit', 'transit_chart' => 'gochar',
+            'sun', 'surya' => 'SUN',
             'rasi', 'lagna', 'd1' => 'D1',
             'moon', 'chandra' => 'MOON',
             'hora', 'd2' => 'D2',
@@ -2189,22 +2416,28 @@ class AstrologyController extends Controller
     private function d1ToD16ChartTypes(): array
     {
         return [
-            ['value' => 'rasi', 'chart_id' => 'D1', 'label' => 'D1 - Rasi Chart'],
+            ['value' => 'chalit', 'chart_id' => 'chalit', 'label' => 'Chalit - Chalit Chart'],
+            ['value' => 'gochar', 'chart_id' => 'gochar', 'label' => 'Gochar / Transit Chart'],
+            ['value' => 'sun', 'chart_id' => 'SUN', 'label' => 'Sun Chart'],
+            ['value' => 'moon', 'chart_id' => 'MOON', 'label' => 'Moon Chart'],
+            ['value' => 'rasi', 'chart_id' => 'D1', 'label' => 'D1 - Birth Chart'],
             ['value' => 'hora', 'chart_id' => 'D2', 'label' => 'D2 - Hora Chart'],
-            ['value' => 'drekkana', 'chart_id' => 'D3', 'label' => 'D3 - Drekkana Chart'],
-            ['value' => 'chaturthamsa', 'chart_id' => 'D4', 'label' => 'D4 - Chaturthamsa Chart'],
-            ['value' => 'panchamsa', 'chart_id' => 'D5', 'label' => 'D5 - Panchamsa Chart'],
-            ['value' => 'shashtamsa', 'chart_id' => 'D6', 'label' => 'D6 - Shashtamsa Chart'],
+            ['value' => 'drekkana', 'chart_id' => 'D3', 'label' => 'D3 - Dreshkan Chart'],
+            ['value' => 'chaturthamsa', 'chart_id' => 'D4', 'label' => 'D4 - Chathurthamasha Chart'],
+            ['value' => 'panchamsa', 'chart_id' => 'D5', 'label' => 'D5 - Panchmamsha Chart'],
             ['value' => 'saptamsa', 'chart_id' => 'D7', 'label' => 'D7 - Saptamsa Chart'],
             ['value' => 'ashtamsa', 'chart_id' => 'D8', 'label' => 'D8 - Ashtamsa Chart'],
-            ['value' => 'navamsa', 'chart_id' => 'D9', 'label' => 'D9 - Navamsa Chart'],
-            ['value' => 'dasamsa', 'chart_id' => 'D10', 'label' => 'D10 - Dasamsa Chart'],
-            ['value' => 'rudramsa', 'chart_id' => 'D11', 'label' => 'D11 - Rudramsa Chart'],
-            ['value' => 'dwadasamsa', 'chart_id' => 'D12', 'label' => 'D12 - Dwadasamsa Chart'],
-            ['value' => 'trayodashamsa', 'chart_id' => 'D13', 'label' => 'D13 - Trayodashamsa Chart'],
-            ['value' => 'chaturdashamsa', 'chart_id' => 'D14', 'label' => 'D14 - Chaturdashamsa Chart'],
-            ['value' => 'panchdashamsa', 'chart_id' => 'D15', 'label' => 'D15 - Panchdashamsa Chart'],
-            ['value' => 'shodasamsa', 'chart_id' => 'D16', 'label' => 'D16 - Shodasamsa Chart'],
+            ['value' => 'navamsa', 'chart_id' => 'D9', 'label' => 'D9 - Navamansha Chart'],
+            ['value' => 'dasamsa', 'chart_id' => 'D10', 'label' => 'D10 - Dashamansha Chart'],
+            ['value' => 'dwadasamsa', 'chart_id' => 'D12', 'label' => 'D12 - Dwadashamsha Chart'],
+            ['value' => 'shodasamsa', 'chart_id' => 'D16', 'label' => 'D16 - Shodashamsha Chart'],
+            ['value' => 'vimsamsa', 'chart_id' => 'D20', 'label' => 'D20 - Vishamansha Chart'],
+            ['value' => 'chaturvimsamsa', 'chart_id' => 'D24', 'label' => 'D24 - Chaturvimshamsha Chart'],
+            ['value' => 'bhamsa', 'chart_id' => 'D27', 'label' => 'D27 - Bhamsa Chart'],
+            ['value' => 'trimsamsa', 'chart_id' => 'D30', 'label' => 'D30 - Trishamansha Chart'],
+            ['value' => 'khavedamsa', 'chart_id' => 'D40', 'label' => 'D40 - Khavedamsha Chart'],
+            ['value' => 'akshavedamsa', 'chart_id' => 'D45', 'label' => 'D45 - Akshvedansha Chart'],
+            ['value' => 'shastiamsa', 'chart_id' => 'D60', 'label' => 'D60 - Shashtymsha Chart'],
         ];
     }
 
@@ -2242,13 +2475,16 @@ class AstrologyController extends Controller
                     ]),
                     $language
                 );
+                $chartSvg = is_string($response) && str_starts_with(trim($response), '<svg')
+                    ? $response
+                    : ($response['svg'] ?? null);
 
                 $charts[] = [
                     'status' => 'success',
                     'chart_type' => (string) $chartType,
                     'chart_id' => $chartId,
                     'label' => $this->chartLabelForId($chartId),
-                    'chart_svg' => $response['svg'] ?? null,
+                    'chart_svg' => $chartSvg,
                     'chart_data' => $response,
                 ];
             } catch (\Throwable $exception) {
@@ -2303,6 +2539,30 @@ class AstrologyController extends Controller
                 ->map(fn ($period) => $this->formatLooseDashaPeriod($period))
                 ->filter(fn ($period) => !empty($period['start']) && Carbon::parse($period['start'])->isFuture())
                 ->take(4)
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function formatLimitedVdashaSummary(array $currentPayload, array $majorPayload): array
+    {
+        $currentMajor = $currentPayload['major'] ?? $currentPayload['maha_dasha'] ?? $currentPayload['mahadasha'] ?? null;
+        $majorPeriods = collect($majorPayload['dasha_period'] ?? $majorPayload['major'] ?? $majorPayload)
+            ->filter(fn ($period) => is_array($period))
+            ->values();
+
+        return [
+            'current_mahadasha' => is_array($currentMajor)
+                ? $this->formatLooseDashaPeriod($currentMajor)
+                : [
+                    'name' => is_string($currentMajor) ? $currentMajor : ($currentPayload['planet'] ?? $currentPayload['dasha'] ?? null),
+                    'start' => $this->parseLooseDate($currentPayload['start'] ?? $currentPayload['start_date'] ?? null),
+                    'end' => $this->parseLooseDate($currentPayload['end'] ?? $currentPayload['end_date'] ?? null),
+                ],
+            'next_mahadasha' => $majorPeriods
+                ->map(fn ($period) => $this->formatLooseDashaPeriod($period))
+                ->filter(fn ($period) => !empty($period['name']))
+                ->take(9)
                 ->values()
                 ->all(),
         ];

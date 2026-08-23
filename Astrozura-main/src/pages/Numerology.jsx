@@ -3,12 +3,14 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import InlineInfoPopover from "../components/InlineInfoPopover";
 import RecentProfilePicker from "../components/RecentProfilePicker";
+import { RelatedToolTabs, ToolInputPanel } from "../components/tool/ToolLayout";
 import { ProviderSections, ReportDataBlock } from "../components/report/ReportDataRenderer";
 import { ReportPanel } from "../components/report/ReportTables";
 import { NumerologyReportLayout } from "../components/report/SpecializedVedicReports";
 import { getNumerologyReport } from "../api/prokeralaApi";
 import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
+import { serviceCatalog } from "../data/serviceCatalog";
 import { getServiceIcon } from "../data/serviceIcons";
 import { buildRecentProfilePayload } from "../utils/recentProfile";
 
@@ -36,6 +38,14 @@ const fullNameFromForm = (form) =>
     .join(" ");
 
 const pageIcon = getServiceIcon("detailed-numerology");
+const calculatorTabs = serviceCatalog
+  .filter((item) => item.category === "Calculators")
+  .map((item) => ({
+    label: item.title,
+    to: item.ctaTo,
+    icon: item.icon,
+    isActive: item.slug === "detailed-numerology",
+  }));
 
 export default function Numerology() {
   const { user } = useAuth();
@@ -169,19 +179,13 @@ export default function Numerology() {
       </section>
 
       <section className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-16 md:-mt-16 md:px-8">
-        <div className="grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-            <div>
-              <h2 className="text-2xl font-bold">Detailed Numerology Inputs</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Enter the name and birth date used for numerology calculations.
-              </p>
-            </div>
-            <div className="mt-4">
-              <RecentProfilePicker onSelect={applyRecentProfile} />
-            </div>
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <div className="space-y-8">
+          <ToolInputPanel
+            title="Detailed Numerology Inputs"
+            description="Detailed Numerology uses your name and birth date for number-based insights."
+            action={<RecentProfilePicker onSelect={applyRecentProfile} />}
+          >
+            <form onSubmit={handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-600">First Name</label>
                 <input
@@ -244,12 +248,14 @@ export default function Numerology() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557] transition hover:bg-[#e0b84f] disabled:opacity-60"
+                className="w-full rounded-2xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557] transition hover:bg-[#e0b84f] disabled:opacity-60 md:col-span-2 xl:col-span-4"
               >
                 {loading ? "Calculating..." : "Generate Detailed Numerology"}
               </button>
             </form>
-          </aside>
+          </ToolInputPanel>
+
+          <RelatedToolTabs title="Calculators" items={calculatorTabs} />
 
           <main className="space-y-6">
             {!result ? (

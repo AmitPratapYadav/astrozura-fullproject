@@ -10,7 +10,7 @@ class AstrologerProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = astrologer.name ?? "Astrologer";
+    final name = astrologer.name;
     final imageUrl = astrologer.fullImageUrl;
 
     return Container(
@@ -56,6 +56,10 @@ class AstrologerProfileCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 14),
+
+          _statusBadge(astrologer),
+
+          const SizedBox(height: 12),
 
           /// RATING
           Row(
@@ -207,5 +211,47 @@ class AstrologerProfileCard extends StatelessWidget {
         style: const TextStyle(fontSize: 12, color: Colors.white),
       ),
     );
+  }
+
+  Widget _statusBadge(AstrologerModel astrologer) {
+    final color = _statusColor(astrologer.availabilityLabel);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.9)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 7),
+          Text(
+            astrologer.availabilityLabel,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Busy':
+        return const Color(0xFFFFC857);
+      case 'Offline':
+        return const Color(0xFFFF6B6B);
+      default:
+        return const Color(0xFF38D58A);
+    }
   }
 }

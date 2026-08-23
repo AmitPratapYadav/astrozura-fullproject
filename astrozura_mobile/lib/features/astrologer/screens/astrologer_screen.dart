@@ -17,27 +17,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/providers/spotlight_provider.dart';
 
 class AstrologerScreen extends StatefulWidget {
-  const AstrologerScreen({super.key});
+  final bool palmReadingOnly;
+
+  const AstrologerScreen({super.key, this.palmReadingOnly = false});
 
   @override
   State<AstrologerScreen> createState() => _AstrologerScreenState();
 }
 
 class _AstrologerScreenState extends State<AstrologerScreen> {
-  final AstrologerService _service = AstrologerService();
-
   List<AstrologerModel> _allAstrologers = [];
   List<AstrologerModel> _filteredList = [];
 
   bool _isLoading = true;
   String? _error;
-  String _selectedFilter = 'All'; // speciality chip filter
+  late String _selectedFilter; // speciality chip filter
   String _searchQuery = '';
   String _selectedSort = 'Default'; // ← NEW: sort option from filter sheet
+  String _selectedLanguage = 'All';
+  String _selectedConsultation = 'All';
+  String _selectedAvailability = 'All';
   int _currentPage = 1;
   static const int _itemsPerPage = 3;
-
-  final List<String> _filters = ['All', 'Vedic', 'Tarot', 'Palmist'];
 
   // All unique specialities extracted from loaded astrologers — used in sheet
   List<String> get _allSpecialities {
@@ -46,6 +47,14 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
       specs.addAll(a.specialityList);
     }
     return specs.toList();
+  }
+
+  List<String> get _allLanguages {
+    final Set<String> languages = {'All'};
+    for (final a in _allAstrologers) {
+      languages.addAll(a.languageList);
+    }
+    return languages.toList();
   }
 
   // ── Pagination ─────────────────────────────────────────────────────────────
@@ -72,6 +81,7 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.palmReadingOnly ? 'Palm Reading' : 'All';
     _fetchAstrologers();
     Future.microtask(() => _initProvider());
   }
@@ -113,15 +123,17 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
       _currentPage = 1;
 
       // 1. Category / speciality chip
-      List<AstrologerModel> list = _selectedFilter == 'All'
-          ? [..._allAstrologers]
-          : _allAstrologers.where((a) {
-              return a.specialityList.any(
-                (s) => s.toLowerCase().contains(
-                      _selectedFilter.toLowerCase(),
-                    ),
-              );
-            }).toList();
+      List<AstrologerModel> list = widget.palmReadingOnly
+          ? _allAstrologers.where((a) => a.isPalmReadingExpert).toList()
+          : _selectedFilter == 'All'
+              ? [..._allAstrologers]
+              : _allAstrologers.where((a) {
+                  return a.specialityList.any(
+                    (s) => s.toLowerCase().contains(
+                          _selectedFilter.toLowerCase(),
+                        ),
+                  );
+                }).toList();
 
       // 2. Search query
       if (_searchQuery.isNotEmpty) {
@@ -130,6 +142,30 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
               a.specialities.toLowerCase().contains(_searchQuery) ||
               a.languages.toLowerCase().contains(_searchQuery);
         }).toList();
+      }
+
+      if (_selectedLanguage != 'All') {
+        list = list
+            .where((a) => a.languageList.any((language) =>
+                language.toLowerCase() == _selectedLanguage.toLowerCase()))
+            .toList();
+      }
+
+      if (_selectedConsultation == 'Chat') {
+        list = list.where((a) => a.supportsChat).toList();
+      } else if (_selectedConsultation == 'Call') {
+        list = list.where((a) => a.supportsCall).toList();
+      }
+
+      if (_selectedAvailability == 'Available') {
+        list = list
+            .where((a) =>
+                a.availabilityLabel == 'Available' && !a.isBusy && a.isOnline)
+            .toList();
+      } else if (_selectedAvailability == 'Busy') {
+        list = list.where((a) => a.availabilityLabel == 'Busy').toList();
+      } else if (_selectedAvailability == 'Offline') {
+        list = list.where((a) => a.availabilityLabel == 'Offline').toList();
       }
 
       // 3. Sort
@@ -154,11 +190,6 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
     });
   }
 
-  void _applyFilter(String category) {
-    _selectedFilter = category;
-    _applyFilters();
-  }
-
   void _onSearch(String value) {
     _searchQuery = value.toLowerCase().trim();
     _applyFilters();
@@ -169,6 +200,9 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
   void _showFilterSheet() {
     String tempSpeciality = _selectedFilter;
     String tempSort = _selectedSort;
+    String tempLanguage = _selectedLanguage;
+    String tempConsultation = _selectedConsultation;
+    String tempAvailability = _selectedAvailability;
 
     showModalBottomSheet(
       context: context,
@@ -179,182 +213,329 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
           builder: (ctx, setSheetState) {
             return Container(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.88,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Handle ───────────────────────────────────────
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Handle ───────────────────────────────────────
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // ── Title ────────────────────────────────────────
-                  Text(
-                    'Filter Experts',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2E2E5D),
+                    // ── Title ────────────────────────────────────────
+                    Text(
+                      'Filter Experts',
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF2E2E5D),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // ── Speciality ───────────────────────────────────
-                  Text(
-                    'SPECIALITY',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                      color: Colors.black45,
+                    // ── Speciality ───────────────────────────────────
+                    Text(
+                      'SPECIALITY',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.black45,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: _allSpecialities.map((spec) {
-                      final isSelected = spec == tempSpeciality;
-                      return GestureDetector(
-                        onTap: () => setSheetState(() => tempSpeciality = spec),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 9),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFFD4A73A)
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(20),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _allSpecialities.map((spec) {
+                        final isSelected = spec == tempSpeciality;
+                        return GestureDetector(
+                          onTap: () =>
+                              setSheetState(() => tempSpeciality = spec),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFFD4A73A)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              spec,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            spec,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected ? Colors.white : Colors.black87,
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── Sort ─────────────────────────────────────────
+                    Text(
+                      'LANGUAGE',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.black45,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _allLanguages.take(14).map((language) {
+                        final isSelected = language == tempLanguage;
+                        return GestureDetector(
+                          onTap: () =>
+                              setSheetState(() => tempLanguage = language),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF1E3557)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              language,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Text(
+                      'CONSULTATION',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.black45,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: ['All', 'Chat', 'Call'].map((type) {
+                        final isSelected = type == tempConsultation;
+                        return GestureDetector(
+                          onTap: () =>
+                              setSheetState(() => tempConsultation = type),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF5B63D3)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              type,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Text(
+                      'AVAILABILITY',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.black45,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children:
+                          ['All', 'Available', 'Busy', 'Offline'].map((status) {
+                        final isSelected = status == tempAvailability;
+                        return GestureDetector(
+                          onTap: () =>
+                              setSheetState(() => tempAvailability = status),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF0F9F6E)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Text(
+                      'SORT BY',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        color: Colors.black45,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        'Default',
+                        'Top Rated',
+                        'Most Experienced',
+                        'Price: Low to High',
+                        'Price: High to Low',
+                      ].map((sort) {
+                        final isSelected = sort == tempSort;
+                        return GestureDetector(
+                          onTap: () => setSheetState(() => tempSort = sort),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF2E2E5D)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              sort,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ── Actions ───────────────────────────────────────
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              setSheetState(() {
+                                tempSpeciality = 'All';
+                                tempSort = 'Default';
+                                tempLanguage = 'All';
+                                tempConsultation = 'All';
+                                tempAvailability = 'All';
+                              });
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: const BorderSide(color: Color(0xFFD4A73A)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: const Text(
+                              'Reset',
+                              style: TextStyle(color: Color(0xFFD4A73A)),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── Sort ─────────────────────────────────────────
-                  Text(
-                    'SORT BY',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                      color: Colors.black45,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      'Default',
-                      'Top Rated',
-                      'Most Experienced',
-                      'Price: Low to High',
-                      'Price: High to Low',
-                    ].map((sort) {
-                      final isSelected = sort == tempSort;
-                      return GestureDetector(
-                        onTap: () => setSheetState(() => tempSort = sort),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 9),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF2E2E5D)
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            sort,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected ? Colors.white : Colors.black87,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedFilter = tempSpeciality;
+                                _selectedSort = tempSort;
+                                _selectedLanguage = tempLanguage;
+                                _selectedConsultation = tempConsultation;
+                                _selectedAvailability = tempAvailability;
+                              });
+                              _applyFilters();
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFD4A73A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Apply Filters',
+                              style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ── Actions ───────────────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            setSheetState(() {
-                              tempSpeciality = 'All';
-                              tempSort = 'Default';
-                            });
-                          },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: Color(0xFFD4A73A)),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: const Text(
-                            'Reset',
-                            style: TextStyle(color: Color(0xFFD4A73A)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedFilter = tempSpeciality;
-                              _selectedSort = tempSort;
-                            });
-                            _applyFilters();
-                            Navigator.pop(context);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFD4A73A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14)),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Apply Filters',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -391,7 +572,9 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
-                      'Chat or Call with Trusted Astrologers',
+                      widget.palmReadingOnly
+                          ? 'Palm Reading Experts'
+                          : 'Chat or Call with Trusted Astrologers',
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       style: GoogleFonts.playfairDisplay(
@@ -411,7 +594,13 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 500),
                         child: GlobalSearchWidget(
-                          hintText: "Search by name or speciality...",
+                          astrologersOnly: true,
+                          animatedHints: const [
+                            'Search your favourite Astrologer',
+                            'Connect with a specialist',
+                          ],
+                          hintText: 'Search your favourite Astrologer',
+                          onChanged: _onSearch,
                           // onChanged: _onSearch,           // ← live search
                           // onSubmitted: _onSearch,         // ← keyboard enter
                           onFilterTap: _showFilterSheet, // ← filter sheet
@@ -423,7 +612,11 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
                   const SizedBox(height: 12),
 
                   // ── ACTIVE FILTER INDICATOR ───────────────────────
-                  if (_selectedFilter != 'All' || _selectedSort != 'Default')
+                  if (_selectedFilter != 'All' ||
+                      _selectedSort != 'Default' ||
+                      _selectedLanguage != 'All' ||
+                      _selectedConsultation != 'All' ||
+                      _selectedAvailability != 'All')
                     _buildActiveFilterRow(),
 
                   const SizedBox(height: 8),
@@ -464,10 +657,41 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
                               color: const Color(0xFF2E2E5D),
                             ),
                           ),
-                          Text(
-                            'Showing ${_filteredList.length}',
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.grey),
+                          GestureDetector(
+                            onTap: _showFilterSheet,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFFD4A73A).withOpacity(0.45),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.tune,
+                                    size: 16,
+                                    color: Color(0xFFD4A73A),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Filter',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1E3557),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -484,9 +708,11 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
                                   size: 52, color: Colors.grey.shade300),
                               const SizedBox(height: 12),
                               Text(
-                                _searchQuery.isNotEmpty
-                                    ? 'No experts found for "$_searchQuery"'
-                                    : 'No astrologers found for this filter.',
+                                widget.palmReadingOnly
+                                    ? 'No palm reading experts are available right now. Please check again shortly.'
+                                    : _searchQuery.isNotEmpty
+                                        ? 'No experts found for "$_searchQuery"'
+                                        : 'No astrologers found for this filter.',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(color: Colors.black45),
                               ),
@@ -548,6 +774,30 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
                 _applyFilters();
               },
             ),
+          if (_selectedLanguage != 'All')
+            _filterChip(
+              label: _selectedLanguage,
+              onRemove: () {
+                setState(() => _selectedLanguage = 'All');
+                _applyFilters();
+              },
+            ),
+          if (_selectedConsultation != 'All')
+            _filterChip(
+              label: _selectedConsultation,
+              onRemove: () {
+                setState(() => _selectedConsultation = 'All');
+                _applyFilters();
+              },
+            ),
+          if (_selectedAvailability != 'All')
+            _filterChip(
+              label: _selectedAvailability,
+              onRemove: () {
+                setState(() => _selectedAvailability = 'All');
+                _applyFilters();
+              },
+            ),
         ],
       ),
     );
@@ -586,53 +836,6 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
   }
 
   // ── WIDGETS ────────────────────────────────────────────────────────────────
-
-  Widget _buildFilters() {
-    return SizedBox(
-      height: 40,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _filters.length,
-        itemBuilder: (context, index) {
-          final filter = _filters[index];
-          final isSelected = filter == _selectedFilter;
-
-          return GestureDetector(
-            onTap: () => _applyFilter(filter),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.only(right: 20),
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFFD4A73A)
-                    : Colors.white.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Text(
-                filter,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _buildPagination() {
     return Row(

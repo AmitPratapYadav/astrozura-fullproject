@@ -3,12 +3,18 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import RecentProfilePicker from "../components/RecentProfilePicker";
-import { getMarriageMatching, searchLocation } from "../api/prokeralaApi";
+import { RelatedToolTabs, ToolInputPanel } from "../components/tool/ToolLayout";
+import { getDivisionalCharts, getMarriageMatching, searchLocation } from "../api/prokeralaApi";
 import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
-import { FaHeart, FaStar, FaInfoCircle, FaSpinner, FaExchangeAlt } from "react-icons/fa";
+import { FaHeart, FaStar, FaInfoCircle, FaSpinner, FaExchangeAlt, FaMars, FaVenus } from "react-icons/fa";
+import { serviceCatalog } from "../data/serviceCatalog";
 import { getServiceIcon } from "../data/serviceIcons";
 import { ProviderSections } from "../components/report/ReportDataRenderer";
+import MatchDivisionalCharts, {
+  MATCH_DIVISIONAL_CHART_TYPES,
+  normalizeMatchCharts,
+} from "../components/report/MatchDivisionalCharts";
 import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const initialForm = {
@@ -17,19 +23,51 @@ const initialForm = {
   boy_time: "",
   boy_place: "",
   boy_coordinates: "",
-  
+
   girl_name: "",
   girl_dob: "",
   girl_time: "",
   girl_place: "",
   girl_coordinates: "",
-  
+
   language: "en",
 };
 
 const pageIcon = getServiceIcon("detailed-matchmaking");
+const reportTabs = serviceCatalog
+  .filter((item) => item.category === "Reports")
+  .map((item) => ({
+    label: item.title,
+    to: item.ctaTo,
+    icon: item.icon,
+    isActive: item.slug === "detailed-matchmaking",
+  }));
 
 const normalizeMatchData = (data) => data?.match || data || {};
+
+const withMatchCharts = (data, charts) => {
+  if (data?.match) {
+    return {
+      ...data,
+      match: {
+        ...data.match,
+        match_charts: charts,
+      },
+    };
+  }
+
+  return {
+    ...data,
+    match_charts: charts,
+  };
+};
+
+const formatProfileDate = (value) => {
+  if (!value) return "-";
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}-${month}-${year}`;
+};
 
 export default function DetailedMatchmaking() {
   const { user } = useAuth();
@@ -148,18 +186,18 @@ export default function DetailedMatchmaking() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.boy_dob || !form.boy_time || !form.boy_coordinates) {
-      setToast("Complete groom's birth details and birthplace selection.");
+      setToast("Complete male birth details and birthplace selection.");
       return;
     }
     if (!form.girl_dob || !form.girl_time || !form.girl_coordinates) {
-      setToast("Complete bride's birth details and birthplace selection.");
+      setToast("Complete female birth details and birthplace selection.");
       return;
     }
 
     try {
       setLoading(true);
       setMatchData(null);
-      
+
       const girl_dob_formatted = `${form.girl_dob}T${form.girl_time}:00+05:30`;
       const boy_dob_formatted = `${form.boy_dob}T${form.boy_time}:00+05:30`;
 
@@ -177,7 +215,29 @@ export default function DetailedMatchmaking() {
       );
 
       if (response?.status === "success" && response.data) {
-        setMatchData(response.data);
+        const [maleChartsResult, femaleChartsResult] = await Promise.allSettled([
+          getDivisionalCharts(
+            boy_dob_formatted,
+            form.boy_coordinates,
+            MATCH_DIVISIONAL_CHART_TYPES,
+            "north-indian",
+            { la: form.language },
+          ),
+          getDivisionalCharts(
+            girl_dob_formatted,
+            form.girl_coordinates,
+            MATCH_DIVISIONAL_CHART_TYPES,
+            "north-indian",
+            { la: form.language },
+          ),
+        ]);
+
+        const matchCharts = {
+          male: maleChartsResult.status === "fulfilled" ? normalizeMatchCharts(maleChartsResult.value) : [],
+          female: femaleChartsResult.status === "fulfilled" ? normalizeMatchCharts(femaleChartsResult.value) : [],
+        };
+
+        setMatchData(withMatchCharts(response.data, matchCharts));
         void rememberProfile("boy", "boy");
         void rememberProfile("girl", "girl");
         setToast("Premium matchmaking report generated successfully.");
@@ -197,7 +257,23 @@ export default function DetailedMatchmaking() {
   const maxScore = gunaDetails.maximum_points || 36;
   const percentage = Math.round((totalScore / maxScore) * 100);
   const verdictText = matchInfo.message?.description || matchInfo.message || "Compatibility report generated successfully.";
-  const gunaRows = Array.isArray(gunaDetails.guna) ? gunaDetails.guna : [];
+  const getBasicMatchmakingReport = () => {
+    if (!matchInfo.provider_sections) return null;
+    for (const section of matchInfo.provider_sections) {
+      if (section.items) {
+        if (section.items.match_ashtakoot_points) {
+          const dataObj = section.items.match_ashtakoot_points.data || section.items.match_ashtakoot_points;
+          if (dataObj && dataObj.conclusion) {
+            return dataObj.conclusion.report || dataObj.conclusion.description || null;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  const basicReport = getBasicMatchmakingReport();
+  const displayDescription = basicReport || verdictText;
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] text-[#1E3557] font-sans">
@@ -235,7 +311,7 @@ export default function DetailedMatchmaking() {
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-[#F5ECFE] border border-[#DCBEFB] text-[#8E2DE2] shadow-inner mb-8">
               <FaHeart className="text-5xl text-[#8E2DE2] animate-pulse" />
             </div>
-            
+
             <h2 className="text-3xl font-black tracking-tight text-[#1E3557] md:text-4xl">
               Don't Let A Guna Score Limit Your Love
             </h2>
@@ -251,7 +327,7 @@ export default function DetailedMatchmaking() {
               <p className="mt-4 text-sm font-semibold text-emerald-700">
                 Sign in to generate this report without a service charge.
               </p>
-              
+
               <Link
                 to="/login"
                 className="mt-6 block w-full rounded-2xl bg-[#8E2DE2] py-3.5 text-center text-sm font-bold text-white shadow-md shadow-[#8E2DE2]/25 hover:bg-[#7724C3] transition"
@@ -268,7 +344,7 @@ export default function DetailedMatchmaking() {
                 {[
                   { title: "Physical & Romantic chemistry", desc: "Venus alignments, Mars chemistry, and Yoni matching observations to analyze relationship longevity." },
                   { title: "Mental & Emotional Bond", desc: "Moon sign and Gana wavelength checking to ensure both of you communicate seamlessly." },
-                  { title: "Mutual Manglik Harmony", desc: "Analyses whether groom & bride's Manglik doshas cancel each other out harmoniously." },
+                  { title: "Mutual Manglik Harmony", desc: "Analyses whether male & female Manglik doshas cancel each other out harmoniously." },
                   { title: "Joint Remedial Advice", desc: "Practical suggestions, puja recommendations, and gemstones to overcome compatibility blockages." },
                 ].map((item, i) => (
                   <div key={i} className="rounded-2xl border border-gray-100 bg-[#FCFAF7] p-5">
@@ -285,21 +361,21 @@ export default function DetailedMatchmaking() {
         </section>
       ) : (
         <section className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-16 md:px-10">
-          <div className="grid gap-8 xl:grid-cols-[440px_minmax(0,1fr)]">
-            <aside className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm self-start">
-              <h2 className="text-2xl font-bold">Relationship Details</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Input groom and bride parameters to fetch in-depth matching outcomes.
-              </p>
+          <div className="space-y-8">
+            <ToolInputPanel
+              title="Relationship Details"
+              description="Input male and female parameters to fetch in-depth matching outcomes."
+            >
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-                {/* Boy Form */}
+                <div className="grid gap-5 lg:grid-cols-2">
+                {/* Male Form */}
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 space-y-4">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    <span className="text-xs">🤵</span> Groom's Profile
+                    <span className="text-xs">♂</span> Male Profile
                   </h3>
                   <RecentProfilePicker
-                    buttonLabel="Choose recent groom profile"
+                    buttonLabel="Choose recent male profile"
                     onSelect={(profile) => applyRecentProfile("boy", profile)}
                   />
                   <div>
@@ -308,7 +384,7 @@ export default function DetailedMatchmaking() {
                       name="boy_name"
                       value={form.boy_name}
                       onChange={handleChange}
-                      placeholder="Groom's Full Name"
+                      placeholder="Male Full Name"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs outline-none focus:border-[#D4A73C]"
                     />
                   </div>
@@ -334,7 +410,7 @@ export default function DetailedMatchmaking() {
                       type="text"
                       value={form.boy_place}
                       onChange={(event) => handleLocationSearch("boy", event.target.value)}
-                      placeholder="Search groom's birthplace"
+                      placeholder="Search male birthplace"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs outline-none focus:border-[#D4A73C]"
                     />
                     {loadingPlaces && activeSearchField === "boy" && <div className="absolute right-3 top-3 h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-[#D4A73C]" />}
@@ -356,13 +432,13 @@ export default function DetailedMatchmaking() {
                   {form.boy_coordinates && <p className="text-[10px] text-gray-400">Coordinates: {form.boy_coordinates}</p>}
                 </div>
 
-                {/* Girl Form */}
+                {/* Female Form */}
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 space-y-4">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    <span className="text-xs">👰</span> Bride's Profile
+                    <span className="text-xs">♀</span> Female Profile
                   </h3>
                   <RecentProfilePicker
-                    buttonLabel="Choose recent bride profile"
+                    buttonLabel="Choose recent female profile"
                     onSelect={(profile) => applyRecentProfile("girl", profile)}
                   />
                   <div>
@@ -371,7 +447,7 @@ export default function DetailedMatchmaking() {
                       name="girl_name"
                       value={form.girl_name}
                       onChange={handleChange}
-                      placeholder="Bride's Full Name"
+                      placeholder="Female Full Name"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs outline-none focus:border-[#D4A73C]"
                     />
                   </div>
@@ -397,7 +473,7 @@ export default function DetailedMatchmaking() {
                       type="text"
                       value={form.girl_place}
                       onChange={(event) => handleLocationSearch("girl", event.target.value)}
-                      placeholder="Search bride's birthplace"
+                      placeholder="Search female birthplace"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs outline-none focus:border-[#D4A73C]"
                     />
                     {loadingPlaces && activeSearchField === "girl" && <div className="absolute right-3 top-3 h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-[#D4A73C]" />}
@@ -418,6 +494,7 @@ export default function DetailedMatchmaking() {
                   </div>
                   {form.girl_coordinates && <p className="text-[10px] text-gray-400">Coordinates: {form.girl_coordinates}</p>}
                 </div>
+                </div>
 
                 <button
                   type="submit"
@@ -434,7 +511,9 @@ export default function DetailedMatchmaking() {
                   )}
                 </button>
               </form>
-            </aside>
+            </ToolInputPanel>
+
+            <RelatedToolTabs title="Reports" items={reportTabs} />
 
             <main className="space-y-6">
               {!matchData ? (
@@ -444,7 +523,7 @@ export default function DetailedMatchmaking() {
                   </div>
                   <h2 className="text-xl font-bold">Ready to Compare Compatibility</h2>
                   <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto leading-6">
-                    Enter both groom & bride particulars and trigger analysis. Our engine compiles deep emotional, romantic, physical, and Manglik cancellation values.
+                    Enter both male & female particulars and trigger analysis. Our engine compiles deep emotional, romantic, physical, and Manglik cancellation values.
                   </p>
                 </div>
               ) : (
@@ -465,7 +544,7 @@ export default function DetailedMatchmaking() {
                         <h3 className="font-bold text-lg text-[#1E3557]">Guna Milan Score</h3>
                         <p className="text-xs text-gray-400">Ashtakoota traditional points matched</p>
                         <p className="text-sm font-extrabold text-[#8E2DE2] mt-1">Verdict: {matchInfo.message?.type || "Generated"}</p>
-                        <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">{verdictText}</p>
+                        <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">{displayDescription}</p>
                       </div>
                     </div>
 
@@ -476,79 +555,53 @@ export default function DetailedMatchmaking() {
                       </span>
                     </div>
                   </div>
-
-                  {gunaRows.length > 0 && (
-                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm">
-                      <div className="border-b border-[#EFE3D1] bg-[#1E3557] px-6 py-4">
-                        <h3 className="text-lg font-black text-white">Ashtakoot Breakdown</h3>
-                        <p className="mt-1 text-xs text-white/70">Real compatibility points returned from the matchmaking API.</p>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full text-left text-sm">
-                          <thead className="bg-[#FFF7DF] text-[#7A4C00]">
-                            <tr>
-                              {["Koot", "Groom", "Bride", "Points", "Description"].map((heading) => (
-                                <th key={heading} className="px-4 py-3 font-black">{heading}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {gunaRows.map((row, index) => (
-                              <tr key={row.id || row.name || index} className="border-b border-slate-100 last:border-b-0 odd:bg-white even:bg-slate-50">
-                                <td className="px-4 py-3 font-black text-[#1E3557]">{row.name || row.id}</td>
-                                <td className="px-4 py-3 text-slate-600">{row.boy_koot || "-"}</td>
-                                <td className="px-4 py-3 text-slate-600">{row.girl_koot || "-"}</td>
-                                <td className="px-4 py-3 font-bold text-[#8E2DE2]">{row.obtained_points ?? 0}/{row.maximum_points ?? "-"}</td>
-                                <td className="px-4 py-3 text-slate-600">{row.description || "-"}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                  <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+                    <div className="rounded-[2rem] border border-[#DDE7F4] bg-gradient-to-br from-[#F8FBFF] to-[#EDF5FF] p-5 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#B7D3F4] bg-white text-3xl text-[#1E63A6] shadow-sm">
+                          <FaMars />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5C7FA6]">Male</p>
+                          <h3 className="mt-1 truncate text-xl font-black text-[#1E3557]">{form.boy_name || "Male Profile"}</h3>
+                          <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                            <span><strong className="text-[#1E3557]">Birth:</strong> {formatProfileDate(form.boy_dob)} {form.boy_time || ""}</span>
+                            <span><strong className="text-[#1E3557]">Place:</strong> {form.boy_place || "-"}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* 5 Pillar Compatibility Cards */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-black text-[#1E3557] px-1">Beyond 36 Points: Compatibility Deep Dive</h3>
-                    
-                    {[
-                      { title: "Personality & Temperament Match", icon: "🧠", color: "text-[#B05B35]", bg: "bg-orange-50", desc: "Measures emotional wavelength, general behavior, and psychological sync based on Moon signs and nakshatras." },
-                      { title: "Emotional Bond & Communication", icon: "🗣️", color: "text-[#1E3C72]", bg: "bg-blue-50", desc: "Checks Maitri (friendship) and Gana matching to see how you converse, resolve disputes, and support each other through stress." },
-                      { title: "Romantic & Physical Chemistry", icon: "🔥", color: "text-[#8E2DE2]", bg: "bg-purple-50", desc: "Analyzes Yoni matching and Venus positions to understand mutual romance quotient, intimacy, and biological attraction." },
-                      { title: "Family Prosperity & Health", icon: "🏡", color: "text-emerald-700", bg: "bg-emerald-50", desc: "Tracks Nadi (genetic defects check) and Bhakoot values to evaluate longevity, financial fortune, and children prospects." },
-                      { title: "Mangal Dosha Match & Cancelation", icon: "🛡️", color: "text-[#8C3B3B]", bg: "bg-red-50", desc: "Dynamic evaluations on groom and bride's Mars house placement. It confirms that the individual Manglik doshas cancel each other without malefic conflicts." },
-                    ].map((pill, idx) => (
-                      <div key={idx} className="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm hover:shadow-md transition">
-                        <div className="flex items-center gap-3 border-b border-gray-50 pb-3 mb-3">
-                          <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm ${pill.bg} ${pill.color}`}>{pill.icon}</span>
-                          <h4 className="font-bold text-sm text-[#1E3557]">{pill.title}</h4>
-                        </div>
-                        <p className="text-xs leading-5 text-gray-500">{pill.desc}</p>
+                    <div className="flex items-center justify-center">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#EAD8A5] bg-white text-[#D7AF4B] shadow-sm">
+                        <FaExchangeAlt />
                       </div>
-                    ))}
-                  </div>
+                    </div>
 
-                  {/* Remedies */}
-                  <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm space-y-4">
-                    <h3 className="text-lg font-bold text-[#1E3557]">✨ Joint Remedies & Suggestions</h3>
-                    <p className="text-xs text-slate-500">Simple remedies recommended to mitigate any minor points deficit:</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {[
-                        "Recite the Gauri Shankar Mantra together daily to strengthen mutual understanding.",
-                        "Observe minor fasts on Thursdays to pacify Jupiter placements in the 7th house.",
-                        "Offer mutual support during active planetary dashas and avoid major disputes during full moon periods.",
-                        "Consult with a senior astrologer for personalized gemstone sizes for both partners.",
-                      ].map((rem, i) => (
-                        <div key={i} className="flex gap-2.5 items-start rounded-xl bg-slate-50 p-4 text-xs text-slate-600 border border-slate-100">
-                          <span className="text-[#8E2DE2] mt-0.5">✓</span>
-                          <span>{rem}</span>
+                    <div className="rounded-[2rem] border border-[#F2D8E6] bg-gradient-to-br from-[#FFF9FC] to-[#FFEFF7] p-5 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#F2BFD7] bg-white text-3xl text-[#C0417D] shadow-sm">
+                          <FaVenus />
                         </div>
-                      ))}
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#A65C82]">Female</p>
+                          <h3 className="mt-1 truncate text-xl font-black text-[#1E3557]">{form.girl_name || "Female Profile"}</h3>
+                          <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                            <span><strong className="text-[#1E3557]">Birth:</strong> {formatProfileDate(form.girl_dob)} {form.girl_time || ""}</span>
+                            <span><strong className="text-[#1E3557]">Place:</strong> {form.girl_place || "-"}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  <ProviderSections sections={matchInfo.provider_sections || []} />
+                  <ProviderSections
+                    sections={matchInfo.provider_sections || []}
+                    renderSectionExtra={(section) =>
+                      section?.id === "match-astro-details" ? (
+                        <MatchDivisionalCharts charts={matchInfo.match_charts} />
+                      ) : null
+                    }
+                  />
                 </div>
               )}
             </main>

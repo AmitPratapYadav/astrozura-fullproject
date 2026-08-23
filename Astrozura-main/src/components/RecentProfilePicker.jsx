@@ -10,7 +10,12 @@ const formatDate = (date) => {
   return year && month && day ? `${day}-${month}-${year}` : date;
 };
 
-export default function RecentProfilePicker({ onSelect, buttonLabel = "Choose a recent profile", className = "" }) {
+export default function RecentProfilePicker({
+  onSelect,
+  buttonLabel = "Choose a recent profile",
+  description = "Reuse saved birth details in one tap.",
+  className = "",
+}) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [profiles, setProfiles] = useState([]);
@@ -54,14 +59,21 @@ export default function RecentProfilePicker({ onSelect, buttonLabel = "Choose a 
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#D4A73C]/40 bg-[#fff9e8] px-4 py-2.5 text-sm font-black text-[#7a5205] transition hover:bg-[#fff3cd] ${className}`}
-      >
-        <Clock3 size={16} />
-        {buttonLabel}
-      </button>
+      <div className="space-y-1.5">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#D4A73C]/40 bg-[#fff9e8] px-4 py-2.5 text-sm font-black text-[#7a5205] transition hover:bg-[#fff3cd] ${className}`}
+        >
+          <Clock3 size={16} />
+          {buttonLabel}
+        </button>
+        {description ? (
+          <p className="px-1 text-center text-[11px] font-semibold leading-5 text-slate-500 sm:text-xs">
+            {description}
+          </p>
+        ) : null}
+      </div>
 
       {open ? (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/55 px-3 py-4 sm:items-center">

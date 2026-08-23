@@ -19,6 +19,8 @@ export default function AddAstrologer() {
     supports_chat: true,
     supports_call: true,
     is_online: true,
+    supports_palm_reading: false,
+    supports_ritual_booking: false,
     chat_commission_percentage: "20",
     call_commission_percentage: "20",
     chat_price_10: "", chat_price_15: "", chat_price_20: "", chat_price_30: "",
@@ -51,7 +53,7 @@ export default function AddAstrologer() {
       Object.keys(formData).forEach((key) => {
         if (key.endsWith("_hi") || /^(chat|call)_price_(10|15|20|30)$/.test(key)) return;
         if (formData[key] !== null) {
-          const value = ["is_featured", "supports_chat", "supports_call", "is_online"].includes(key)
+          const value = ["is_featured", "supports_chat", "supports_call", "is_online", "supports_palm_reading", "supports_ritual_booking"].includes(key)
             ? (formData[key] ? "1" : "0")
             : formData[key];
           dataToSubmit.append(key, value);
@@ -90,6 +92,8 @@ export default function AddAstrologer() {
           supports_chat: true,
           supports_call: true,
           is_online: true,
+          supports_palm_reading: false,
+          supports_ritual_booking: false,
           chat_commission_percentage: "20",
           call_commission_percentage: "20",
           chat_price_10: "", chat_price_15: "", chat_price_20: "", chat_price_30: "",
@@ -187,6 +191,8 @@ export default function AddAstrologer() {
             <div className="flex flex-wrap gap-5 rounded-lg bg-gray-50 p-4 text-sm font-medium">
               <label className="flex items-center gap-2"><input type="checkbox" name="supports_chat" checked={formData.supports_chat} onChange={handleChange} /> Available for Chat</label>
               <label className="flex items-center gap-2"><input type="checkbox" name="supports_call" checked={formData.supports_call} onChange={handleChange} /> Available for Call</label>
+              <label className="flex items-center gap-2"><input type="checkbox" name="supports_palm_reading" checked={formData.supports_palm_reading} onChange={handleChange} /> Palm Reading Expert</label>
+              <label className="flex items-center gap-2"><input type="checkbox" name="supports_ritual_booking" checked={formData.supports_ritual_booking} onChange={handleChange} /> Ritual Booking Expert</label>
               <label className="flex items-center gap-2"><input type="checkbox" name="is_online" checked={formData.is_online} onChange={handleChange} /> Online</label>
             </div>
 

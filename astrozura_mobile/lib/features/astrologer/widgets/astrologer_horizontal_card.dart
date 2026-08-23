@@ -15,7 +15,7 @@ class AstrologerHorizontalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = astrologer.name ?? "Astrologer";
+    final name = astrologer.name;
 
     return Container(
       width: 260,
@@ -73,6 +73,8 @@ class AstrologerHorizontalCard extends StatelessWidget {
                         color: Colors.grey,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    _statusBadge(astrologer),
                   ],
                 ),
               ),
@@ -159,5 +161,39 @@ class AstrologerHorizontalCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _statusBadge(AstrologerModel astrologer) {
+    final color = _statusColor(astrologer.availabilityLabel);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          astrologer.availabilityLabel,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Busy':
+        return const Color(0xFFB86A10);
+      case 'Offline':
+        return const Color(0xFFD43F3A);
+      default:
+        return const Color(0xFF0F9F6E);
+    }
   }
 }

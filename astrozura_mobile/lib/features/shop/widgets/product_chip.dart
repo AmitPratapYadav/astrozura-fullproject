@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/contants/app_colors.dart';
 import '../../../core/models/product/product.model.dart';
+import '../../../core/services/product_wishlist_service.dart';
 import '../product_details_screen.dart';
 import '../../../core/services/cart_service.dart';
 
@@ -42,7 +43,16 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── PRODUCT IMAGE ──────────────────────────────────────────
-            _ProductImage(imageUrl: product.images[0]),
+            Stack(
+              children: [
+                _ProductImage(imageUrl: product.images[0]),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _WishlistToggle(product: product),
+                ),
+              ],
+            ),
 
             // ── CARD CONTENT ───────────────────────────────────────────
             Expanded(
@@ -136,6 +146,70 @@ class _ProductImage extends StatelessWidget {
   }
 }
 
+class _WishlistToggle extends StatefulWidget {
+  final ProductModel product;
+
+  const _WishlistToggle({required this.product});
+
+  @override
+  State<_WishlistToggle> createState() => _WishlistToggleState();
+}
+
+class _WishlistToggleState extends State<_WishlistToggle> {
+  final ProductWishlistService _wishlist = ProductWishlistService();
+
+  @override
+  void initState() {
+    super.initState();
+    _wishlist.load();
+  }
+
+  Future<void> _toggle() async {
+    try {
+      await _wishlist.toggle(widget.product);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _wishlist,
+      builder: (context, _) {
+        final isSaved = _wishlist.isWishlisted(widget.product.id);
+        return Material(
+          color: Colors.white.withOpacity(0.92),
+          shape: const CircleBorder(),
+          elevation: 3,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: _toggle,
+            child: Padding(
+              padding: const EdgeInsets.all(7),
+              child: Icon(
+                isSaved
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                size: 18,
+                color: isSaved ? const Color(0xFFE1456B) : Colors.black54,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _RatingRow extends StatelessWidget {
   final double rating;
   final int reviews;
@@ -150,9 +224,8 @@ class _RatingRow extends StatelessWidget {
           return Icon(
             index < rating.floor() ? Icons.star : Icons.star_border,
             size: 13,
-            color: index < rating.floor()
-                ? Colors.orange
-                : Colors.grey.shade300,
+            color:
+                index < rating.floor() ? Colors.orange : Colors.grey.shade300,
           );
         }),
         const SizedBox(width: 4),
@@ -213,26 +286,21 @@ class _AddToCartButton extends StatelessWidget {
         CartService().addToCart(product);
 
         ScaffoldMessenger.of(context)
-  ..hideCurrentSnackBar()
-  ..showSnackBar(
-    SnackBar(
-      content: Text(
-        '${product.name} added to cart',
-      ),
-
-      duration: const Duration(seconds: 2),
-
-      behavior: SnackBarBehavior.floating,
-
-      margin: const EdgeInsets.all(16),
-
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-
-      backgroundColor: const Color(0xFF2E2A63),
-    ),
-  );
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                '${product.name} added to cart',
+              ),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              backgroundColor: const Color(0xFF2E2A63),
+            ),
+          );
       },
       child: Container(
         width: double.infinity,

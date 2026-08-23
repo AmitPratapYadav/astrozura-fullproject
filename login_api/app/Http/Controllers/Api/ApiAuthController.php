@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\SmartChatWhatsAppService;
 use App\Services\UltronSmsService;
 use App\Services\UserNotificationService;
 use App\Support\MediaStorage;
@@ -14,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -41,6 +43,10 @@ class ApiAuthController extends Controller
         $state = $this->decodeOAuthState((string) $request->query('state', ''));
         $frontend = $state['frontend'] ?? 'main';
         $frontendUrl = $state['frontend_url'] ?? $this->resolveFrontendUrl($frontend);
+
+        if (!$request->filled('code')) {
+            return redirect($frontendUrl . '/login?error=google_auth_failed');
+        }
 
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
@@ -152,7 +158,7 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function sendOtp(Request $request, UltronSmsService $sms)
+    public function sendOtp(Request $request, UltronSmsService $sms, SmartChatWhatsAppService $whatsapp)
     {
         $validator = Validator::make($request->all(), [
             'identifier' => 'required|string',
@@ -179,20 +185,22 @@ class ApiAuthController extends Controller
         $user->save();
 
         $smsSent = false;
+        $whatsappSent = false;
         if (!$isEmail) {
             $smsSent = $sms->sendOtp($identifier, (string) $otp);
+            $whatsappSent = $whatsapp->sendOtp($identifier, (string) $otp);
         }
 
-        if (!$isEmail && !$smsSent && app()->environment('production')) {
+        if (!$isEmail && !$smsSent && !$whatsappSent && app()->environment('production')) {
             return response()->json([
                 'success' => false,
-                'message' => 'OTP SMS could not be sent. Please try again shortly.',
+                'message' => 'OTP could not be sent. Please try again shortly.',
             ], 503);
         }
 
         $payload = [
             'success' => true,
-            'message' => $isEmail ? 'OTP generated successfully.' : ($smsSent ? 'OTP sent successfully.' : 'OTP generated successfully. SMS is not configured in this environment.'),
+            'message' => $isEmail ? 'OTP generated successfully.' : (($smsSent || $whatsappSent) ? 'OTP sent successfully.' : 'OTP generated successfully. Messaging is not configured in this environment.'),
             'identifier' => $identifier,
         ];
 
@@ -579,6 +587,8 @@ class ApiAuthController extends Controller
             'supports_chat' => filter_var($request->input('supports_chat', true), FILTER_VALIDATE_BOOLEAN),
             'supports_call' => filter_var($request->input('supports_call', true), FILTER_VALIDATE_BOOLEAN),
             'is_online' => filter_var($request->input('is_online', true), FILTER_VALIDATE_BOOLEAN),
+            'supports_palm_reading' => filter_var($request->input('supports_palm_reading', false), FILTER_VALIDATE_BOOLEAN),
+            'supports_ritual_booking' => filter_var($request->input('supports_ritual_booking', false), FILTER_VALIDATE_BOOLEAN),
         ]);
 
         $validator = Validator::make($request->all(), [
@@ -598,6 +608,8 @@ class ApiAuthController extends Controller
             'supports_chat' => 'nullable|boolean',
             'supports_call' => 'nullable|boolean',
             'is_online' => 'nullable|boolean',
+            'supports_palm_reading' => 'nullable|boolean',
+            'supports_ritual_booking' => 'nullable|boolean',
             'chat_commission_percentage' => 'nullable|numeric|between:0,100',
             'call_commission_percentage' => 'nullable|numeric|between:0,100',
             'translations' => 'nullable|array',
@@ -635,6 +647,8 @@ class ApiAuthController extends Controller
             'supports_chat' => $request->boolean('supports_chat', true),
             'supports_call' => $request->boolean('supports_call', true),
             'is_online' => $request->boolean('is_online', true),
+            'supports_palm_reading' => $request->boolean('supports_palm_reading'),
+            'supports_ritual_booking' => $request->boolean('supports_ritual_booking'),
             'chat_commission_percentage' => $request->input('chat_commission_percentage', 20),
             'call_commission_percentage' => $request->input('call_commission_percentage', 20),
             'translations' => $request->input('translations'),
@@ -654,11 +668,13 @@ class ApiAuthController extends Controller
     {
         $term = trim((string) $request->query('q', ''));
         $type = $request->query('type');
+        $specialty = $request->query('specialty');
 
         $astrologers = User::with('astrologerDetail')
             ->where('role', 'astrologer')
             ->when($type === 'chat', fn ($query) => $query->whereHas('astrologerDetail', fn ($detail) => $detail->where('supports_chat', true)))
             ->when($type === 'call', fn ($query) => $query->whereHas('astrologerDetail', fn ($detail) => $detail->where('supports_call', true)))
+            ->when($specialty === 'palm-reading', fn ($query) => $query->whereHas('astrologerDetail', fn ($detail) => $detail->where('supports_palm_reading', true)))
             ->when($term !== '', function ($query) use ($term) {
                 $query->where(function ($builder) use ($term) {
                     $builder->where('name', 'like', '%' . $term . '%')
@@ -684,10 +700,20 @@ class ApiAuthController extends Controller
 
     public function getAstrologerProfile(Request $request, $id)
     {
+        $hasPinnedReviews = Schema::hasColumn('astrologer_reviews', 'is_pinned')
+            && Schema::hasColumn('astrologer_reviews', 'pinned_at');
+
         $astrologer = User::with([
                 'astrologerDetail',
-                'receivedReviews' => function ($query) {
-                    $query->latest()->with('user:id,name,profile_image');
+                'receivedReviews' => function ($query) use ($hasPinnedReviews) {
+                    if ($hasPinnedReviews) {
+                        $query
+                            ->orderByDesc('is_pinned')
+                            ->orderByDesc('pinned_at');
+                    }
+
+                    $query->latest()
+                        ->with('user:id,name,profile_image');
                 },
             ])
             ->where('role', 'astrologer')
@@ -773,6 +799,8 @@ class ApiAuthController extends Controller
             'supports_chat' => filter_var($request->input('supports_chat', true), FILTER_VALIDATE_BOOLEAN),
             'supports_call' => filter_var($request->input('supports_call', true), FILTER_VALIDATE_BOOLEAN),
             'is_online' => filter_var($request->input('is_online', true), FILTER_VALIDATE_BOOLEAN),
+            'supports_palm_reading' => filter_var($request->input('supports_palm_reading', false), FILTER_VALIDATE_BOOLEAN),
+            'supports_ritual_booking' => filter_var($request->input('supports_ritual_booking', false), FILTER_VALIDATE_BOOLEAN),
         ]);
 
         $validator = Validator::make($request->all(), [
@@ -792,6 +820,8 @@ class ApiAuthController extends Controller
             'supports_chat' => 'nullable|boolean',
             'supports_call' => 'nullable|boolean',
             'is_online' => 'nullable|boolean',
+            'supports_palm_reading' => 'nullable|boolean',
+            'supports_ritual_booking' => 'nullable|boolean',
             'chat_commission_percentage' => 'nullable|numeric|between:0,100',
             'call_commission_percentage' => 'nullable|numeric|between:0,100',
             'translations' => 'nullable|array',
@@ -833,6 +863,8 @@ class ApiAuthController extends Controller
                 'supports_chat' => $request->boolean('supports_chat', true),
                 'supports_call' => $request->boolean('supports_call', true),
                 'is_online' => $request->boolean('is_online', true),
+                'supports_palm_reading' => $request->boolean('supports_palm_reading'),
+                'supports_ritual_booking' => $request->boolean('supports_ritual_booking'),
                 'chat_commission_percentage' => $request->input('chat_commission_percentage', 20),
                 'call_commission_percentage' => $request->input('call_commission_percentage', 20),
                 'translations' => $request->input('translations'),
@@ -1024,7 +1056,10 @@ class ApiAuthController extends Controller
             : env('FRONTEND_MAIN_URL', $productionUrl);
         $configuredHost = parse_url((string) $configuredUrl, PHP_URL_HOST);
 
-        if (app()->environment('production') && in_array($configuredHost, ['localhost', '127.0.0.1', '::1'], true)) {
+        if (app()->environment('production') && (
+            in_array($configuredHost, ['localhost', '127.0.0.1', '::1'], true)
+            || Str::contains((string) $configuredHost, 'astrozura.cloud')
+        )) {
             return $productionUrl;
         }
 
@@ -1038,6 +1073,14 @@ class ApiAuthController extends Controller
         }
 
         $normalizedUrl = rtrim($frontendUrl, '/');
+        $host = parse_url($normalizedUrl, PHP_URL_HOST);
+
+        if (app()->environment('production') && (
+            in_array($host, ['localhost', '127.0.0.1', '::1'], true)
+            || Str::contains((string) $host, 'astrozura.cloud')
+        )) {
+            return null;
+        }
 
         return $this->isAllowedFrontendUrl($normalizedUrl) ? $normalizedUrl : null;
     }

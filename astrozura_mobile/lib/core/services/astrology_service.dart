@@ -23,8 +23,27 @@ class AstrologyService {
     return _api.post(ApiConstants.generateKundli, body: payload);
   }
 
+  Future<Map<String, dynamic>> kundliDetailSection(
+    String section,
+    Map<String, dynamic> payload,
+  ) {
+    return _api.post(ApiConstants.kundliDetailSection(section), body: payload);
+  }
+
+  Future<Map<String, dynamic>> divisionalCharts(Map<String, dynamic> payload) {
+    return _api.post(ApiConstants.divisionalCharts, body: payload);
+  }
+
+  Future<Map<String, dynamic>> predictions(Map<String, dynamic> payload) {
+    return _api.post(ApiConstants.predictions, body: payload);
+  }
+
   Future<Map<String, dynamic>> panchang(Map<String, dynamic> payload) {
     return _api.post(ApiConstants.getPanchang, body: payload);
+  }
+
+  Future<Map<String, dynamic>> panchangExtras(Map<String, dynamic> payload) {
+    return _api.post(ApiConstants.panchangExtras, body: payload);
   }
 
   Future<Map<String, dynamic>> matchMaking(Map<String, dynamic> payload) {

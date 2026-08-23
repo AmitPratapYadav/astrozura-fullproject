@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/contants/api_constants.dart';
 import '../../core/models/puja_anusthan/puja_anusthan_model.dart';
 import '../../core/services/api_client.dart';
 import '../../core/services/astrologer_service.dart';
-import '../../core/services/razorpay_service.dart';
 import '../shared/widgets/location_search_field.dart';
 import 'widgets/puja_card.dart';
 
@@ -92,9 +90,9 @@ class _PujaAnusthanDetailScreenState extends State<PujaAnusthanDetailScreen> {
             children: [
               Expanded(
                 child: Text(
-                  _item.price > 0 ? '₹${_item.price}' : 'Contact for price',
+                  'Consult first, pay later',
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 15,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFFD4A73C),
                   ),
@@ -104,7 +102,7 @@ class _PujaAnusthanDetailScreenState extends State<PujaAnusthanDetailScreen> {
                 height: 48,
                 width: 190,
                 child: ElevatedButton(
-                  onPressed: _item.price > 0 ? _book : null,
+                  onPressed: _book,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0D437B),
                     foregroundColor: Colors.white,
@@ -113,7 +111,7 @@ class _PujaAnusthanDetailScreenState extends State<PujaAnusthanDetailScreen> {
                     ),
                   ),
                   child: const Text(
-                    'Choose Date & Book',
+                    'Schedule Consult',
                     maxLines: 1,
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
@@ -304,22 +302,16 @@ class _RitualBookingSheetState extends State<RitualBookingSheet> {
   final _state = TextEditingController();
   final _pincode = TextEditingController();
   final _notes = TextEditingController();
-  final RazorpayService _paymentService = RazorpayService();
-  late final Razorpay _razorpay;
 
   DateTime? _date;
   TimeOfDay? _time;
   String _venue = 'online';
   bool _expenseAcknowledged = false;
   bool _submitting = false;
-  int? _pendingBookingId;
 
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay()
-      ..on(Razorpay.EVENT_PAYMENT_SUCCESS, _paymentSuccess)
-      ..on(Razorpay.EVENT_PAYMENT_ERROR, _paymentError);
     _loadProfile();
   }
 
@@ -339,7 +331,6 @@ class _RitualBookingSheetState extends State<RitualBookingSheet> {
 
   @override
   void dispose() {
-    _razorpay.clear();
     for (final controller in [
       _name,
       _email,
@@ -420,59 +411,20 @@ class _RitualBookingSheetState extends State<RitualBookingSheet> {
       if (bookingId == null) {
         throw const ApiException('Ritual booking ID was missing.');
       }
-      final payment = await _paymentService.createOrder(
-        purpose: 'ritual',
-        recordId: bookingId,
-      );
-      _pendingBookingId = bookingId;
-      _razorpay.open({
-        'key': payment.keyId,
-        'amount': payment.amount,
-        'currency': payment.currency,
-        'name': 'Astrozura',
-        'description': widget.item.title,
-        'order_id': payment.orderId,
-        'prefill': {
-          'contact': _phone.text.trim(),
-          'email': _email.text.trim(),
-          'name': _name.text.trim(),
-        },
-        'theme': {'color': '#D4A73C'},
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _submitting = false);
-      _snack(error.toString());
-    }
-  }
-
-  Future<void> _paymentSuccess(PaymentSuccessResponse response) async {
-    final bookingId = _pendingBookingId;
-    if (bookingId == null) return;
-    try {
-      await _paymentService.verifyPayment(
-        purpose: 'ritual',
-        recordId: bookingId,
-        razorpayOrderId: response.orderId ?? '',
-        razorpayPaymentId: response.paymentId ?? '',
-        razorpaySignature: response.signature ?? '',
-      );
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ritual booked successfully.')),
+        const SnackBar(
+          content: Text(
+            'Ritual consultation scheduled. Join from My Bookings.',
+          ),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
       _snack(error.toString());
     }
-  }
-
-  void _paymentError(PaymentFailureResponse response) {
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    _snack(response.message ?? 'Payment was not completed.');
   }
 
   void _snack(String message) {
@@ -499,7 +451,7 @@ class _RitualBookingSheetState extends State<RitualBookingSheet> {
                 children: [
                   const Expanded(
                     child: Text(
-                      'Book Your Ritual',
+                      'Schedule Ritual Consultation',
                       style: TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
@@ -625,7 +577,7 @@ class _RitualBookingSheetState extends State<RitualBookingSheet> {
                               ),
                             )
                           : const Text(
-                              'Continue to Payment',
+                              'Submit Consultation Request',
                               style: TextStyle(fontWeight: FontWeight.w800),
                             ),
                     ),

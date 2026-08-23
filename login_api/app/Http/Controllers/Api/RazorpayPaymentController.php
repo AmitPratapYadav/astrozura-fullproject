@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\Order;
 use App\Models\RitualBooking;
 use App\Models\YearlyHoroscopeAccess;
+use App\Services\SmartChatWhatsAppService;
 use App\Services\UltronSmsService;
 use App\Services\UserNotificationService;
 use Illuminate\Database\Eloquent\Model;
@@ -211,8 +212,9 @@ class RazorpayPaymentController extends Controller
     private function markPaid(Model $record, string $purpose, string $paymentId, ?string $signature = null): void
     {
         $sendBookingSms = false;
+        $sendPaymentSms = false;
 
-        DB::transaction(function () use ($record, $purpose, $paymentId, $signature, &$sendBookingSms) {
+        DB::transaction(function () use ($record, $purpose, $paymentId, $signature, &$sendBookingSms, &$sendPaymentSms) {
             $record->refresh();
             if ($record->payment_status === 'paid') {
                 return;
@@ -229,12 +231,14 @@ class RazorpayPaymentController extends Controller
                 $updates['status'] = 'confirmed';
                 $sendBookingSms = true;
             } elseif ($record instanceof RitualBooking) {
-                $updates['status'] = 'pending';
+                $updates['status'] = 'confirmed';
+                $updates['paid_at'] = now('Asia/Kolkata');
             } elseif ($record instanceof YearlyHoroscopeAccess) {
                 $updates['access_expires_at'] = now('Asia/Kolkata')->addHours(12);
             }
 
             $record->update($updates);
+            $sendPaymentSms = true;
             $this->createNotification($record, $purpose);
         });
 
@@ -242,6 +246,28 @@ class RazorpayPaymentController extends Controller
             $booking = $record->fresh(['user', 'astrologer']);
             if ($booking instanceof Booking) {
                 app(UltronSmsService::class)->sendBookingConfirmation($booking);
+                app(SmartChatWhatsAppService::class)->sendBookingConfirmation($booking);
+            }
+        }
+
+        if ($sendPaymentSms) {
+            $freshRecord = $record->fresh();
+            if ($freshRecord) {
+                $recipient = $this->paymentSmsRecipient($freshRecord);
+                if ($recipient['phone'] !== '') {
+                    app(UltronSmsService::class)->sendPaymentSuccess(
+                        $recipient['phone'],
+                        $recipient['name'],
+                        $this->recordAmount($freshRecord),
+                        $this->paymentPurposeLabel($purpose, $freshRecord)
+                    );
+                    app(SmartChatWhatsAppService::class)->sendPaymentSuccess(
+                        $recipient['phone'],
+                        $recipient['name'],
+                        $this->recordAmount($freshRecord),
+                        $this->paymentPurposeLabel($purpose, $freshRecord)
+                    );
+                }
             }
         }
 
@@ -262,6 +288,50 @@ class RazorpayPaymentController extends Controller
                 ['purpose' => $purpose, 'record_id' => $record->id]
             );
         }
+    }
+
+    private function paymentSmsRecipient(Model $record): array
+    {
+        $record->loadMissing('user');
+
+        if ($record instanceof RitualBooking) {
+            return [
+                'phone' => (string) ($record->devotee_phone ?? $record->user?->phone ?? ''),
+                'name' => (string) ($record->devotee_name ?? $record->user?->name ?? 'User'),
+            ];
+        }
+
+        if ($record instanceof Order) {
+            return [
+                'phone' => (string) ($record->phone ?? $record->user?->phone ?? ''),
+                'name' => (string) ($record->user?->name ?? 'User'),
+            ];
+        }
+
+        if ($record instanceof Booking) {
+            return [
+                'phone' => (string) ($record->user?->phone ?? ''),
+                'name' => (string) ($record->user?->name ?? $record->user_name ?? 'User'),
+            ];
+        }
+
+        return [
+            'phone' => (string) ($record->user?->phone ?? ''),
+            'name' => (string) ($record->user?->name ?? 'User'),
+        ];
+    }
+
+    private function paymentPurposeLabel(string $purpose, Model $record): string
+    {
+        return match ($purpose) {
+            'consultation' => $record instanceof Booking
+                ? ucfirst((string) $record->consultation_type) . ' consultation'
+                : 'consultation',
+            'ritual' => 'Pooja Anusthan',
+            'product' => $record instanceof Order ? "order {$record->order_number}" : 'shop order',
+            'yearly_horoscope' => 'yearly horoscope',
+            default => 'AstroZura service',
+        };
     }
 
     private function createNotification(Model $record, string $purpose): void

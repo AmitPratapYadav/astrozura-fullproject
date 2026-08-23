@@ -24,6 +24,7 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [headerVisible, setHeaderVisible] = useState(true);
 
   const menuItems = [
     { path: "/allproduct?new_arrivals=1", name: "New Arrival", mega: "new-arrivals" },
@@ -37,6 +38,26 @@ export default function Navbar() {
 
   useEffect(() => {
     fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY < 24 || currentScrollY < lastScrollY - 6) {
+        setHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY + 8 && currentScrollY > 120) {
+        setHeaderVisible(false);
+        setMenuOpen(false);
+        setCatMenuOpen(false);
+        setSearchOpen(false);
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -87,12 +108,12 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="relative sticky top-0 z-50 bg-white px-3 py-3 shadow-sm md:px-10 md:py-6">
+      <nav className={`sticky top-0 z-50 bg-white px-3 py-2 shadow-sm transition-transform duration-300 md:px-8 md:py-3 ${headerVisible || menuOpen ? "translate-y-0" : "-translate-y-full"}`}>
         <div className="flex justify-between items-center">
 
           {/* LOGO */}
           <NavLink to="/">
-            <img src={vedic} alt="logo" className="h-10 w-auto max-w-[128px] cursor-pointer object-contain md:h-16 md:max-w-none" />
+            <img src={vedic} alt="logo" className="h-9 w-auto max-w-[120px] cursor-pointer object-contain md:h-12 md:max-w-none" />
           </NavLink>
 
           {/* DESKTOP MENU */}

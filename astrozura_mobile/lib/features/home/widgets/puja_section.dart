@@ -88,7 +88,7 @@ class _HomePujaSectionState extends State<HomePujaSection> {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 196,
+          height: 208,
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
@@ -133,7 +133,7 @@ class _PujaMiniCard extends StatelessWidget {
         );
       },
       child: Container(
-        width: 158,
+        width: 164,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -183,12 +183,14 @@ class _PujaMiniCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    item.price > 0 ? '₹${item.price}' : 'Contact for price',
-                    maxLines: 1,
+                    'Consult now, pay later',
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFFD4A84F),
                       fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      height: 1.15,
                     ),
                   ),
                 ],

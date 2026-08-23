@@ -1,5 +1,9 @@
 import api from "./axios";
 
+const isLocalPaymentBypass = () =>
+  import.meta.env.DEV ||
+  ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+
 const loadRazorpay = () =>
   new Promise((resolve, reject) => {
     if (window.Razorpay) {
@@ -23,6 +27,10 @@ const loadRazorpay = () =>
   });
 
 export const ensureRazorpayConfigured = async () => {
+  if (isLocalPaymentBypass()) {
+    return { enabled: true, local_bypass: true };
+  }
+
   const { data } = await api.get("/payments/razorpay/config");
   if (!data?.enabled) {
     throw new Error("Online payments are being configured. Please try again shortly.");
@@ -31,6 +39,22 @@ export const ensureRazorpayConfigured = async () => {
 };
 
 export const payWithRazorpay = async ({ purpose, recordId, name, email, contact, description }) => {
+  if (isLocalPaymentBypass()) {
+    return {
+      success: true,
+      local_bypass: true,
+      payment: {
+        purpose,
+        record_id: recordId,
+        name,
+        email,
+        contact,
+        description,
+        payment_id: `local_${Date.now()}`,
+      },
+    };
+  }
+
   await loadRazorpay();
 
   const { data } = await api.post("/payments/razorpay/order", {

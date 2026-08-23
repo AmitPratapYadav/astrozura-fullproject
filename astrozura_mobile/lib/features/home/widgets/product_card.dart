@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/models/product/product.model.dart';
-import '../../shop/product_details_screen.dart'; // 👈 IMPORT THIS
+import '../../shop/product_details_screen.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -11,7 +12,6 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // 🚀 NAVIGATION WITH DATA
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -27,7 +27,7 @@ class ProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -36,8 +36,6 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 🖼 IMAGE
-            /// 🖼 IMAGE
             ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(18)),
@@ -47,14 +45,11 @@ class ProductCard extends StatelessWidget {
                       height: 145,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      // Also handles broken/failed URLs
                       errorBuilder: (context, error, stackTrace) =>
                           _buildDefaultImage(),
                     )
                   : _buildDefaultImage(),
             ),
-
-            /// 🔵 BOTTOM INFO
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
@@ -66,7 +61,6 @@ class ProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// NAME
                   Text(
                     product.name,
                     maxLines: 2,
@@ -77,17 +71,21 @@ class ProductCard extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-
                   const SizedBox(height: 4),
-
-                  /// PRICE
-                  Text(
-                    "₹${product.price.toStringAsFixed(0)}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 15,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '₹${product.price.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      _ProductRating(rating: product.rating),
+                    ],
                   ),
                 ],
               ),
@@ -102,12 +100,34 @@ class ProductCard extends StatelessWidget {
     return Container(
       height: 145,
       width: double.infinity,
-      color: const Color(0xFFF0EFEA), // light grey background like the card
+      color: const Color(0xFFF0EFEA),
       child: const Center(
         child: Icon(
           Icons.image_not_supported_outlined,
           size: 48,
-          color: Color(0xFFBBBBBB), // muted grey icon
+          color: Color(0xFFBBBBBB),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductRating extends StatelessWidget {
+  final double rating;
+
+  const _ProductRating({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    final filled = rating.round().clamp(0, 5);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        5,
+        (index) => Icon(
+          index < filled ? Icons.star_rounded : Icons.star_border_rounded,
+          size: 12,
+          color: index < filled ? const Color(0xFFD4A84F) : Colors.white54,
         ),
       ),
     );

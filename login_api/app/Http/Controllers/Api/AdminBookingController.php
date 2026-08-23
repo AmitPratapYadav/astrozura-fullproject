@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Services\SmartChatWhatsAppService;
 use App\Services\UltronSmsService;
 use App\Services\UserNotificationService;
 use App\Models\User;
@@ -49,6 +50,7 @@ class AdminBookingController extends Controller
         Request $request,
         $id,
         UltronSmsService $sms,
+        SmartChatWhatsAppService $whatsapp,
         UserNotificationService $notifications
     )
     {
@@ -69,6 +71,7 @@ class AdminBookingController extends Controller
 
         if (!$wasConfirmed && $booking->status === 'confirmed' && $booking->payment_status === 'paid') {
             $sms->sendBookingConfirmation($booking);
+            $whatsapp->sendBookingConfirmation($booking);
         }
 
         if ($booking->user_id) {

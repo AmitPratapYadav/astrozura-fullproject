@@ -23,8 +23,8 @@ class AstrologerService {
   static dynamic _safeDecode(http.Response response) {
     final body = response.body;
 
-    debugPrint("🌐 URL: ${response.request?.url}");
-    debugPrint("📦 RESPONSE: $body");
+    debugPrint(
+        'Astrologer API ${response.statusCode}: ${response.request?.url}');
 
     if (body.trim().startsWith('<')) {
       debugPrint("❌ HTML response detected");
@@ -46,9 +46,7 @@ class AstrologerService {
   static Future<dynamic> _get(String endpoint, {String? token}) async {
     try {
       final url = '$_baseUrl$endpoint';
-      debugPrint('======================');
       debugPrint('CALLING URL => $url');
-      debugPrint('======================');
 
       final response = await http.get(
         Uri.parse(url),
@@ -59,7 +57,6 @@ class AstrologerService {
       ).timeout(const Duration(seconds: 15));
 
       debugPrint('STATUS => ${response.statusCode}');
-      debugPrint('BODY => ${response.body}');
 
       if (response.statusCode == 200) {
         return _safeDecode(response);
@@ -93,7 +90,7 @@ class AstrologerService {
           )
           .timeout(const Duration(seconds: 15));
 
-      debugPrint('📦 POST ${response.statusCode} => ${response.body}');
+      debugPrint('POST ${response.statusCode}: ${response.request?.url}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return _safeDecode(response);
@@ -115,7 +112,7 @@ class AstrologerService {
   static Future<List<Map<String, dynamic>>> getAllAstrologers() async {
     final data = await _api.get(ApiConstants.getAstrologers);
 
-    debugPrint('ASTRO RESPONSE => $data');
+    debugPrint('ASTRO RESPONSE keys => ${data.keys.join(', ')}');
 
     final nested = data['data'];
     final dynamic raw = data['astrologers'] ??
@@ -222,7 +219,7 @@ class AstrologerService {
     ).timeout(const Duration(seconds: 15));
 
     debugPrint('🌐 astrologer/bookings → ${response.statusCode}');
-    debugPrint('📦 body: ${response.body}');
+    debugPrint('astrologer/bookings body bytes: ${response.body.length}');
 
     if (response.statusCode == 401) {
       throw Exception('Session expired. Please log in again.');
@@ -293,7 +290,7 @@ class AstrologerService {
       },
     ).timeout(const Duration(seconds: 15));
 
-    debugPrint('📦 markComplete → ${response.statusCode}: ${response.body}');
+    debugPrint('markComplete → ${response.statusCode}');
 
     if (response.statusCode == 401) {
       throw Exception('Session expired. Please log in again.');
@@ -509,8 +506,7 @@ class AstrologerService {
   // =========================================================
 
   static Future<Map<String, dynamic>> getCurrentLiveSession() async {
-    final data = await _get('/live-sessions/current');
-    return data is Map<String, dynamic> ? data : {};
+    return _api.get(ApiConstants.endpoint('live-sessions/current'));
   }
 
   // =========================================================

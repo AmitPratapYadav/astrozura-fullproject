@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { API_BASE_URL } from "../utils/apiBase";
@@ -10,22 +10,7 @@ const getImageUrl = (path, fallback) => {
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
-const formatRatingText = (details) => {
-  const ratingValue =
-    details?.rating !== null && details?.rating !== undefined && details?.rating !== ""
-      ? Number(details.rating)
-      : null;
-  const totalReviews = Number(details?.total_reviews || 0);
-
-  if (!ratingValue || totalReviews === 0) {
-    return "Not Rated Yet";
-  }
-
-  return `${ratingValue.toFixed(1)} (${totalReviews} review${totalReviews === 1 ? "" : "s"})`;
-};
-
 const FOUNDER_TAGLINE = "Align Your Stars. Engineer Your Destiny.";
-const FOUNDER_DISPLAY_NAME = "Meet Ananya Gupta (Astrotarsh)";
 const FOUNDER_QUOTE =
   "Astrology is not just about predicting the future; it's about decoding the blueprint of your soul.";
 
@@ -68,14 +53,6 @@ export default function FeaturedAstrologerSection() {
 
   const featuredDetails = featured?.astrologer_detail || {};
   const featuredImage = getImageUrl(featured?.profile_image || featuredDetails.profile_image, "");
-  const featuredHighlights = useMemo(() => {
-    const merged = [
-      ...(featuredDetails.specialities?.split(",").map((item) => item.trim()).filter(Boolean) || []),
-      ...(featuredDetails.languages?.split(",").map((item) => item.trim()).filter(Boolean) || []),
-    ];
-
-    return merged.slice(0, 4);
-  }, [featuredDetails.languages, featuredDetails.specialities]);
 
   return (
     <section className="bg-gradient-to-b from-[#FAF7F2] to-[#F8F5EF] px-4 py-10 md:px-10 md:py-14">
@@ -97,7 +74,7 @@ export default function FeaturedAstrologerSection() {
             </div>
           </div>
         ) : featured ? (
-        <div className="group relative grid items-center gap-10 overflow-hidden rounded-[2rem] border border-[#EEE7D6] bg-gradient-to-r from-[#FDFCFB] via-[#F9F6F0] to-[#FDFCFB] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.04)] md:grid-cols-2 md:gap-16 md:p-12 lg:p-14">
+        <div className="group relative grid items-center gap-8 overflow-hidden rounded-[2rem] border border-[#EEE7D6] bg-gradient-to-r from-[#FDFCFB] via-[#F9F6F0] to-[#FDFCFB] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.04)] md:grid-cols-2 md:gap-12 md:p-12 lg:p-14">
           <div className="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-[#D4A73C]/5 blur-3xl" />
 
           <div className="relative">
@@ -126,51 +103,31 @@ export default function FeaturedAstrologerSection() {
           </div>
 
           <div className="relative">
-            <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#f3d38d]/50 bg-[#fdf2d9] px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#b8860b] shadow-sm">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#f3d38d]/50 bg-[#fdf2d9] px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#b8860b] shadow-sm">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#D4A73C]" />
               {t("main.the_mastermind")}
             </span>
 
-            <h2 className="mb-2 text-3xl font-black leading-[1.1] text-[#1E3557] md:text-5xl">
+            <h2 className="mb-2 text-3xl font-black leading-[1.08] text-[#1E3557] md:text-4xl lg:text-[2.65rem]">
               Meet Ananya Gupta <br />
               <span className="text-[#D4A73C] drop-shadow-sm">(Astrotarsh)</span>
             </h2>
 
-            <p className="mb-2 text-xs font-black uppercase tracking-[0.24em] text-[#D4A73C]">{FOUNDER_TAGLINE}</p>
-            <p className="mb-3 text-lg font-bold text-[#b8860b]">
-              {(featured?.name || "").toLowerCase().includes("ananya")
-                ? "Ananya Gupta"
-                : featured?.name || "Featured Astrologer"}
-            </p>
-            <p className="mb-6 text-sm font-semibold text-gray-500">{formatRatingText(featuredDetails)}</p>
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.24em] text-[#D4A73C]">{FOUNDER_TAGLINE}</p>
 
             <div className="relative">
               <div className="absolute bottom-0 left-0 top-0 w-1 rounded-full bg-[#D4A73C]" />
-              <p className="pl-6 text-sm font-medium italic leading-loose text-gray-500 md:text-base">
+              <p className="pl-6 text-sm font-medium italic leading-7 text-gray-500">
                 "{featuredDetails.about_bio || FOUNDER_QUOTE}"
               </p>
               {featuredDetails.about_bio ? (
-                <p className="mt-4 pl-6 text-sm font-black leading-6 text-[#1E3557] md:text-base">
+                <p className="mt-3 pl-6 text-sm font-black leading-6 text-[#1E3557]">
                   "{FOUNDER_QUOTE}"
                 </p>
               ) : null}
             </div>
 
-            <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6">
-              {(featuredHighlights.length
-                ? featuredHighlights
-                : [t("main.vedic_astrology"), t("main.lal_kitab_rem"), t("main.numerology"), t("main.palmistry")]
-              ).map((label, index) => (
-                <div key={`${label}-${index}`} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EEE7D6] bg-[#FAF7F2] text-sm shadow-sm">
-                    {["*", "O", "+", "~"][index % 4]}
-                  </div>
-                  <span className="text-xs font-bold text-[#1E3557] opacity-80">{label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10">
+            <div className="mt-6">
               <button
                 type="button"
                 onClick={() => {

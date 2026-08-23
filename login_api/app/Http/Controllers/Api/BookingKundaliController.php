@@ -37,10 +37,20 @@ class BookingKundaliController extends Controller
         $datetime = $this->buildIsoDatetime((string) $date, (string) $time);
         $language = (string) $request->query('la', 'en');
         $payload = $this->buildBirthPayload($datetime, (string) $coordinates, $request->query('ayanamsa', 1));
-        $chart = $this->safeAstrologyRequest('horo_chart_image/D1', array_merge($payload, [
-            'chartType' => 'north',
-            'image_type' => 'svg',
-        ]), $language);
+        $charts = collect($this->chartOptions())->map(function (array $chartOption) use ($payload, $language) {
+            $chart = $this->safeAstrologyRequest('horo_chart_image/' . $chartOption['id'], array_merge($payload, [
+                'chartType' => 'north',
+                'image_type' => 'svg',
+            ]), $language);
+
+            return [
+                'status' => $chart['status'],
+                'chart_id' => $chartOption['id'],
+                'label' => $chartOption['label'],
+                'chart_svg' => $chart['data']['svg'] ?? null,
+                'message' => $chart['message'] ?? null,
+            ];
+        })->values()->all();
 
         $providerPayload = [
             'birth_details' => $this->safeAstrologyRequest('birth_details', $payload, $language),
@@ -54,7 +64,14 @@ class BookingKundaliController extends Controller
             'basic_gem_suggestion' => $this->safeAstrologyRequest('basic_gem_suggestion', $payload, $language),
             'rudraksha_suggestion' => $this->safeAstrologyRequest('rudraksha_suggestion', $payload, $language),
             'puja_suggestion' => $this->safeAstrologyRequest('puja_suggestion', $payload, $language),
-            'horo_chart_image/D1' => $chart,
+            'kp_planets' => $this->safeAstrologyRequest('kp_planets', $payload, $language),
+            'kp_house_cusps' => $this->safeAstrologyRequest('kp_house_cusps', $payload, $language),
+            'kp_birth_chart' => $this->safeAstrologyRequest('kp_birth_chart', $payload, $language),
+            'kp_house_significator' => $this->safeAstrologyRequest('kp_house_significator', $payload, $language),
+            'kp_planet_significator' => $this->safeAstrologyRequest('kp_planet_significator', $payload, $language),
+            'current_yogini_dasha' => $this->safeAstrologyRequest('current_yogini_dasha', $payload, $language),
+            'major_yogini_dasha' => $this->safeAstrologyRequest('major_yogini_dasha', $payload, $language),
+            'sub_yogini_dasha' => $this->safeAstrologyRequest('sub_yogini_dasha', $payload, $language),
         ];
 
         return response()->json([
@@ -65,13 +82,7 @@ class BookingKundaliController extends Controller
                 'requested_datetime' => $datetime,
                 'planets' => $providerPayload['planets']['data'] ?? [],
                 'astro_details' => $providerPayload['astro_details']['data'] ?? [],
-                'charts' => [[
-                    'status' => $chart['status'],
-                    'chart_id' => 'D1',
-                    'label' => 'D1 - Rasi Chart',
-                    'chart_svg' => $chart['data']['svg'] ?? null,
-                    'message' => $chart['message'] ?? null,
-                ]],
+                'charts' => $charts,
                 'doshas' => [
                     'mangal' => $providerPayload['manglik']['data'] ?? null,
                     'pitra' => $providerPayload['pitra_dosha_report']['data'] ?? null,
@@ -82,9 +93,48 @@ class BookingKundaliController extends Controller
                 'gemstones' => $providerPayload['basic_gem_suggestion']['data'] ?? null,
                 'rudraksha' => $providerPayload['rudraksha_suggestion']['data'] ?? null,
                 'puja_suggestions' => $providerPayload['puja_suggestion']['data'] ?? null,
+                'kp' => [
+                    'planets' => $providerPayload['kp_planets']['data'] ?? null,
+                    'house_cusps' => $providerPayload['kp_house_cusps']['data'] ?? null,
+                    'birth_chart' => $providerPayload['kp_birth_chart']['data'] ?? null,
+                    'house_significator' => $providerPayload['kp_house_significator']['data'] ?? null,
+                    'planet_significator' => $providerPayload['kp_planet_significator']['data'] ?? null,
+                ],
+                'yogini_dasha' => [
+                    'current' => $providerPayload['current_yogini_dasha']['data'] ?? null,
+                    'major' => $providerPayload['major_yogini_dasha']['data'] ?? null,
+                    'sub' => $providerPayload['sub_yogini_dasha']['data'] ?? null,
+                ],
                 'provider_payload' => collect($providerPayload)->map(fn ($item) => $item['data'] ?? null)->all(),
             ],
         ]);
+    }
+
+    private function chartOptions(): array
+    {
+        return [
+            ['id' => 'chalit', 'label' => 'Chalit Chart'],
+            ['id' => 'SUN', 'label' => 'Sun Chart'],
+            ['id' => 'MOON', 'label' => 'Moon Chart'],
+            ['id' => 'D1', 'label' => 'D1 - Birth Chart'],
+            ['id' => 'D2', 'label' => 'D2 - Hora Chart'],
+            ['id' => 'D3', 'label' => 'D3 - Dreshkan Chart'],
+            ['id' => 'D4', 'label' => 'D4 - Chaturthamsha Chart'],
+            ['id' => 'D5', 'label' => 'D5 - Panchmansha Chart'],
+            ['id' => 'D7', 'label' => 'D7 - Saptamansha Chart'],
+            ['id' => 'D8', 'label' => 'D8 - Ashtamansha Chart'],
+            ['id' => 'D9', 'label' => 'D9 - Navamansha Chart'],
+            ['id' => 'D10', 'label' => 'D10 - Dashamansha Chart'],
+            ['id' => 'D12', 'label' => 'D12 - Dwadashamsha Chart'],
+            ['id' => 'D16', 'label' => 'D16 - Shodashamsha Chart'],
+            ['id' => 'D20', 'label' => 'D20 - Vishamansha Chart'],
+            ['id' => 'D24', 'label' => 'D24 - Chaturvimshamsha Chart'],
+            ['id' => 'D27', 'label' => 'D27 - Bhamsha Chart'],
+            ['id' => 'D30', 'label' => 'D30 - Trishamansha Chart'],
+            ['id' => 'D40', 'label' => 'D40 - Khavedamsha Chart'],
+            ['id' => 'D45', 'label' => 'D45 - Akshvedansha Chart'],
+            ['id' => 'D60', 'label' => 'D60 - Shashtyamsha Chart'],
+        ];
     }
 
     private function authorizeBooking(Request $request, Booking $booking): void

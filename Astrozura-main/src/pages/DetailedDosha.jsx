@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import RecentProfilePicker from "../components/RecentProfilePicker";
+import { RelatedToolTabs, ToolInputPanel } from "../components/tool/ToolLayout";
 import { getVedicCalculator, searchLocation } from "../api/prokeralaApi";
 import { saveRecentProfile } from "../api/recentProfilesApi";
 import { useAuth } from "../context/AuthContext";
 import { FaShieldAlt, FaStar, FaExclamationTriangle, FaCheckCircle, FaSpinner } from "react-icons/fa";
+import { serviceCatalog } from "../data/serviceCatalog";
 import { getServiceIcon } from "../data/serviceIcons";
 import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
@@ -20,6 +22,14 @@ const initialForm = {
 };
 
 const pageIcon = getServiceIcon("detailed-dosha");
+const reportTabs = serviceCatalog
+  .filter((item) => item.category === "Reports")
+  .map((item) => ({
+    label: item.title,
+    to: item.ctaTo,
+    icon: item.icon,
+    isActive: item.slug === "detailed-dosha",
+  }));
 
 export default function DetailedDosha() {
   const { user } = useAuth();
@@ -262,17 +272,13 @@ export default function DetailedDosha() {
         </section>
       ) : (
         <section className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-16 md:px-10">
-          <div className="grid gap-8 xl:grid-cols-[400px_minmax(0,1fr)]">
-            <aside className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm self-start">
-              <h2 className="text-2xl font-bold">Horoscope Details</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Input your birth specifics to fetch all active dosha states simultaneously.
-              </p>
-              <div className="mt-4">
-                <RecentProfilePicker onSelect={applyRecentProfile} />
-              </div>
-
-              <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          <div className="space-y-8">
+            <ToolInputPanel
+              title="Horoscope Details"
+              description="Detailed Dosha Analysis uses your birth details to check active dosha states."
+              action={<RecentProfilePicker onSelect={applyRecentProfile} />}
+            >
+              <form onSubmit={handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-600">Date of Birth</label>
                   <input
@@ -323,7 +329,7 @@ export default function DetailedDosha() {
                 </div>
 
                 {form.coordinates && (
-                  <div className="rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-xs text-slate-500">
+                  <div className="rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-xs text-slate-500 md:col-span-2 xl:col-span-4">
                     Coordinates: {form.coordinates}
                   </div>
                 )}
@@ -331,7 +337,7 @@ export default function DetailedDosha() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-2xl bg-[#B05B35] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#974A25] disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#B05B35] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#974A25] disabled:opacity-60 md:col-span-2 xl:col-span-4"
                 >
                   {loading ? (
                     <>
@@ -343,7 +349,9 @@ export default function DetailedDosha() {
                   )}
                 </button>
               </form>
-            </aside>
+            </ToolInputPanel>
+
+            <RelatedToolTabs title="Reports" items={reportTabs} />
 
             <main className="space-y-8">
               {!results ? (

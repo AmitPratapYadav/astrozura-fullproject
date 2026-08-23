@@ -32,6 +32,72 @@ const readablePrediction = (value, fallback) =>
     ? value
     : fallback;
 
+const premiumCardThemes = [
+  {
+    bg: "from-[#FFF4EA] to-[#FFEDE4]",
+    orb: "bg-[#FDD2C2]",
+    icon: "from-[#FF6B2C] to-[#E63C2E]",
+    text: "text-[#C2410C]",
+    border: "border-[#F7D6BD]",
+  },
+  {
+    bg: "from-[#F1FAE9] to-[#EAF7DF]",
+    orb: "bg-[#CDECC1]",
+    icon: "from-[#68C927] to-[#1E8C35]",
+    text: "text-[#2F7D1C]",
+    border: "border-[#D5EBC8]",
+  },
+  {
+    bg: "from-[#EAF7FF] to-[#E8F2FF]",
+    orb: "bg-[#C8E6FF]",
+    icon: "from-[#2EB4FF] to-[#2768F0]",
+    text: "text-[#1D4ED8]",
+    border: "border-[#CBE2F7]",
+  },
+  {
+    bg: "from-[#EAFBF8] to-[#E5F7F2]",
+    orb: "bg-[#BEEBE4]",
+    icon: "from-[#27C3C8] to-[#0A8F8C]",
+    text: "text-[#087F7A]",
+    border: "border-[#C8EAE4]",
+  },
+  {
+    bg: "from-[#FFF9D9] to-[#FFF4C2]",
+    orb: "bg-[#FFE3A0]",
+    icon: "from-[#FFB000] to-[#F97316]",
+    text: "text-[#C45A00]",
+    border: "border-[#F5DFA3]",
+  },
+  {
+    bg: "from-[#F7F2EA] to-[#F1F3EA]",
+    orb: "bg-[#DCE4D5]",
+    icon: "from-[#9CAD79] to-[#65756A]",
+    text: "text-[#556B2F]",
+    border: "border-[#E1E5D5]",
+  },
+  {
+    bg: "from-[#FAECFF] to-[#F5E6FF]",
+    orb: "bg-[#E7C8F7]",
+    icon: "from-[#B45CFF] to-[#7C3AED]",
+    text: "text-[#7E22CE]",
+    border: "border-[#E8D1F5]",
+  },
+  {
+    bg: "from-[#FFECEC] to-[#FFE5E9]",
+    orb: "bg-[#F4C2C8]",
+    icon: "from-[#EF5968] to-[#9F2B37]",
+    text: "text-[#BE123C]",
+    border: "border-[#F0CDD1]",
+  },
+];
+
+const themeForService = (item, index) => {
+  if (item.accent?.includes("#")) {
+    return premiumCardThemes[index % premiumCardThemes.length];
+  }
+  return premiumCardThemes[index % premiumCardThemes.length];
+};
+
 export default function Premium() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -50,6 +116,9 @@ export default function Premium() {
       .map((item) => ({
         title: item.title,
         summary: item.summary,
+        slug: item.slug,
+        category: item.category,
+        accent: item.accent,
         to: item.ctaTo,
         icon: item.icon,
       }));
@@ -335,41 +404,58 @@ export default function Premium() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {premiumServices.map((item) => (
-              <div
-                key={item.title}
-                className="group flex min-h-[260px] flex-col rounded-2xl border border-[#EEE7D6] bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#D4A73C]/45 hover:shadow-xl"
-              >
-                <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-2xl bg-[#FBF7F0] p-3 ring-1 ring-[#EFE5D4] transition group-hover:scale-[1.03] sm:h-28 sm:w-28">
-                  {item.icon ? (
-                    <img src={item.icon} alt="" className="h-full w-full object-contain" />
-                  ) : (
-                    <span className="text-xl font-black text-[#1E3557]">AZ</span>
-                  )}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {premiumServices.map((item, index) => {
+              const theme = themeForService(item, index);
+
+              return (
+                <div
+                  key={item.title}
+                  className={`group relative flex min-h-[290px] overflow-hidden rounded-[1.4rem] border ${theme.border} bg-gradient-to-br ${theme.bg} p-5 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/20`}
+                >
+                  <div className={`absolute -right-8 -top-10 h-28 w-28 rounded-full ${theme.orb} opacity-70 transition group-hover:scale-110`} />
+                  <div className="relative z-10 flex h-full w-full flex-col">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${theme.icon} p-2.5 shadow-lg shadow-black/10 ring-4 ring-white/80 transition group-hover:scale-[1.04]`}>
+                        <div className="flex h-full w-full items-center justify-center rounded-xl bg-white/90 p-2">
+                          {item.icon ? (
+                            <img src={item.icon} alt="" className="h-full w-full object-contain" />
+                          ) : (
+                            <span className="text-xl font-black text-[#1E3557]">AZ</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`rounded-full bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${theme.text} shadow-sm`}>
+                        {item.category || "Vedic"}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-6 text-lg font-black leading-6 text-[#1E3557]">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
+                      {item.summary}
+                    </p>
+
+                    <div className="mt-auto flex justify-center pt-6">
+                      <button
+                        onClick={() => {
+                          notify(`${item.title} selected`);
+                          navigate(item.to);
+                        }}
+                        className={`group/btn flex w-full items-center justify-between rounded-full border border-white/80 bg-white/85 px-4 py-3 text-xs font-black ${theme.text} shadow-sm transition hover:bg-[#1E3557] hover:text-white`}
+                      >
+                        <span>{t("premium.open")}</span>
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1E3557] shadow-sm transition group-hover/btn:translate-x-0.5">
+                          →
+                        </span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                <h3 className="text-base font-black leading-6 text-[#1E3557]">
-                  {item.title}
-                </h3>
-
-                <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-500">
-                  {item.summary}
-                </p>
-
-                <div className="mt-auto flex justify-center pt-5">
-                  <button
-                    onClick={() => {
-                      notify(`${item.title} selected`);
-                      navigate(item.to);
-                    }}
-                    className="w-full rounded-xl border border-[#1E3557] px-4 py-3 text-xs font-black text-[#1E3557] transition hover:bg-[#1E3557] hover:text-white"
-                  >
-                    {t("premium.open")}
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-6 flex justify-center md:hidden">

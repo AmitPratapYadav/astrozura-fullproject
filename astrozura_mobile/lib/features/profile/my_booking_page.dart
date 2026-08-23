@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import '../../core/contants/app_colors.dart';
 import '../../core/services/booking_service.dart';
+import '../../core/services/astrologer_service.dart';
 import '../../core/models/ritual_booking_model.dart';
 import '../../core/services/ritual_booking_service.dart';
 import './widgets/app_drawer.dart'; // ← shared drawer
@@ -462,6 +463,10 @@ class _BookingSection extends StatelessWidget {
                   amount: 'Rs ${b.amount.toStringAsFixed(2)}',
                   paymentStatus: b.paymentStatus ?? 'paid',
                   isChat: isChatFn(b),
+                  actionLabel: isChatFn(b) ? 'Connect Chat' : 'Connect Call',
+                  actionIcon: isChatFn(b)
+                      ? Icons.chat_bubble_outline_rounded
+                      : Icons.call_rounded,
                   onAction: () => onOpenChat(b.id),
                   showBirthDetails: false,
                 ),
@@ -491,6 +496,102 @@ class _HistorySection extends StatelessWidget {
     required this.onOpenChat,
   });
 
+  Future<void> _showReviewDialog(
+      BuildContext context, BookingModel booking) async {
+    var rating = 5;
+    final commentCtrl = TextEditingController();
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Rate Astrologer'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    booking.astrologerName,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final selected = index < rating;
+                      return IconButton(
+                        onPressed: () =>
+                            setDialogState(() => rating = index + 1),
+                        icon: Icon(
+                          selected ? Icons.star : Icons.star_border,
+                          color: _gold,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: commentCtrl,
+                    minLines: 3,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Review',
+                      hintText: 'Share your experience',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _navy,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (submitted != true || !context.mounted) {
+      commentCtrl.dispose();
+      return;
+    }
+
+    try {
+      await AstrologerService.submitReview(
+        bookingId: booking.id,
+        rating: rating,
+        comment: commentCtrl.text.trim(),
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Review submitted.')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+      }
+    } finally {
+      commentCtrl.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -516,7 +617,9 @@ class _HistorySection extends StatelessWidget {
                 amount: 'Rs ${b.amount.toStringAsFixed(2)}',
                 paymentStatus: b.paymentStatus ?? 'paid',
                 isChat: isChatFn(b),
-                onAction: () => onOpenChat(b.id),
+                actionLabel: 'Rate Astrologer',
+                actionIcon: Icons.star_border_rounded,
+                onAction: () => _showReviewDialog(context, b),
                 showBirthDetails: b.birthDetails != null,
                 birthDetails: b.birthDetails,
               ),
@@ -586,10 +689,31 @@ class _RitualBookingSection extends StatelessWidget {
                     formatDate(b.scheduledDate),
                     b.scheduledTime,
                   ].where((part) => part.trim().isNotEmpty).join(' at '),
-                  amount: 'Rs ${b.amount.toStringAsFixed(2)}',
+                  amount: b.amount > 0
+                      ? 'Rs ${b.amount.toStringAsFixed(2)}'
+                      : 'After consultation',
                   paymentStatus: b.paymentStatus,
-                  isChat: false,
-                  onAction: () {},
+                  isChat: true,
+                  actionLabel: 'View Ritual Status',
+                  actionIcon: Icons.auto_awesome_rounded,
+                  onAction: () {
+                    final chatId = b.consultationBookingId;
+                    if (chatId == null || chatId <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Consultation chat will appear after assignment.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pushNamed(
+                      context,
+                      '/chat-session',
+                      arguments: {'bookingId': chatId},
+                    );
+                  },
                   showBirthDetails: false,
                 ),
               )),
@@ -610,6 +734,8 @@ class _BookingCard extends StatelessWidget {
   final String amount;
   final String paymentStatus;
   final bool isChat;
+  final String? actionLabel;
+  final IconData? actionIcon;
   final VoidCallback onAction;
   final bool showBirthDetails;
   final Map<String, dynamic>? birthDetails;
@@ -623,6 +749,8 @@ class _BookingCard extends StatelessWidget {
     required this.amount,
     required this.paymentStatus,
     required this.isChat,
+    this.actionLabel,
+    this.actionIcon,
     required this.onAction,
     this.showBirthDetails = false,
     this.birthDetails,
@@ -799,13 +927,14 @@ class _BookingCard extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onAction,
                 icon: Icon(
-                  isChat
-                      ? Icons.chat_bubble_outline_rounded
-                      : Icons.videocam_outlined,
+                  actionIcon ??
+                      (isChat
+                          ? Icons.chat_bubble_outline_rounded
+                          : Icons.call_rounded),
                   size: 17,
                 ),
                 label: Text(
-                  isChat ? 'Open Chat Session' : 'Join Video Session',
+                  actionLabel ?? (isChat ? 'Connect Chat' : 'Connect Call'),
                   style: const TextStyle(
                       fontSize: 13.5, fontWeight: FontWeight.w700),
                 ),

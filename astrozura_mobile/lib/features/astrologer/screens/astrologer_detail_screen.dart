@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/contants/app_colors.dart';
 import '../../../core/models/astrologer/astrologer_model.dart';
+import '../../../core/services/astrologer_service.dart';
 import '../../mainwidgets/header.dart';
 import '../../mainwidgets/bottom_navbar.dart';
 import '../../main_navigation.dart';
@@ -25,12 +26,27 @@ class AstrologerDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<AstrologerDetailScreen> createState() =>
-      _AstrologerDetailScreenState();
+  State<AstrologerDetailScreen> createState() => _AstrologerDetailScreenState();
 }
 
 class _AstrologerDetailScreenState extends State<AstrologerDetailScreen> {
   final int _currentIndex = 1;
+  late AstrologerModel _astrologer;
+
+  @override
+  void initState() {
+    super.initState();
+    _astrologer = widget.astrologer;
+    _loadAstrologerProfile();
+  }
+
+  Future<void> _loadAstrologerProfile() async {
+    final profile = await AstrologerService.getAstrologerProfile(
+      widget.astrologer.id,
+    );
+    if (!mounted || profile == null) return;
+    setState(() => _astrologer = AstrologerModel.fromJson(profile));
+  }
 
   void _onTabTapped(int index) {
     Navigator.pushAndRemoveUntil(
@@ -42,7 +58,7 @@ class _AstrologerDetailScreenState extends State<AstrologerDetailScreen> {
 
   // ── Share functionality ────────────────────────────────────────────────────
   void _shareAstrologer() {
-    final a = widget.astrologer;
+    final a = _astrologer;
     final text = '''
 ✨ Check out this amazing astrologer on AstroZura!
 
@@ -59,7 +75,7 @@ Book a consultation now on AstroZura app!
 
   // ── Similar astrologers ────────────────────────────────────────────────────
   List<AstrologerModel> get _similar {
-    final current = widget.astrologer;
+    final current = _astrologer;
     final currentSpecs =
         current.specialityList.map((e) => e.toLowerCase()).toSet();
 
@@ -81,7 +97,7 @@ Book a consultation now on AstroZura app!
 
   @override
   Widget build(BuildContext context) {
-    final astrologer = widget.astrologer;
+    final astrologer = _astrologer;
 
     return Scaffold(
       backgroundColor: AppColors.bgTop,
@@ -104,8 +120,8 @@ Book a consultation now on AstroZura app!
 
                 // ── TITLE ROW (share left, title left, back right) ─
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     children: [
                       // Back button

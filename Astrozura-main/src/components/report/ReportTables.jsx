@@ -2,18 +2,18 @@ import React from "react";
 import { displayCell } from "./reportUtils";
 
 export function ReportTable({ columns = [], rows = [], emptyText = "No data returned.", compact = false }) {
-  const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report"));
+  const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report") || window.location.pathname.includes("/detailed-matchmaking") || window.location.pathname.includes("/detailed-kundali"));
   const theadBgClass = isCalculator ? "bg-[#D7AF4B]" : "bg-[#fff8df]";
-  const theadTextClass = isCalculator ? "text-[#1E3557]" : "text-[#7a5205]";
+  const theadTextClass = isCalculator ? "text-[#1E3C72]" : "text-[#7a5205]";
   const borderClass = isCalculator ? "border-[#D7AF4B]" : "border-[#e7c76c]";
 
   return (
-    <div className="overflow-x-auto rounded-sm border border-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-[#E6D7BA] bg-white shadow-sm">
       <table className="min-w-full border-collapse text-left text-sm">
         <thead className={`${theadBgClass} ${theadTextClass}`}>
           <tr>
             {columns.map((column) => (
-              <th key={column.key || column.label} className={`border-b ${borderClass} px-3 py-3 font-bold`}>
+              <th key={column.key || column.label} className={`border ${borderClass} px-3 py-3 font-bold`}>
                 {column.label}
               </th>
             ))}
@@ -22,9 +22,9 @@ export function ReportTable({ columns = [], rows = [], emptyText = "No data retu
         <tbody>
           {rows.length > 0 ? (
             rows.map((row, rowIndex) => (
-              <tr key={row.id || rowIndex} className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+              <tr key={row.id || rowIndex} className={`${rowIndex % 2 === 0 ? "bg-white" : "bg-[#F8FAFC]"} transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]`}>
                 {columns.map((column) => (
-                  <td key={column.key || column.label} className={`border-b border-gray-200 px-3 ${compact ? "py-2" : "py-3"} align-top text-gray-800`}>
+                  <td key={column.key || column.label} className={`border border-gray-200 px-3 ${compact ? "py-2" : "py-3"} align-top text-gray-800 transition-colors`}>
                     {column.render ? column.render(row, rowIndex) : displayCell(row[column.key])}
                   </td>
                 ))}
@@ -54,20 +54,20 @@ export function KeyValueTable({ rows = [], label = "Field", value = "Value", col
   }
 
   return (
-    <div className="overflow-x-auto rounded-sm border border-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-[#E6D7BA] bg-white shadow-sm">
       <table className="min-w-full border-collapse text-sm">
         <tbody>
           {tableRows.length > 0 ? (
             tableRows.map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+              <tr key={rowIndex} className={`${rowIndex % 2 === 0 ? "bg-white" : "bg-[#F8FAFC]"} transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]`}>
                 {Array.from({ length: columns }).map((_, cellIndex) => {
                   const item = row[cellIndex];
                   return (
                     <React.Fragment key={cellIndex}>
-                      <th className="w-[20%] border-b border-gray-200 px-3 py-3 text-left font-bold text-gray-800">
+                      <th className="w-[20%] border border-gray-200 px-3 py-3 text-left font-bold text-[#1E3C72]">
                         {item ? item.key : ""}
                       </th>
-                      <td className="w-[30%] border-b border-gray-200 px-3 py-3 text-gray-800">
+                      <td className="w-[30%] border border-gray-200 px-3 py-3 text-gray-800">
                         {item ? displayCell(item.value) : ""}
                       </td>
                     </React.Fragment>
@@ -77,8 +77,8 @@ export function KeyValueTable({ rows = [], label = "Field", value = "Value", col
             ))
           ) : (
             <tr>
-              <th className="border-b border-gray-200 px-3 py-3 text-left font-bold text-gray-800">{label}</th>
-              <td className="border-b border-gray-200 px-3 py-3 text-gray-500">{value}</td>
+              <th className="border border-gray-200 px-3 py-3 text-left font-bold text-[#1E3C72]">{label}</th>
+              <td className="border border-gray-200 px-3 py-3 text-gray-500">{value}</td>
             </tr>
           )}
         </tbody>
@@ -88,14 +88,14 @@ export function KeyValueTable({ rows = [], label = "Field", value = "Value", col
 }
 
 export function ReportPanel({ title, subtitle, children, actions = null }) {
-  const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report"));
+  const isCalculator = typeof window !== "undefined" && (window.location.pathname.includes("/vedic-calculators") || window.location.pathname.includes("/lal-kitab-report") || window.location.pathname.includes("/detailed-matchmaking") || window.location.pathname.includes("/detailed-kundali"));
   const bgClass = isCalculator ? "bg-[#D7AF4B]" : "bg-[#fff8df]";
   const borderClass = isCalculator ? "border-[#D7AF4B]" : "border-[#e7c76c]";
-  const textClass = isCalculator ? "text-[#1E3557]" : "text-[#7a5205]";
-  const subtextClass = isCalculator ? "text-[#1E3557]/80" : "text-gray-600";
+  const textClass = isCalculator ? "text-[#1E3C72]" : "text-[#7a5205]";
+  const subtextClass = isCalculator ? "text-[#1E3C72]/80" : "text-gray-600";
 
   return (
-    <section className="rounded-sm border border-gray-200 bg-white shadow-sm">
+    <section className="flow-root overflow-hidden rounded-2xl border border-[#E6D7BA] bg-white shadow-sm">
       <div className={`flex flex-col gap-2 border-b ${borderClass} ${bgClass} px-4 py-3 sm:flex-row sm:items-center sm:justify-between`}>
         <div>
           <h3 className={`text-base font-bold ${textClass}`}>{title}</h3>

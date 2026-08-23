@@ -164,6 +164,32 @@ export default function MainSections() {
   };
 
   const ritualFallbacks = [poojaRitual, bhagwat, lamp];
+  const pathStepThemes = [
+    {
+      bg: "from-[#FFF4EA] to-[#FFEDE4]",
+      orb: "bg-[#FDD2C2]",
+      icon: "from-[#FFB05C] to-[#E65D2E]",
+      border: "border-[#F7D6BD]",
+    },
+    {
+      bg: "from-[#F1FAE9] to-[#EAF7DF]",
+      orb: "bg-[#CDECC1]",
+      icon: "from-[#D5B33A] to-[#41983B]",
+      border: "border-[#D5EBC8]",
+    },
+    {
+      bg: "from-[#EAF7FF] to-[#E8F2FF]",
+      orb: "bg-[#C8E6FF]",
+      icon: "from-[#58BAFF] to-[#2D65D9]",
+      border: "border-[#CBE2F7]",
+    },
+    {
+      bg: "from-[#FAECFF] to-[#F5E6FF]",
+      orb: "bg-[#E7C8F7]",
+      icon: "from-[#C084FC] to-[#7C3AED]",
+      border: "border-[#E8D1F5]",
+    },
+  ];
 
   const formatRatingText = (details) => {
     const ratingValue =
@@ -212,7 +238,7 @@ export default function MainSections() {
       )}
 
       <div className="mx-auto w-full max-w-[1200px] space-y-20">
-        <div className="rounded-[2rem] border border-[#EEE7D6] bg-white p-7 shadow-sm md:p-10">
+        <div className="overflow-hidden rounded-[2rem] border border-[#EEE7D6] bg-white p-7 shadow-sm md:p-10">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#D4A73C]">{t("home_sections.how_eyebrow")}</p>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-[#1E3557] md:text-4xl">
@@ -223,22 +249,34 @@ export default function MainSections() {
             </p>
           </div>
 
-          <div className="relative mt-10 grid gap-6 md:grid-cols-4">
-            <div className="absolute left-[12%] right-[12%] top-10 hidden border-t border-dashed border-[#D4A73C]/40 md:block" />
+          <div className="relative mt-10 grid gap-5 md:grid-cols-4">
+            <div className="absolute left-[12%] right-[12%] top-12 hidden border-t border-dashed border-[#D4A73C]/40 md:block" />
             {[
               ["1", t("home_sections.steps.birth_title"), t("home_sections.steps.birth_copy")],
               ["2", t("home_sections.steps.service_title"), t("home_sections.steps.service_copy")],
               ["3", t("home_sections.steps.connect_title"), t("home_sections.steps.connect_copy")],
               ["4", t("home_sections.steps.guidance_title"), t("home_sections.steps.guidance_copy")],
-            ].map(([number, title, copy]) => (
-              <div key={number} className="relative rounded-2xl border border-[#F0E5D2] bg-[#FBF7F0] p-5 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-[#D4A73C] text-2xl font-black text-[#1E3557] shadow-lg">
-                  {number}
+            ].map(([number, title, copy], index) => {
+              const theme = pathStepThemes[index % pathStepThemes.length];
+
+              return (
+                <div
+                  key={number}
+                  className={`group relative min-h-[230px] overflow-hidden rounded-[1.35rem] border ${theme.border} bg-gradient-to-br ${theme.bg} p-6 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10`}
+                >
+                  <div className={`absolute -right-8 -top-10 h-28 w-28 rounded-full ${theme.orb} opacity-70 transition group-hover:scale-110`} />
+                  <div className="relative z-10">
+                    <div className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${theme.icon} p-1 shadow-lg shadow-black/15 ring-4 ring-white/90 transition group-hover:scale-[1.04]`}>
+                      <span className="flex h-full w-full items-center justify-center rounded-full bg-[#D7AF4B] text-3xl font-black text-[#1E3557]">
+                        {number}
+                      </span>
+                    </div>
+                    <h3 className="mt-6 text-base font-black text-[#1E3557]">{title}</h3>
+                    <p className="mx-auto mt-3 max-w-[230px] text-sm leading-6 text-slate-600">{copy}</p>
+                  </div>
                 </div>
-                <h3 className="mt-5 text-base font-black text-[#1E3557]">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-gray-500">{copy}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -332,7 +370,7 @@ export default function MainSections() {
                     <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-500">{ritual.short_description}</p>
                     <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
                       <span>{ritual.duration_label}</span>
-                      <span className="font-bold text-[#1E3557]">Rs {Number(ritual.price || 0).toLocaleString("en-IN")}</span>
+                      <span className="font-bold text-[#1E3557]">Consultation first</span>
                     </div>
                     <div className="mt-5 grid grid-cols-2 gap-3">
                       <Link

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,17 +18,43 @@ class PanchangSection extends StatefulWidget {
 
 class _PanchangSectionState extends State<PanchangSection> {
   final AstrologyService _service = AstrologyService();
+  final PageController _metricController = PageController();
+  Timer? _metricTimer;
   bool _loading = true;
   String? _error;
   String _locationName = 'Saved birth place';
+  String _dateLabel = '--';
+  String _vaar = '--';
   String _tithi = '--';
   String _nakshatra = '--';
   String _yoga = '--';
+  int _metricIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _loadPanchang();
+    _startMetricTimer();
+  }
+
+  @override
+  void dispose() {
+    _metricTimer?.cancel();
+    _metricController.dispose();
+    super.dispose();
+  }
+
+  void _startMetricTimer() {
+    _metricTimer?.cancel();
+    _metricTimer = Timer.periodic(const Duration(milliseconds: 2400), (_) {
+      if (!_metricController.hasClients || _loading || _error != null) return;
+      final next = (_metricIndex + 1) % _metricCount;
+      _metricController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   Future<void> _loadPanchang() async {
@@ -58,6 +86,10 @@ class _PanchangSectionState extends State<PanchangSection> {
                     coordinates['lng'] ??
                     coordinates['lon']
                 : null));
+        if (lat != null && lng != null) {
+          await prefs.setDouble('user_pob_lat', lat);
+          await prefs.setDouble('user_pob_lng', lng);
+        }
       }
 
       if (lat == null || lng == null) {
@@ -70,6 +102,9 @@ class _PanchangSectionState extends State<PanchangSection> {
       }
 
       final now = DateTime.now();
+      final cacheKey = _cacheKey(now, lat, lng);
+      if (_restoreCachedPanchang(prefs, cacheKey, place, now)) return;
+
       final response = await _service.panchang({
         'datetime': now.toIso8601String(),
         'coordinates': '$lat,$lng',
@@ -84,6 +119,14 @@ class _PanchangSectionState extends State<PanchangSection> {
       if (!mounted) return;
       setState(() {
         _locationName = place.isEmpty ? 'Default location' : place;
+        _dateLabel = _formatDate(now);
+        _vaar = _entryName(summary['vaara']);
+        if (_vaar == '--') {
+          _vaar = _entryName(data['vaara']);
+        }
+        if (_vaar == '--') {
+          _vaar = _weekdayName(now);
+        }
         _tithi = _entryName(summary['current_tithi']);
         _nakshatra = _entryName(summary['current_nakshatra']);
         _yoga = _entryName(summary['current_yoga']);
@@ -92,6 +135,16 @@ class _PanchangSectionState extends State<PanchangSection> {
         }
         _loading = false;
       });
+      await _storeCachedPanchang(
+        prefs,
+        cacheKey: cacheKey,
+        locationName: place.isEmpty ? 'Default location' : place,
+        dateLabel: _formatDate(now),
+        vaar: _vaar,
+        tithi: _tithi,
+        nakshatra: _nakshatra,
+        yoga: _yoga,
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -124,6 +177,91 @@ class _PanchangSectionState extends State<PanchangSection> {
         .toString();
   }
 
+  static const int _metricCount = 5;
+
+  static String _cacheKey(DateTime date, double lat, double lng) {
+    final day =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    return '$day:${lat.toStringAsFixed(3)},${lng.toStringAsFixed(3)}';
+  }
+
+  bool _restoreCachedPanchang(
+    SharedPreferences prefs,
+    String cacheKey,
+    String place,
+    DateTime now,
+  ) {
+    if (prefs.getString('home_panchang_cache_key') != cacheKey) return false;
+    final tithi = prefs.getString('home_panchang_tithi') ?? '';
+    final nakshatra = prefs.getString('home_panchang_nakshatra') ?? '';
+    final yoga = prefs.getString('home_panchang_yoga') ?? '';
+    if (tithi.isEmpty && nakshatra.isEmpty && yoga.isEmpty) return false;
+    if (!mounted) return false;
+    setState(() {
+      _locationName = prefs.getString('home_panchang_location') ??
+          (place.isEmpty ? 'Default location' : place);
+      _dateLabel =
+          prefs.getString('home_panchang_date_label') ?? _formatDate(now);
+      _vaar = prefs.getString('home_panchang_vaar') ?? _weekdayName(now);
+      _tithi = tithi.isEmpty ? '--' : tithi;
+      _nakshatra = nakshatra.isEmpty ? '--' : nakshatra;
+      _yoga = yoga.isEmpty ? '--' : yoga;
+      _loading = false;
+      _error = null;
+    });
+    return true;
+  }
+
+  Future<void> _storeCachedPanchang(
+    SharedPreferences prefs, {
+    required String cacheKey,
+    required String locationName,
+    required String dateLabel,
+    required String vaar,
+    required String tithi,
+    required String nakshatra,
+    required String yoga,
+  }) async {
+    await prefs.setString('home_panchang_cache_key', cacheKey);
+    await prefs.setString('home_panchang_location', locationName);
+    await prefs.setString('home_panchang_date_label', dateLabel);
+    await prefs.setString('home_panchang_vaar', vaar);
+    await prefs.setString('home_panchang_tithi', tithi);
+    await prefs.setString('home_panchang_nakshatra', nakshatra);
+    await prefs.setString('home_panchang_yoga', yoga);
+  }
+
+  static String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  static String _weekdayName(DateTime date) {
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    return days[date.weekday - 1];
+  }
+
   static String? _providerMessage(Map<String, dynamic> data) {
     final sections = data['provider_sections'];
     if (sections is! List) return null;
@@ -139,6 +277,7 @@ class _PanchangSectionState extends State<PanchangSection> {
   }
 
   void _openFullPanchang() {
+    if (MainNavigationState.activateIndex(8)) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -252,16 +391,18 @@ class _PanchangSectionState extends State<PanchangSection> {
                   else if (_error != null)
                     _ErrorState(message: _error!, onRetry: _loadPanchang)
                   else
-                    Row(
-                      children: [
-                        Expanded(
-                            child: _InfoCard(title: 'Tithi', value: _tithi)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _InfoCard(
-                                title: 'Nakshatra', value: _nakshatra)),
-                        const SizedBox(width: 10),
-                        Expanded(child: _InfoCard(title: 'Yoga', value: _yoga)),
+                    _MetricCarousel(
+                      controller: _metricController,
+                      index: _metricIndex,
+                      onChanged: (index) => setState(() {
+                        _metricIndex = index;
+                      }),
+                      cards: [
+                        _InfoCard(title: 'Date', value: _dateLabel),
+                        _InfoCard(title: 'Vaar', value: _vaar),
+                        _InfoCard(title: 'Tithi', value: _tithi),
+                        _InfoCard(title: 'Nakshatra', value: _nakshatra),
+                        _InfoCard(title: 'Yoga', value: _yoga),
                       ],
                     ),
                   const SizedBox(height: 20),
@@ -327,6 +468,59 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
+class _MetricCarousel extends StatelessWidget {
+  final PageController controller;
+  final int index;
+  final ValueChanged<int> onChanged;
+  final List<Widget> cards;
+
+  const _MetricCarousel({
+    required this.controller,
+    required this.index,
+    required this.onChanged,
+    required this.cards,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 78,
+          child: PageView.builder(
+            controller: controller,
+            itemCount: cards.length,
+            onPageChanged: onChanged,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: cards[index],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(cards.length, (dotIndex) {
+            final active = dotIndex == index;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: active ? 16 : 6,
+              height: 6,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                color: active
+                    ? AppColors.accentGold
+                    : Colors.white.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
 class _InfoCard extends StatelessWidget {
   final String title;
   final String value;
@@ -336,7 +530,8 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 18),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: .65),
         borderRadius: BorderRadius.circular(14),
@@ -356,7 +551,7 @@ class _InfoCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: const TextStyle(

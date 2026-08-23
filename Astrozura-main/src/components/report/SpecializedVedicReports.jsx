@@ -49,17 +49,28 @@ const renderCleanValue = (value) => {
   return stripHtml(displayCell(parsed));
 };
 
+const resolveRudrakshaImageUrl = (value) => {
+  const imageValue = Array.isArray(value) ? value.find(Boolean) : value;
+  if (!imageValue || typeof imageValue !== "string") return rudrakshaFallbackImage;
+  const trimmed = imageValue.trim();
+  if (!trimmed) return rudrakshaFallbackImage;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  if (trimmed.startsWith("/")) return trimmed;
+  return trimmed;
+};
+
 const AttributeTable = ({ rows = [], emptyText = "No data returned." }) => (
-  <div className="overflow-x-auto rounded-sm border border-gray-200 bg-white">
-    <table className="min-w-full border-collapse text-sm">
+  <div className="overflow-x-auto rounded-2xl border border-[#E6D7BA] bg-white shadow-sm">
+    <table className="w-full min-w-0 table-auto border-collapse text-sm">
       <tbody>
         {rows.length > 0 ? (
           rows.map(([label, value], index) => (
-            <tr key={`${label}-${index}`} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-              <th className="w-[24%] min-w-36 border-b border-gray-200 px-4 py-3 text-left align-top font-bold text-gray-900">
+            <tr key={`${label}-${index}`} className={`${index % 2 === 0 ? "bg-white" : "bg-[#F8FAFC]"} transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]`}>
+              <th className="w-[34%] min-w-0 break-words border border-gray-200 px-3 py-2.5 text-left align-top text-xs font-bold text-[#1E3C72] sm:text-sm">
                 {label}
               </th>
-              <td className="border-b border-gray-200 px-4 py-3 align-top leading-7 text-gray-800">
+              <td className="min-w-0 break-words border border-gray-200 px-3 py-2.5 align-top leading-6 text-gray-800">
                 {renderCleanValue(value)}
               </td>
             </tr>
@@ -375,7 +386,7 @@ const findNestedArray = (source, matchers = []) => {
 };
 
 const getDashaName = (row) =>
-  renderCleanValue(getAny(row, ["dasha_planet", "dasha_name", "dasha", "planet", "sign", "rashi", "name"]) || "-");
+  renderCleanValue(getAny(row, ["dasha_planet", "dasha_name", "dasha", "planet", "sign_name", "sign", "rashi", "name"]) || "-");
 
 const getStartDate = (row) => renderCleanValue(getAny(row, ["start_date", "startDate", "start"]) || "-");
 const getEndDate = (row) => renderCleanValue(getAny(row, ["end_date", "endDate", "end"]) || "-");
@@ -569,7 +580,7 @@ const KpCuspBhavChart = ({ rows = [] }) => {
 
   return (
     <div className="space-y-4">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-lg">
         <div className="relative aspect-square border border-gray-900 bg-white">
           <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
             <line x1="0" y1="0" x2="100" y2="100" stroke="currentColor" strokeWidth="0.35" />
@@ -601,7 +612,7 @@ const KpCuspBhavChart = ({ rows = [] }) => {
             );
           })}
         </div>
-        <h4 className="mt-4 text-center text-xl font-black text-[#1E3557]">KP Cusp Bhav Chart</h4>
+        <h4 className="mt-3 text-center text-lg font-black text-[#1E3557]">KP Cusp Bhav Chart</h4>
       </div>
       <ReportTable
         columns={[
@@ -617,6 +628,37 @@ const KpCuspBhavChart = ({ rows = [] }) => {
     </div>
   );
 };
+
+const kpPlanetColumns = [
+  { key: "planet_id", label: "Planet ID", render: (row) => renderCleanValue(row.planet_id) },
+  { key: "planet_name", label: "Planet", render: (row) => renderCleanValue(row.planet_name) },
+  { key: "degree", label: "Degree", render: (row) => renderCleanValue(row.degree) },
+  { key: "formatted_degree", label: "Formatted Degree", render: (row) => renderCleanValue(row.formatted_degree) },
+  { key: "is_retro", label: "Retrograde", render: (row) => (row.is_retro === true || row.is_retro === "true" ? "Yes" : "No") },
+  { key: "norm_degree", label: "Norm Degree", render: (row) => renderCleanValue(row.norm_degree) },
+  { key: "formatted_norm_degree", label: "Formatted Norm Degree", render: (row) => renderCleanValue(row.formatted_norm_degree) },
+  { key: "house", label: "House", render: (row) => renderCleanValue(row.house) },
+  { key: "sign", label: "Sign", render: (row) => renderCleanValue(row.sign) },
+  { key: "sign_lord", label: "Sign Lord", render: (row) => renderCleanValue(row.sign_lord) },
+  { key: "nakshatra", label: "Nakshatra", render: (row) => renderCleanValue(row.nakshatra) },
+  { key: "nakshatra_lord", label: "Nakshatra Lord", render: (row) => renderCleanValue(row.nakshatra_lord) },
+  { key: "charan", label: "Charan", render: (row) => renderCleanValue(row.charan) },
+  { key: "sub_lord", label: "Sub Lord", render: (row) => renderCleanValue(row.sub_lord) },
+  { key: "sub_sub_lord", label: "Sub Sub Lord", render: (row) => renderCleanValue(row.sub_sub_lord) },
+];
+
+const kpHouseCuspColumns = [
+  { key: "house_id", label: "House ID", render: (row) => renderCleanValue(row.house_id) },
+  { key: "cusp_full_degree", label: "Cusp Full Degree", render: (row) => renderCleanValue(row.cusp_full_degree) },
+  { key: "formatted_degree", label: "Formatted Degree", render: (row) => renderCleanValue(row.formatted_degree) },
+  { key: "sign_id", label: "Sign ID", render: (row) => renderCleanValue(row.sign_id) },
+  { key: "sign", label: "Sign", render: (row) => renderCleanValue(row.sign) },
+  { key: "sign_lord", label: "Sign Lord", render: (row) => renderCleanValue(row.sign_lord) },
+  { key: "nakshatra", label: "Nakshatra", render: (row) => renderCleanValue(row.nakshatra) },
+  { key: "nakshatra_lord", label: "Nakshatra Lord", render: (row) => renderCleanValue(row.nakshatra_lord) },
+  { key: "sub_lord", label: "Sub Lord", render: (row) => renderCleanValue(row.sub_lord) },
+  { key: "sub_sub_lord", label: "Sub Sub Lord", render: (row) => renderCleanValue(row.sub_sub_lord) },
+];
 
 const ChartLikeGrid = ({ rows = [], title = "Chart" }) => {
   const cells = Array.from({ length: 12 }, (_, index) => {
@@ -688,11 +730,275 @@ const monthChartEntries = (payload) => {
     }));
 };
 
+const hasRenderablePayload = (payload) => {
+  if (payload === null || payload === undefined || payload === "") return false;
+  const parsed = parseMaybeJson(payload);
+  if (Array.isArray(parsed)) return parsed.length > 0;
+  if (isObject(parsed)) {
+    return Object.values(parsed).some((value) => {
+      if (value === null || value === undefined || value === "") return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (isObject(value)) return hasRenderablePayload(value);
+      return true;
+    });
+  }
+  return true;
+};
+
+const varshaphalPlanetColumns = [
+  { key: "name", label: "Planet", render: (row) => renderCleanValue(row.name) },
+  { key: "sign", label: "Sign", render: (row) => renderCleanValue(row.sign) },
+  { key: "signLord", label: "Sign Lord", render: (row) => renderCleanValue(row.signLord) },
+  { key: "house", label: "House", render: (row) => renderCleanValue(row.house) },
+  { key: "nakshatra", label: "Nakshatra", render: (row) => renderCleanValue(row.nakshatra) },
+  { key: "nakshatraLord", label: "Nakshatra Lord", render: (row) => renderCleanValue(row.nakshatraLord) },
+  { key: "nakshatra_pad", label: "Nakshatra Pada", render: (row) => renderCleanValue(row.nakshatra_pad) },
+  { key: "planet_awastha", label: "Planet Awastha", render: (row) => renderCleanValue(row.planet_awastha) },
+  { key: "is_planet_set", label: "Planet Set", render: (row) => (row.is_planet_set === true || row.is_planet_set === "true" ? "Yes" : "No") },
+  { key: "fullDegree", label: "Full Degree", render: (row) => renderCleanValue(row.fullDegree) },
+  { key: "normDegree", label: "Norm Degree", render: (row) => renderCleanValue(row.normDegree) },
+  { key: "speed", label: "Speed", render: (row) => renderCleanValue(row.speed) },
+  { key: "isRetro", label: "Retrograde", render: (row) => (row.isRetro === true || row.isRetro === "true" ? "Yes" : "No") },
+];
+
+const hasValues = (value) => {
+  const parsed = parseMaybeJson(value);
+  if (!Array.isArray(parsed)) return parsed !== null && parsed !== undefined && parsed !== "";
+  return parsed.some((item) => {
+    if (Array.isArray(item)) return item.some((nested) => nested !== null && nested !== undefined && nested !== "");
+    return item !== null && item !== undefined && item !== "";
+  });
+};
+
+const formatPlanetGroups = (value, scalarArrayAsGroup = false) => {
+  const parsed = parseMaybeJson(value);
+  if (!Array.isArray(parsed) || parsed.length === 0) return "-";
+  const groups = scalarArrayAsGroup && parsed.every((item) => !Array.isArray(item)) ? [parsed] : parsed;
+
+  return groups
+    .map((group) => {
+      const planets = Array.isArray(group) ? group : [group];
+      return planets
+        .filter((planet) => planet !== null && planet !== undefined && planet !== "")
+        .map((planet) => renderCleanValue(planet))
+        .join(" + ");
+    })
+    .filter(Boolean)
+    .join(" | ") || "-";
+};
+
+const yogaTypeItems = (value) => {
+  const types = parseMaybeJson(value);
+  return Array.isArray(types) ? types.filter(isObject) : [];
+};
+
+const getVarshaphalYogaPlanets = (row, key) => {
+  if (hasValues(row[key])) return formatPlanetGroups(row[key]);
+
+  const groups = yogaTypeItems(row.yog_type)
+    .map((type) => type[key])
+    .filter(hasValues);
+
+  return groups.length ? groups.map((group) => formatPlanetGroups(group, true)).join(" | ") : "-";
+};
+
+const formatVarshaphalYogTypes = (value) => {
+  const types = yogaTypeItems(value);
+  if (types.length === 0) return "-";
+
+  return types
+    .map((type) => {
+      const name = renderCleanValue(type.yog_name || type.name);
+      return name !== "-" ? name : "";
+    })
+    .filter(Boolean)
+    .join("\n") || "-";
+};
+
+const varshaphalYogaColumns = [
+  { key: "yog_name", label: "Yog", render: (row) => renderCleanValue(row.yog_name) },
+  { key: "is_yog_happening", label: "Happening", render: (row) => (row.is_yog_happening === true || row.is_yog_happening === "true" ? "Yes" : "No") },
+  { key: "yog_type", label: "Yog Type", render: (row) => <span className="whitespace-pre-line">{formatVarshaphalYogTypes(row.yog_type)}</span> },
+  { key: "planets", label: "Planets", render: (row) => <span className="whitespace-pre-line">{getVarshaphalYogaPlanets(row, "planets").replace(/\s\|\s/g, "\n")}</span> },
+  { key: "planets_id", label: "Planet IDs", render: (row) => <span className="whitespace-pre-line">{getVarshaphalYogaPlanets(row, "planets_id").replace(/\s\|\s/g, "\n")}</span> },
+  { key: "powerfullness_percentage", label: "Powerfulness", render: (row) => renderCleanValue(row.powerfullness_percentage) },
+  { key: "yog_description", label: "Description", render: (row) => renderCleanValue(row.yog_description) },
+  { key: "yog_prediction", label: "Prediction", render: (row) => renderCleanValue(row.yog_prediction) },
+];
+
 const dashaTableColumns = [
-  { key: "dasha", label: "Dasha Planet", render: (row) => getDashaName(row) },
+  { key: "dasha", label: "Dasha", render: (row) => getDashaName(row) },
+  {
+    key: "planet_id",
+    label: "ID",
+    render: (row) => {
+      const value = getAny(row, ["planet_id", "planetId", "sign_id", "signId", "dasha_id", "dashaId", "id"]);
+      return renderCleanValue(value ?? "-");
+    },
+  },
   { key: "start", label: "Start Date", render: (row) => getStartDate(row) },
   { key: "end", label: "End Date", render: (row) => getEndDate(row) },
+  { key: "duration", label: "Duration", render: (row) => renderCleanValue(getAny(row, ["duration", "years"]) || "-") },
 ];
+
+const dashaColumnsForRows = (rows = []) => {
+  const hasDuration = rows.some((row) => {
+    const value = getAny(row, ["duration", "years"]);
+    return value !== null && value !== undefined && value !== "" && value !== "-";
+  });
+  return hasDuration ? dashaTableColumns : dashaTableColumns.filter((column) => column.key !== "duration");
+};
+
+const vimshottariHierarchySections = [
+  { key: "major", title: "Major Dasha" },
+  { key: "minor", title: "Antar Dasha" },
+  { key: "sub_minor", title: "Pratyantar Dasha" },
+  { key: "sub_sub_minor", title: "Sookshma Dasha" },
+  { key: "sub_sub_sub_minor", title: "Pran Dasha" },
+];
+
+const CurrentVimshottariHierarchy = ({ data }) => {
+  if (!isObject(data)) return null;
+  const sections = vimshottariHierarchySections
+    .map((section) => ({
+      ...section,
+      rows: normalizeDashaRows(data[section.key]),
+      planet: data[section.key]?.planet,
+    }))
+    .filter((section) => section.rows.length > 0 || hasRenderablePayload(section.planet));
+
+  if (!sections.length) return payloadPanel("Complete Current Dasha", data);
+
+  return (
+    <ReportPanel title="Complete Current Dasha">
+      <div className="space-y-6">
+        {sections.map((section) => (
+          <div key={section.key} className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-[#D7AF4B] bg-[#fff8df] px-4 py-3">
+              <h4 className="text-base font-black text-[#1E3557]">{section.title}</h4>
+              {hasRenderablePayload(section.planet) ? (
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8a650d]">
+                  Current: {renderCleanValue(section.planet)}
+                </span>
+              ) : null}
+            </div>
+            {section.rows.length > 0 ? (
+              <ReportTable columns={dashaColumnsForRows(section.rows)} rows={section.rows} compact />
+            ) : (
+              <AttributeTable rows={objectRows(section.planet)} />
+            )}
+          </div>
+        ))}
+      </div>
+    </ReportPanel>
+  );
+};
+
+const charDashaRowsFromCurrent = (data) => {
+  if (!isObject(data)) return [];
+  return [
+    ["major_dasha", "Major Dasha"],
+    ["sub_dasha", "Sub Dasha"],
+    ["sub_sub_dasha", "Sub Sub Dasha"],
+  ]
+    .map(([key, label]) => {
+      const row = data[key];
+      return isObject(row) ? { id: key, level: label, ...row } : null;
+    })
+    .filter(Boolean);
+};
+
+const charCurrentColumns = [
+  { key: "level", label: "Level", render: (row) => renderCleanValue(row.level) },
+  ...dashaColumnsForRows([
+    { sign_id: 1, sign_name: "Sample", start_date: "start", end_date: "end", duration: "duration" },
+  ]),
+];
+
+const CharDashaPeriodPanel = ({ title, data, periodKey }) => {
+  const contextRows = [
+    ["Major Dasha", data?.major_dasha],
+    ["Sub Dasha", data?.sub_dasha && !Array.isArray(data.sub_dasha) ? data.sub_dasha : null],
+  ].filter(([, value]) => isObject(value));
+  const rows = normalizeDashaRows(data?.[periodKey] || data);
+  const tableTitle =
+    periodKey === "sub_sub_dasha"
+      ? "Sub Sub Dasha"
+      : periodKey === "sub_dasha"
+        ? "Sub Dasha"
+        : "Dasha Periods";
+
+  if (!hasRenderablePayload(data)) return null;
+
+  return (
+    <ReportPanel title={title}>
+      <div className="space-y-5">
+        {contextRows.length ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {contextRows.map(([label, value]) => (
+              <div key={label} className="rounded-sm border border-[#D7AF4B] bg-[#fff8df] p-4">
+                <p className="text-sm font-black text-[#1E3557]">{label}</p>
+                <div className="mt-3">
+                  <AttributeTable rows={cleanDashaRows(value)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {rows.length ? (
+          <div className="space-y-3">
+            <div className="rounded-sm border border-[#D7AF4B] bg-[#fff8df] px-4 py-3">
+              <h4 className="text-base font-black text-[#1E3557]">{tableTitle}</h4>
+            </div>
+            <ReportTable columns={dashaColumnsForRows(rows)} rows={rows} compact />
+          </div>
+        ) : (
+          <AttributeTable rows={objectRows(data)} />
+        )}
+      </div>
+    </ReportPanel>
+  );
+};
+
+const YoginiSubDashaPanel = ({ title, data }) => {
+  if (!hasRenderablePayload(data)) return null;
+  const groups = Array.isArray(data) ? data : [data];
+  const renderableGroups = groups
+    .filter((group) => isObject(group))
+    .map((group, index) => ({
+      id: index + 1,
+      major: group.major_dasha || group.majorDasha || null,
+      rows: normalizeDashaRows(group.sub_dasha || group.subDasha || group),
+    }))
+    .filter((group) => hasRenderablePayload(group.major) || group.rows.length > 0);
+
+  if (!renderableGroups.length) return payloadPanel(title, data);
+
+  return (
+    <ReportPanel title={title}>
+      <div className="space-y-6">
+        {renderableGroups.map((group) => (
+          <div key={group.id} className="space-y-4 rounded-sm border border-[#D7AF4B] bg-[#fffdf2] p-4">
+            {hasRenderablePayload(group.major) ? (
+              <div className="space-y-3">
+                <h4 className="text-base font-black text-[#1E3557]">Major Dasha</h4>
+                <AttributeTable rows={cleanDashaRows(group.major)} />
+              </div>
+            ) : null}
+            {group.rows.length ? (
+              <div className="space-y-3">
+                <div className="rounded-sm border border-[#D7AF4B] bg-[#fff8df] px-4 py-3">
+                  <h4 className="text-base font-black text-[#1E3557]">Sub Dasha</h4>
+                </div>
+                <ReportTable columns={dashaColumnsForRows(group.rows)} rows={group.rows} compact />
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </ReportPanel>
+  );
+};
 
 const DashaFlow = ({ title, items = [] }) => (
   <div className="rounded-sm border border-gray-200 bg-white p-5">
@@ -888,6 +1194,23 @@ const ashtakColumns = (firstLabel = "Sign") => [
   { key: "total", label: "Total", render: (row) => renderCleanValue(row.total) },
 ];
 
+const ashtakVargaRows = (value) => {
+  const parsed = parseMaybeJson(value);
+  if (!isObject(parsed?.ashtak_varga)) return [];
+  const details = parsed.ashtak_varga;
+  return [
+    ["Type", details.type],
+    ["Planet", details.planet],
+    ["Sign", details.sign],
+    ["Sign ID", details.sign_id],
+  ].filter(([, item]) => item !== null && item !== undefined && item !== "");
+};
+
+const ashtakVargaDetails = (value) => {
+  const parsed = parseMaybeJson(value);
+  return isObject(parsed?.ashtak_varga) ? parsed.ashtak_varga : null;
+};
+
 export function PitraDoshaReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const data = getSuccessData(providerPayload, "pitra_dosha_report") || result?.data;
@@ -941,6 +1264,7 @@ export function PitraDoshaReport({ result }) {
           <SimpleTextTable title="Remedy" items={remedies} />
         </ReportPanel>
       )}
+
     </div>
   );
 }
@@ -1041,6 +1365,7 @@ export function MangalDoshaReport({ result }) {
           <SimpleTextTable heading="Rule" items={ruleRows} />
         </ReportPanel>
       ) : null}
+
     </div>
   );
 }
@@ -1049,17 +1374,25 @@ export function GemstoneSuggestionReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const data = getSuccessData(providerPayload, "basic_gem_suggestion") || result?.data;
   const life = parseMaybeJson(data?.LIFE || data?.life || data?.Life);
+  const benefic = parseMaybeJson(data?.BENEFIC || data?.benefic || data?.Benefic);
   const lucky = parseMaybeJson(data?.LUCKY || data?.lucky || data?.Lucky);
   const fallbackRows = objectRows(data, ["gem_key"]);
+  const additionalRows = objectRows(data, ["life", "benefic", "lucky"]);
 
   return (
     <ReportPanel title="Gemstone Suggestion" subtitle="Basic gemstone recommendations from the horoscope.">
-      {isObject(life) || isObject(lucky) ? (
-        <div className="grid gap-5 lg:grid-cols-2">
+      {isObject(life) || isObject(benefic) || isObject(lucky) ? (
+        <div className="grid gap-5 xl:grid-cols-3">
           {isObject(life) && (
             <div className="space-y-3">
               <h4 className="text-base font-black text-[#1E3557]">Life Gemstone</h4>
               <AttributeTable rows={objectRows(life, ["gem_key"])} />
+            </div>
+          )}
+          {isObject(benefic) && (
+            <div className="space-y-3">
+              <h4 className="text-base font-black text-[#1E3557]">Benefic Gemstone</h4>
+              <AttributeTable rows={objectRows(benefic, ["gem_key"])} />
             </div>
           )}
           {isObject(lucky) && (
@@ -1072,44 +1405,36 @@ export function GemstoneSuggestionReport({ result }) {
       ) : (
         <AttributeTable rows={fallbackRows} />
       )}
+      {additionalRows.length > 0 && (
+        <div className="mt-5">
+          <h4 className="mb-3 text-base font-black text-[#1E3557]">Additional Gemstone Response</h4>
+          <AttributeTable rows={additionalRows} />
+        </div>
+      )}
     </ReportPanel>
   );
 }
 
-const resolveRudrakshaImageUrl = (value) => {
-  if (!value) return "";
-  const image = String(value).trim();
-  if (/^https?:\/\//i.test(image)) return image;
-  if (image.startsWith("/")) {
-    const base = import.meta.env.VITE_ASTROLOGY_IMAGE_BASE_URL || "https://astrologyapi.com";
-    return `${base}${image}`;
-  }
-  return image;
-};
-
 export function RudrakshaSuggestionReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const data = getSuccessData(providerPayload, "rudraksha_suggestion") || result?.data;
-  const imageUrl = resolveRudrakshaImageUrl(data?.img_url || data?.image_url || data?.image || data?.imgUrl);
-  const rows = objectRows(data, ["img_url", "image_url", "image", "imgurl", "rudraksha_key"]);
+  const imageUrl = resolveRudrakshaImageUrl(data?.img_url || data?.image_url || data?.image || data?.imgUrl || data?.imgurl);
+  const rows = objectRows(data, ["img_url", "image_url", "image", "imgUrl", "imgurl"]);
 
   return (
     <ReportPanel title="Rudraksha Suggestion" subtitle="Rudraksha recommendation based on birth details.">
-      <div className="space-y-5">
-        {imageUrl && (
-          <div className="flex justify-center rounded-sm border border-gray-200 bg-white p-5">
-            <img
-              src={imageUrl}
-              alt={stripHtml(data?.name || "Rudraksha suggestion")}
-              className="max-h-52 max-w-full object-contain"
-              loading="lazy"
-              onError={(event) => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = rudrakshaFallbackImage;
-              }}
-            />
-          </div>
-        )}
+      <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="flex items-center justify-center rounded-2xl border border-[#E6D7BA] bg-[#FFFBF0] p-4 shadow-sm">
+          <img
+            src={imageUrl}
+            alt="Recommended Rudraksha"
+            className="max-h-52 w-full max-w-[180px] object-contain"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = rudrakshaFallbackImage;
+            }}
+          />
+        </div>
         <AttributeTable rows={rows} />
       </div>
     </ReportPanel>
@@ -1120,13 +1445,12 @@ export function YoginiDashaReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const current = getSuccessData(providerPayload, "current_yogini_dasha");
   const major = getSuccessData(providerPayload, "major_yogini_dasha");
+  const sub = getSuccessData(providerPayload, "sub_yogini_dasha");
+  const subByCycle = getSuccessData(providerPayload, "sub_yogini_dasha_by_cycle");
   const currentMajor = pickObject(current, ["major"]) || current?.major_dasha || current?.majorDasha;
   const currentSub = pickObject(current, ["sub_dasha", "antar", "sub"]) || current?.sub_dasha || current?.subDasha;
   const currentSubSub = pickObject(current, ["sub_sub", "pratyantar"]) || current?.sub_sub_dasha || current?.subSubDasha;
   const majorRows = buildRowsFromArray(major);
-  const majorColumns = buildColumnsFromRows(majorRows, ["dasha_name", "name", "start_date", "start", "end_date", "end", "duration"]).filter(
-    (column) => !["dasha_id", "id", "start_ms", "end_ms"].includes(column.key)
-  );
 
   return (
     <div className="space-y-6">
@@ -1155,24 +1479,16 @@ export function YoginiDashaReport({ result }) {
       </ReportPanel>
 
       <ReportPanel title="Major Yogini Dasha">
-        <ReportTable
-          columns={majorColumns.map((column) =>
-            column.key === "duration"
-              ? {
-                  ...column,
-                  render: (row) => {
-                    const value = row.duration;
-                    return value !== null && value !== undefined && value !== "" && !/year/i.test(String(value))
-                      ? `${value} ${Number(value) === 1 ? "Year" : "Years"}`
-                      : renderCleanValue(value);
-                  },
-                }
-              : column
-          )}
-          rows={majorRows}
-          compact
-        />
+        {majorRows.length ? (
+          <ReportTable columns={dashaColumnsForRows(majorRows)} rows={majorRows} compact />
+        ) : (
+          <AttributeTable rows={objectRows(major)} />
+        )}
       </ReportPanel>
+
+      <YoginiSubDashaPanel title="Sub Yogini Dasha" data={sub} />
+
+      <YoginiSubDashaPanel title="Sub Yogini Dasha By Dasha Cycle" data={subByCycle} />
     </div>
   );
 }
@@ -1181,20 +1497,22 @@ export function VarshaphalReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const yearChart = getSuccessData(providerPayload, "varshaphal_year_chart");
   const monthChart = getSuccessData(providerPayload, "varshaphal_month_chart");
+  const varshaphalPlanets = getSuccessData(providerPayload, "varshaphal_planets");
+  const varshaphalYoga = getSuccessData(providerPayload, "varshaphal_yoga");
   const yearChartRows = normalizeChartSignRows(yearChart);
   const monthEntries = monthChartEntries(monthChart);
+  const varshaphalPlanetRows = buildRowsFromArray(varshaphalPlanets);
+  const varshaphalYogaRows = buildRowsFromArray(varshaphalYoga);
   const detailEntries = [
     ["varshaphal_details", "Varshaphal Details"],
-    ["varshaphal_planets", "Varshaphal Planets"],
     ["varshaphal_muntha", "Muntha"],
     ["varshaphal_mudda_dasha", "Mudda Dasha"],
     ["varshaphal_panchavargeeya_bala", "Panchavargeeya Bala"],
     ["varshaphal_harsha_bala", "Harsha Bala"],
     ["varshaphal_saham_points", "Saham Points"],
-    ["varshaphal_yoga", "Varshaphal Yoga"],
   ]
     .map(([key, title]) => ({ key, title, data: getSuccessData(providerPayload, key) }))
-    .filter((item) => item.data);
+    .filter((item) => hasRenderablePayload(item.data));
 
   return (
     <div className="space-y-6">
@@ -1219,6 +1537,18 @@ export function VarshaphalReport({ result }) {
         </div>
       </ReportPanel>
 
+      {varshaphalPlanets ? (
+        <ReportPanel title="Varshaphal Planets">
+          <ReportTable columns={varshaphalPlanetColumns} rows={varshaphalPlanetRows} compact />
+        </ReportPanel>
+      ) : null}
+
+      {varshaphalYoga ? (
+        <ReportPanel title="Varshaphal Yoga">
+          <ReportTable columns={varshaphalYogaColumns} rows={varshaphalYogaRows} compact />
+        </ReportPanel>
+      ) : null}
+
       {detailEntries.map((entry) => (
         <React.Fragment key={entry.key}>{payloadPanel(entry.title, entry.data)}</React.Fragment>
       ))}
@@ -1232,10 +1562,11 @@ export function KrishnamurtiPaddhatiReport({ result }) {
   const houseCusps = getSuccessData(providerPayload, "kp_house_cusps");
   const kpPlanets = getSuccessData(providerPayload, "kp_planets");
   const chartRows = buildKpHouseChartRows({ birthChart, cusps: houseCusps, planets: kpPlanets });
+  const kpPlanetRows = buildRowsFromArray(kpPlanets);
+  const kpHouseCuspRows = buildRowsFromArray(houseCusps);
   const detailEntries = [
-    ["kp_planets", "KP Planets"],
-    ["kp_house_cusps", "KP House Cusps"],
     ["kp_house_significator", "KP House Significator"],
+    ["kp_planet_significator", "KP Planet Significator"],
   ]
     .map(([key, title]) => ({ key, title, data: getSuccessData(providerPayload, key) }))
     .filter((item) => item.data);
@@ -1244,6 +1575,22 @@ export function KrishnamurtiPaddhatiReport({ result }) {
     <div className="space-y-6">
       <ReportPanel title="KP Birth Chart" subtitle="House cusp chart matched by house id, sign id, cusp degree and KP planet placements.">
         <KpCuspBhavChart rows={chartRows} />
+      </ReportPanel>
+
+      <ReportPanel title="KP Planets">
+        {kpPlanetRows.length ? (
+          <ReportTable columns={kpPlanetColumns} rows={kpPlanetRows} compact />
+        ) : (
+          <AttributeTable rows={objectRows(kpPlanets)} />
+        )}
+      </ReportPanel>
+
+      <ReportPanel title="KP House Cusps">
+        {kpHouseCuspRows.length ? (
+          <ReportTable columns={kpHouseCuspColumns} rows={kpHouseCuspRows} compact />
+        ) : (
+          <AttributeTable rows={objectRows(houseCusps)} />
+        )}
       </ReportPanel>
 
       {detailEntries.map((entry) => (
@@ -1288,16 +1635,24 @@ export function PujaSuggestionReport({ result }) {
 
 export function VimshottariDashaReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
-  const current = getSuccessData(providerPayload, "current_vdasha_all") || getSuccessData(providerPayload, "current_vdasha") || {};
+  const currentAll = getSuccessData(providerPayload, "current_vdasha_all");
+  const current = currentAll || getSuccessData(providerPayload, "current_vdasha") || {};
   const major = getSuccessData(providerPayload, "major_vdasha") || {};
   const currentDasha = getSuccessData(providerPayload, "current_vdasha");
   const currentDashaDate = getSuccessData(providerPayload, "current_vdasha_date");
+  const antarDasha = getSuccessData(providerPayload, "sub_vdasha");
+  const pratyantarDasha = getSuccessData(providerPayload, "sub_sub_vdasha");
+  const sookshmaDasha = getSuccessData(providerPayload, "sub_sub_sub_vdasha");
+  const pranDasha = getSuccessData(providerPayload, "sub_sub_sub_sub_vdasha");
   const majorRows = normalizeDashaRows(major);
   const flowItems = vimshottariDashaItems(current);
+  const currentDashaPanel = currentDasha ? ["current_vdasha", "Current Vimshottari Dasha", currentDasha] : null;
   const detailPanels = [
-    ["current_vdasha", "Current Vimshottari Dasha Details", currentDasha],
-    ["current_vdasha_date", "Current Vimshottari Dasha Dates", currentDashaDate],
-    ["current_vdasha_all", "Complete Current Dasha Hierarchy", getSuccessData(providerPayload, "current_vdasha_all")],
+    ["current_vdasha_date", "Current Vimshottari Dasha By Given Date", currentDashaDate],
+    ["sub_vdasha", "Antar Vimshottari Dasha", antarDasha],
+    ["sub_sub_vdasha", "Pratyantar Vimshottari Dasha", pratyantarDasha],
+    ["sub_sub_sub_vdasha", "Sookshma Vimshottari Dasha", sookshmaDasha],
+    ["sub_sub_sub_sub_vdasha", "Pran Vimshottari Dasha", pranDasha],
   ].filter(([, , data]) => data);
 
   return (
@@ -1315,8 +1670,14 @@ export function VimshottariDashaReport({ result }) {
         </div>
       </section>
 
+      {currentDashaPanel ? (
+        <React.Fragment key={currentDashaPanel[0]}>{payloadPanel(currentDashaPanel[1], currentDashaPanel[2])}</React.Fragment>
+      ) : null}
+
+      {currentAll ? <CurrentVimshottariHierarchy data={currentAll} /> : null}
+
       <ReportPanel title="Vimshottari Maha Dasha">
-        <ReportTable columns={dashaTableColumns} rows={majorRows} compact />
+        <ReportTable columns={dashaColumnsForRows(majorRows)} rows={majorRows} compact />
       </ReportPanel>
 
       {detailPanels.map(([key, title, data]) => (
@@ -1330,7 +1691,10 @@ export function CharDashaReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const current = getSuccessData(providerPayload, "current_chardasha") || {};
   const major = getSuccessData(providerPayload, "major_chardasha") || {};
+  const sub = getSuccessData(providerPayload, "sub_chardasha");
+  const subSub = getSuccessData(providerPayload, "sub_sub_chardasha");
   const majorRows = normalizeDashaRows(major);
+  const currentRows = charDashaRowsFromCurrent(current);
   const flowItems = currentDashaItems(current, [
     { label: "Major Dasha", matchers: ["major", "maha"] },
     { label: "Antar Dasha", matchers: ["antar", "sub"] },
@@ -1340,21 +1704,29 @@ export function CharDashaReport({ result }) {
   return (
     <div className="space-y-6">
       <section className="rounded-sm border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
-          <div>
-            <h3 className="text-3xl font-black text-[#1E3557]">Char Dasha</h3>
-            <p className="mt-5 text-sm leading-8 text-gray-700">
-              Char Dasha is a sign-based Jaimini dasha system. The report below focuses on the current Char Dasha sequence and the complete
-              major dasha timeline returned for the native.
-            </p>
-          </div>
-          <DashaFlow title="Current Char Dasha" items={flowItems} />
+        <div>
+          <h3 className="text-3xl font-black text-[#1E3557]">Char Dasha</h3>
+          <p className="mt-5 text-sm leading-8 text-gray-700">
+            Char Dasha is a sign-based Jaimini dasha system. The report below focuses on the current Char Dasha sequence and the complete
+            major dasha timeline returned for the native.
+          </p>
         </div>
       </section>
 
-      <ReportPanel title="Char Maha Dasha">
-        <ReportTable columns={dashaTableColumns} rows={majorRows} compact />
+      <ReportPanel title="Current Char Dasha">
+        {currentRows.length ? (
+          <ReportTable columns={charCurrentColumns} rows={currentRows} compact />
+        ) : (
+          <DashaFlow title="" items={flowItems} />
+        )}
       </ReportPanel>
+
+      <ReportPanel title="Major Char Dasha">
+        <ReportTable columns={dashaColumnsForRows(majorRows)} rows={majorRows} compact />
+      </ReportPanel>
+
+      {sub ? <CharDashaPeriodPanel title="Sub Char Dasha" data={sub} periodKey="sub_dasha" /> : null}
+      {subSub ? <CharDashaPeriodPanel title="Sub Sub Char Dasha" data={subSub} periodKey="sub_sub_dasha" /> : null}
     </div>
   );
 }
@@ -1365,7 +1737,11 @@ export function AshtakavargaReport({ result, planetLabel = "Sun" }) {
   const planetData = planetKey ? getSuccessData(providerPayload, planetKey) : null;
   const sarvaData = getSuccessData(providerPayload, "sarvashtak");
   const planetRows = normalizeAshtakRows(planetData);
+  const planetDetailRows = ashtakVargaRows(planetData);
+  const planetDetails = ashtakVargaDetails(planetData);
   const sarvaRows = normalizeAshtakRows(sarvaData);
+  const sarvaDetailRows = ashtakVargaRows(sarvaData);
+  const selectedPlanet = planetDetails?.planet || planetLabel;
 
   return (
     <div className="space-y-6">
@@ -1380,8 +1756,11 @@ export function AshtakavargaReport({ result, planetLabel = "Sun" }) {
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#D4A73C]">Selected Planet</p>
-            <p className="mt-2 text-2xl font-black text-[#1E3557]">{planetLabel}</p>
+            <p className="mt-2 text-2xl font-black text-[#1E3557]">{selectedPlanet}</p>
           </div>
+          {planetDetailRows.length > 0 ? (
+            <KeyValueTable rows={planetDetailRows} columns={2} />
+          ) : null}
           <ReportTable columns={ashtakColumns("Planet Zodiac")} rows={planetRows} compact />
         </div>
       </ReportPanel>
@@ -1395,6 +1774,9 @@ export function AshtakavargaReport({ result, planetLabel = "Sun" }) {
               helps compare the relative strength of zodiac signs and houses.
             </p>
           </div>
+          {sarvaDetailRows.length > 0 ? (
+            <KeyValueTable rows={sarvaDetailRows} columns={2} />
+          ) : null}
           <ReportTable columns={ashtakColumns("Sign")} rows={sarvaRows} compact />
         </div>
       </ReportPanel>

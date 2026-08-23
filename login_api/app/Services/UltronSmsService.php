@@ -65,6 +65,49 @@ class UltronSmsService
         ]);
     }
 
+    public function sendPaymentSuccess(string $phone, string $name, float $amount, string $purpose): bool
+    {
+        $templateId = $this->templateId('payment_success');
+        if (!$templateId) {
+            Log::warning('Ultron payment SMS skipped: DLT template id is missing.', [
+                'type' => 'payment_success',
+                'purpose' => $purpose,
+            ]);
+            return false;
+        }
+
+        $userName = $this->cleanTemplateValue($name ?: 'User');
+        $formattedAmount = number_format($amount, 2, '.', '');
+        $label = $this->cleanTemplateValue($purpose ?: 'AstroZura service');
+        $text = "Dear {$userName}, payment of Rs.{$formattedAmount} for {$label} has been received successfully. Thank you for choosing AstroZura.";
+
+        return $this->send($phone, $text, $templateId, [
+            'type' => 'payment_success',
+            'purpose' => $purpose,
+        ]);
+    }
+
+    public function sendOrderReceived(string $phone, string $name, string $orderNumber): bool
+    {
+        $templateId = $this->templateId('order_received');
+        if (!$templateId) {
+            Log::warning('Ultron order SMS skipped: DLT template id is missing.', [
+                'type' => 'order_received',
+                'order_number' => $orderNumber,
+            ]);
+            return false;
+        }
+
+        $userName = $this->cleanTemplateValue($name ?: 'User');
+        $order = $this->cleanTemplateValue($orderNumber);
+        $text = "Dear {$userName}, your order {$order} has been received successfully on AstroZura. We will notify you once it is processed.";
+
+        return $this->send($phone, $text, $templateId, [
+            'type' => 'order_received',
+            'order_number' => $orderNumber,
+        ]);
+    }
+
     private function send(string $phone, string $text, string $templateId, array $context = []): bool
     {
         if (!$this->isConfigured()) {

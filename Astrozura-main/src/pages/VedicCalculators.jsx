@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import InlineInfoPopover from "../components/InlineInfoPopover";
 import RecentProfilePicker from "../components/RecentProfilePicker";
+import { RelatedToolTabs, ToolInputPanel } from "../components/tool/ToolLayout";
 import { ProviderSections, ReportDataBlock } from "../components/report/ReportDataRenderer";
 import { KeyValueTable, ReportPanel } from "../components/report/ReportTables";
+import BiorhythmReport from "../components/report/BiorhythmReport";
 import {
   AshtakavargaReport,
   CharDashaReport,
@@ -67,7 +68,6 @@ export default function VedicCalculators() {
   const tool = getVedicCalculatorTool(toolKey);
 
   const [form, setForm] = useState(initialForm);
-  const [calculatorMenuOpen, setCalculatorMenuOpen] = useState(true);
   const [searchResults, setSearchResults] = useState([]);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -223,7 +223,6 @@ export default function VedicCalculators() {
         year: tool.requiresYear ? Number(form.year) : undefined,
         planet: tool.requiresPlanet ? Number(form.planet) : undefined,
         chart_style: tool.requiresChartStyle || tool.hasCompanionChart ? form.chart_style : undefined,
-        detailed_report: tool.supportsAdvanced ? form.detailed_report : undefined,
         mahadasha: form.mahadasha.trim() || undefined,
         antardasha: form.antardasha.trim() || undefined,
         pratyantardasha: form.pratyantardasha.trim() || undefined,
@@ -265,6 +264,57 @@ export default function VedicCalculators() {
     "kp",
   ].includes(tool.key);
   const selectedPlanetLabel = PLANET_OPTIONS.find((option) => Number(option.value) === Number(form.planet))?.label || "Sun";
+  const renderedResult = !result ? null : tool.key === "pitra-dosha" ? (
+    <PitraDoshaReport result={result} />
+  ) : tool.key === "sade-sati" ? (
+    <SadeSatiReport result={result} />
+  ) : tool.key === "kaal-sarp-dosha" ? (
+    <KaalSarpDoshaReport result={result} />
+  ) : tool.key === "basic-gem-suggestion" ? (
+    <GemstoneSuggestionReport result={result} />
+  ) : tool.key === "rudraksha-suggestion" ? (
+    <RudrakshaSuggestionReport result={result} />
+  ) : tool.key === "yogini-dasha" ? (
+    <YoginiDashaReport result={result} />
+  ) : tool.key === "puja-suggestion" ? (
+    <PujaSuggestionReport result={result} />
+  ) : tool.key === "vimshottari-dasha" ? (
+    <VimshottariDashaReport result={result} />
+  ) : tool.key === "char-dasha" ? (
+    <CharDashaReport result={result} />
+  ) : tool.key === "sarvashtakavarga" ? (
+    <AshtakavargaReport result={result} planetLabel={selectedPlanetLabel} />
+  ) : tool.key === "varshaphal" ? (
+    <VarshaphalReport result={result} />
+  ) : tool.key === "kp" ? (
+    <KrishnamurtiPaddhatiReport result={result} />
+  ) : tool.key === "biorhythm" ? (
+    <BiorhythmReport result={result} />
+  ) : providerSections.length > 0 ? (
+    <ProviderSections sections={providerSections} />
+  ) : (
+    <ReportPanel title="Detailed Result" subtitle="Complete calculated details for this module.">
+      <ReportDataBlock title="Result" data={result?.data} />
+    </ReportPanel>
+  );
+  const suggestedToolsPanel =
+    result && suggestedTools.length > 0 ? (
+      <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <h3 className="text-xl font-bold">More Vedic Calculators</h3>
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {suggestedTools.map((item) => (
+            <Link
+              key={item.key}
+              to={item.route}
+              className="rounded-2xl border border-slate-100 bg-[#f8f9fc] p-4 transition hover:-translate-y-1 hover:shadow-md"
+            >
+              <p className="font-semibold text-[#1E3557]">{item.title}</p>
+              <p className="mt-2 text-sm text-slate-500">{item.summary}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    ) : null;
 
   return (
     <div className="min-h-screen bg-[#f7f8fb] text-[#1E3557]">
@@ -297,18 +347,13 @@ export default function VedicCalculators() {
       </section>
 
       <section className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-16 md:-mt-16 md:px-8">
-        <div className="grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <div className="space-y-6">
-            <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-              <h2 className="text-2xl font-bold">Calculator Inputs</h2>
-              <p className="mt-2 text-sm text-slate-500">Enter the required details for the selected calculator.</p>
-              {tool.requiresDate ? (
-                <div className="mt-4">
-                  <RecentProfilePicker onSelect={applyRecentProfile} />
-                </div>
-              ) : null}
-
-              <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <div className="space-y-8">
+          <ToolInputPanel
+            title="Calculator Inputs"
+            description={`${tool.title} uses accurate birth details to generate a reliable calculation.`}
+            action={tool.requiresDate ? <RecentProfilePicker onSelect={applyRecentProfile} /> : null}
+          >
+              <form onSubmit={handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
 
               {tool.requiresDate && (
                 <>
@@ -454,7 +499,7 @@ export default function VedicCalculators() {
               )}
 
               {tool.supportsDashaParams && (
-                <div className="rounded-2xl border border-slate-200 bg-[#f8f9fc] p-4">
+                <div className="rounded-2xl border border-slate-200 bg-[#f8f9fc] p-4 md:col-span-2 xl:col-span-4">
                   <p className="text-sm font-bold text-slate-700">Optional Dasha Sub-period Inputs</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
                     Leave blank to generate the core dasha report. Fill these only when you want a specific sub-period calculation.
@@ -497,7 +542,7 @@ export default function VedicCalculators() {
               )}
 
               {tool.supportsYoginiParams && (
-                <div className="rounded-2xl border border-slate-200 bg-[#f8f9fc] p-4">
+                <div className="rounded-2xl border border-slate-200 bg-[#f8f9fc] p-4 md:col-span-2 xl:col-span-4">
                   <p className="text-sm font-bold text-slate-700">Optional Yogini Sub-period Inputs</p>
                   <div className="mt-4 space-y-3">
                     <input
@@ -520,70 +565,17 @@ export default function VedicCalculators() {
                 </div>
               )}
 
-              {tool.supportsAdvanced && (
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-[#f8f9fc] px-4 py-4 text-sm font-medium text-slate-700">
-                  <input
-                    type="checkbox"
-                    name="detailed_report"
-                    checked={form.detailed_report}
-                    onChange={handleChange}
-                  />
-                  Use advanced detailed report
-                </label>
-              )}
-
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557] transition hover:bg-[#e0b84f] disabled:opacity-60"
+                className="w-full rounded-2xl bg-[#D4A73C] px-5 py-3 text-sm font-bold text-[#1E3557] transition hover:bg-[#e0b84f] disabled:opacity-60 md:col-span-2 xl:col-span-4"
               >
                 {loading ? "Calculating..." : `Run ${tool.title}`}
               </button>
               </form>
-            </aside>
+          </ToolInputPanel>
 
-            <aside className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <button
-                  type="button"
-                  onClick={() => setCalculatorMenuOpen((current) => !current)}
-                  className="flex w-full items-center justify-between bg-slate-200 px-4 py-4 text-left text-sm font-bold uppercase tracking-wide text-slate-900 transition hover:bg-[#fff4cf] focus:outline-none focus:ring-2 focus:ring-[#D4A73C] focus:ring-offset-2"
-                  aria-controls="calculator-menu-list"
-                  aria-expanded={calculatorMenuOpen}
-                  title={calculatorMenuOpen ? "Collapse calculators" : "Open calculators"}
-                >
-                  <span>Calculators</span>
-                  <ChevronDown
-                    size={18}
-                    strokeWidth={2.4}
-                    className={`transition-transform duration-200 ${calculatorMenuOpen ? "rotate-180" : ""}`}
-                    aria-hidden="true"
-                  />
-                </button>
-
-                {calculatorMenuOpen && (
-                  <div id="calculator-menu-list" className="max-h-[360px] overflow-y-auto">
-                    {calculatorMenuItems.map((item) => {
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          aria-current={item.isActive ? "page" : undefined}
-                          className={`block border-b border-slate-200 px-4 py-3 text-sm transition last:border-b-0 ${
-                            item.isActive
-                              ? "border-r-4 border-r-[#D4A73C] bg-[#fff4cf] font-bold text-[#1E3557] shadow-[inset_4px_0_0_#D4A73C]"
-                              : "bg-white font-medium text-slate-700 hover:bg-[#fff9e8] hover:text-[#1E3557]"
-                          }`}
-                        >
-                          {item.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </aside>
-          </div>
+          <RelatedToolTabs title="Calculators" items={calculatorMenuItems} />
 
           <main className="space-y-6">
             {!result ? (
@@ -625,56 +617,8 @@ export default function VedicCalculators() {
                     />
                   </div>
                 </div>
-
-                {tool.key === "pitra-dosha" ? (
-                  <PitraDoshaReport result={result} />
-                ) : tool.key === "sade-sati" ? (
-                  <SadeSatiReport result={result} />
-                ) : tool.key === "kaal-sarp-dosha" ? (
-                  <KaalSarpDoshaReport result={result} />
-                ) : tool.key === "basic-gem-suggestion" ? (
-                  <GemstoneSuggestionReport result={result} />
-                ) : tool.key === "rudraksha-suggestion" ? (
-                  <RudrakshaSuggestionReport result={result} />
-                ) : tool.key === "yogini-dasha" ? (
-                  <YoginiDashaReport result={result} />
-                ) : tool.key === "puja-suggestion" ? (
-                  <PujaSuggestionReport result={result} />
-                ) : tool.key === "vimshottari-dasha" ? (
-                  <VimshottariDashaReport result={result} />
-                ) : tool.key === "char-dasha" ? (
-                  <CharDashaReport result={result} />
-                ) : tool.key === "sarvashtakavarga" ? (
-                  <AshtakavargaReport result={result} planetLabel={selectedPlanetLabel} />
-                ) : tool.key === "varshaphal" ? (
-                  <VarshaphalReport result={result} />
-                ) : tool.key === "kp" ? (
-                  <KrishnamurtiPaddhatiReport result={result} />
-                ) : providerSections.length > 0 ? (
-                  <ProviderSections sections={providerSections} />
-                ) : (
-                  <ReportPanel title="Detailed Result" subtitle="Complete calculated details for this module.">
-                    <ReportDataBlock title="Result" data={result?.data} />
-                  </ReportPanel>
-                )}
-
-                {suggestedTools.length > 0 && (
-                  <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-                    <h3 className="text-xl font-bold">More Vedic Calculators</h3>
-                    <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {suggestedTools.map((item) => (
-                        <Link
-                          key={item.key}
-                          to={item.route}
-                          className="rounded-2xl border border-slate-100 bg-[#f8f9fc] p-4 transition hover:-translate-y-1 hover:shadow-md"
-                        >
-                          <p className="font-semibold text-[#1E3557]">{item.title}</p>
-                          <p className="mt-2 text-sm text-slate-500">{item.summary}</p>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {renderedResult}
+                {suggestedToolsPanel}
               </>
             )}
           </main>

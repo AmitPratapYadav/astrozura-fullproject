@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import UserDashboardSidebar from "../../components/UserDashboardSidebar";
 import { getMyBookings, getMyRitualBookings, submitBookingReview } from "../../api/bookingApi";
+import { ensureRazorpayConfigured, payWithRazorpay } from "../../api/paymentApi";
 
 const formatSchedule = (value) =>
   value
@@ -21,6 +22,8 @@ const statusClass = {
   completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-rose-50 text-rose-700 border-rose-200",
   declined: "bg-rose-50 text-rose-700 border-rose-200",
+  consultation_scheduled: "bg-blue-50 text-blue-700 border-blue-200",
+  payment_requested: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
 const formatBirthDetails = (birthDetails) => {
@@ -42,6 +45,22 @@ export default function MyBookings() {
   const [message, setMessage] = useState(location.state?.message || "");
   const [reviewForms, setReviewForms] = useState({});
   const [submittingReviewFor, setSubmittingReviewFor] = useState(null);
+  const [payingRitualId, setPayingRitualId] = useState(null);
+
+  const ritualPaymentByConsultationId = useMemo(() => {
+    const paymentMap = new Map();
+    [...ritualBookings.upcoming, ...ritualBookings.history].forEach((ritualBooking) => {
+      if (
+        ritualBooking.consultation_booking_id &&
+        ritualBooking.status === "payment_requested" &&
+        ritualBooking.payment_status === "pending" &&
+        Number(ritualBooking.amount || 0) > 0
+      ) {
+        paymentMap.set(Number(ritualBooking.consultation_booking_id), ritualBooking);
+      }
+    });
+    return paymentMap;
+  }, [ritualBookings]);
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -142,7 +161,47 @@ export default function MyBookings() {
     }
   };
 
-  const renderBookingCard = (booking) => (
+  const refreshAllBookings = async () => {
+    const [consultationResponse, ritualResponse] = await Promise.all([
+      getMyBookings(),
+      getMyRitualBookings(),
+    ]);
+    setBookings({
+      upcoming: consultationResponse?.upcoming || [],
+      history: consultationResponse?.history || [],
+    });
+    setRitualBookings({
+      upcoming: ritualResponse?.upcoming || [],
+      history: ritualResponse?.history || [],
+    });
+  };
+
+  const payRitualBooking = async (booking) => {
+    try {
+      setPayingRitualId(booking.id);
+      setMessage("");
+      await ensureRazorpayConfigured();
+      await payWithRazorpay({
+        purpose: "ritual",
+        recordId: booking.id,
+        name: booking.devotee_name,
+        email: booking.devotee_email,
+        contact: booking.devotee_phone,
+        description: booking.ritual?.name || "Pooja Anusthan",
+      });
+      setMessage("Ritual payment completed successfully.");
+      await refreshAllBookings();
+    } catch (error) {
+      setMessage(error?.response?.data?.message || error?.message || "Unable to complete ritual payment.");
+    } finally {
+      setPayingRitualId(null);
+    }
+  };
+
+  const renderBookingCard = (booking) => {
+    const linkedRitualPayment = ritualPaymentByConsultationId.get(Number(booking.id));
+
+    return (
     <div key={booking.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -184,6 +243,29 @@ export default function MyBookings() {
         </div>
       )}
       {booking.notes && <p className="mt-4 rounded-xl bg-[#F8F9FC] px-4 py-3 text-sm text-gray-600">{booking.notes}</p>}
+      {linkedRitualPayment && (
+        <div className="mt-4 rounded-2xl border border-[#F1E1B8] bg-[#FFF9EC] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#D4A73C]">Ritual Payment Requested</p>
+              <p className="mt-1 text-sm leading-6 text-[#1E3557]">
+                {linkedRitualPayment.payment_note || "Complete payment to confirm your Pooja Anusthan booking."}
+              </p>
+              <p className="mt-2 text-lg font-bold text-[#1E3557]">
+                Rs {Number(linkedRitualPayment.amount).toLocaleString("en-IN")}
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={payingRitualId === linkedRitualPayment.id}
+              onClick={() => void payRitualBooking(linkedRitualPayment)}
+              className="rounded-xl bg-[#D4A73C] px-5 py-2.5 text-sm font-bold text-[#1E3557] transition hover:bg-[#c49530] disabled:opacity-60"
+            >
+              {payingRitualId === linkedRitualPayment.id ? "Opening Payment..." : "Pay Now"}
+            </button>
+          </div>
+        </div>
+      )}
       {!["completed", "cancelled", "declined"].includes(booking.status) && (
         <div className="mt-5 flex justify-end">
           <Link
@@ -298,7 +380,8 @@ export default function MyBookings() {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderRitualBookingCard = (booking) => {
     const scheduleDate = booking.confirmed_date || booking.preferred_date;
@@ -342,7 +425,9 @@ export default function MyBookings() {
           </div>
           <div>
             <p className="text-xs uppercase text-gray-400">Amount</p>
-            <p className="mt-1 font-semibold text-[#1E3557]">Rs {booking.amount}</p>
+            <p className="mt-1 font-semibold text-[#1E3557]">
+              {Number(booking.amount || 0) > 0 ? `Rs ${booking.amount}` : "After consultation"}
+            </p>
           </div>
         </div>
 
@@ -359,11 +444,52 @@ export default function MyBookings() {
           </div>
         )}
 
+        {!!booking.updates?.length && (
+          <div className="mt-4 space-y-3">
+            {booking.updates.map((update) => (
+              <div key={update.id} className="rounded-xl border border-[#F1E1B8] bg-[#FFF9EC] px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#D4A73C]">
+                    {update.type === "payment_request" ? "Payment Request" : "Ritual Expert Response"}
+                  </p>
+                  {Number(update.amount || 0) > 0 && (
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#1E3557]">
+                      Rs {Number(update.amount).toLocaleString("en-IN")}
+                    </span>
+                  )}
+                </div>
+                {update.message && <p className="mt-2 text-sm leading-6 text-[#1E3557]">{update.message}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
         {booking.notes && (
           <div className="mt-4 rounded-xl bg-[#F8F9FC] px-4 py-3 text-sm text-gray-600">
             {booking.notes}
           </div>
         )}
+
+        <div className="mt-5 flex flex-wrap justify-end gap-3">
+          {booking.consultation_booking_id && !["completed", "cancelled", "declined"].includes(booking.consultation_booking?.status || "") && (
+            <Link
+              to={`/session/${booking.consultation_booking_id}`}
+              className="inline-flex items-center rounded-xl bg-[#1E3557] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#162744]"
+            >
+              Join Consultation Chat
+            </Link>
+          )}
+          {booking.status === "payment_requested" && booking.payment_status === "pending" && Number(booking.amount || 0) > 0 && (
+            <button
+              type="button"
+              disabled={payingRitualId === booking.id}
+              onClick={() => void payRitualBooking(booking)}
+              className="inline-flex items-center rounded-xl bg-[#D4A73C] px-5 py-2.5 text-sm font-bold text-[#1E3557] transition hover:bg-[#c49530] disabled:opacity-60"
+            >
+              {payingRitualId === booking.id ? "Opening Payment..." : "Pay Now"}
+            </button>
+          )}
+        </div>
       </div>
     );
   };

@@ -96,7 +96,7 @@ export default function RitualDetail() {
             <span className="rounded-full bg-white/10 px-4 py-2">{ritual.mode}</span>
             <span className="rounded-full bg-white/10 px-4 py-2">{ritual.duration_label}</span>
             <span className="rounded-full bg-[#D4A73C] px-4 py-2 font-bold text-[#1E3557]">
-              Rs {Number(ritual.price || 0).toLocaleString("en-IN")}
+              Consultation first
             </span>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function RitualDetail() {
                       <div className="p-3">
                         <p className="text-sm font-semibold leading-5">{item.name}</p>
                         <p className="mt-1 text-xs text-[#D4A73C]">
-                          Rs {Number(item.price || 0).toLocaleString("en-IN")}
+                          Consultation first
                         </p>
                       </div>
                     </Link>
@@ -226,8 +226,8 @@ export default function RitualDetail() {
                     <span className="text-right font-semibold text-[#1E3557]">{ritual.ideal_timing}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Total Amount</span>
-                    <span className="font-bold text-[#1E3557]">Rs {Number(ritual.price || 0).toLocaleString("en-IN")}</span>
+                    <span>Final Amount</span>
+                    <span className="text-right font-bold text-[#1E3557]">After expert consultation</span>
                   </div>
                 </div>
 

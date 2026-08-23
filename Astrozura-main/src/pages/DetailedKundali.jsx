@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import RecentProfilePicker from "../components/RecentProfilePicker";
+import { RelatedToolTabs, ToolInputPanel } from "../components/tool/ToolLayout";
 import { 
   generateKundli, 
   getDivisionalCharts, 
   getPredictions, 
-  getVedicCalculator, 
   searchLocation 
 } from "../api/prokeralaApi";
 import { useAuth } from "../context/AuthContext";
@@ -18,8 +18,11 @@ import {
   MangalDoshaReport,
   PitraDoshaReport,
   RudrakshaSuggestionReport,
-  VimshottariDashaReport,
 } from "../components/report/SpecializedVedicReports";
+import { ReportDataBlock } from "../components/report/ReportDataRenderer";
+import { ReportPanel } from "../components/report/ReportTables";
+import BiorhythmReport from "../components/report/BiorhythmReport";
+import { serviceCatalog } from "../data/serviceCatalog";
 import { getServiceIcon } from "../data/serviceIcons";
 import { saveRecentProfile } from "../api/recentProfilesApi";
 import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
@@ -36,22 +39,28 @@ const initialForm = {
 };
 
 const divisionalChartOptions = [
-  { value: "rasi", label: "D1 - Rasi Chart" },
+  { value: "chalit", label: "Chalit - Chalit Chart" },
+  { value: "gochar", label: "Gochar / Transit Chart" },
+  { value: "sun", label: "Sun Chart" },
+  { value: "moon", label: "Moon Chart" },
+  { value: "rasi", label: "D1 - Birth Chart" },
   { value: "hora", label: "D2 - Hora Chart" },
-  { value: "drekkana", label: "D3 - Drekkana Chart" },
-  { value: "chaturthamsa", label: "D4 - Chaturthamsa Chart" },
-  { value: "panchamsa", label: "D5 - Panchamsa Chart" },
-  { value: "shashtamsa", label: "D6 - Shashtamsa Chart" },
+  { value: "drekkana", label: "D3 - Dreshkan Chart" },
+  { value: "chaturthamsa", label: "D4 - Chathurthamasha Chart" },
+  { value: "panchamsa", label: "D5 - Panchmamsha Chart" },
   { value: "saptamsa", label: "D7 - Saptamsa Chart" },
   { value: "ashtamsa", label: "D8 - Ashtamsa Chart" },
-  { value: "navamsa", label: "D9 - Navamsa Chart" },
-  { value: "dasamsa", label: "D10 - Dasamsa Chart" },
-  { value: "rudramsa", label: "D11 - Rudramsa Chart" },
-  { value: "dwadasamsa", label: "D12 - Dwadasamsa Chart" },
-  { value: "trayodashamsa", label: "D13 - Trayodashamsa Chart" },
-  { value: "chaturdashamsa", label: "D14 - Chaturdashamsa Chart" },
-  { value: "panchdashamsa", label: "D15 - Panchdashamsa Chart" },
-  { value: "shodasamsa", label: "D16 - Shodasamsa Chart" },
+  { value: "navamsa", label: "D9 - Navamansha Chart" },
+  { value: "dasamsa", label: "D10 - Dashamansha Chart" },
+  { value: "dwadasamsa", label: "D12 - Dwadashamsha Chart" },
+  { value: "shodasamsa", label: "D16 - Shodashamsha Chart" },
+  { value: "vimsamsa", label: "D20 - Vishamansha Chart" },
+  { value: "chaturvimsamsa", label: "D24 - Chaturvimshamsha Chart" },
+  { value: "bhamsa", label: "D27 - Bhamsa Chart" },
+  { value: "trimsamsa", label: "D30 - Trishamansha Chart" },
+  { value: "khavedamsa", label: "D40 - Khavedamsha Chart" },
+  { value: "akshavedamsa", label: "D45 - Akshvedansha Chart" },
+  { value: "shastiamsa", label: "D60 - Shashtymsha Chart" },
 ];
 
 const dossierTabs = [
@@ -59,6 +68,7 @@ const dossierTabs = [
   { id: "astro", label: "Astro Details" },
   { id: "charts", label: "Divisional Charts" },
   { id: "predictions", label: "Life Predictions" },
+  { id: "biorhythm", label: "Biorhythm" },
   { id: "dashas", label: "Vimshottari Dasha" },
   { id: "remedies", label: "Gem & Rudraksha" },
   { id: "mangal", label: "Mangal Dosha" },
@@ -67,11 +77,22 @@ const dossierTabs = [
 ];
 
 const predictionTabs = [
-  { id: "career", label: "Career" },
-  { id: "love-and-relationship", label: "Relationships" },
-  { id: "health", label: "Health" },
-  { id: "finance", label: "Wealth & Finance" },
+  { id: "health", label: "Health", tone: "from-[#DCFCE7] to-[#F0FDF4]", accent: "text-[#15803D]" },
+  { id: "emotions", label: "Emotions", tone: "from-[#FFE4E6] to-[#FFF1F2]", accent: "text-[#BE123C]" },
+  { id: "profession", label: "Profession", tone: "from-[#DBEAFE] to-[#EFF6FF]", accent: "text-[#1D4ED8]" },
+  { id: "luck", label: "Luck", tone: "from-[#FEF3C7] to-[#FFFBEB]", accent: "text-[#B45309]" },
+  { id: "personal_life", label: "Personal Life", tone: "from-[#F3E8FF] to-[#FAF5FF]", accent: "text-[#7E22CE]" },
+  { id: "travel", label: "Travel", tone: "from-[#CCFBF1] to-[#F0FDFA]", accent: "text-[#0F766E]" },
 ];
+
+const reportTabs = serviceCatalog
+  .filter((item) => item.category === "Reports")
+  .map((item) => ({
+    label: item.title,
+    to: item.ctaTo,
+    icon: item.icon,
+    isActive: item.slug === "detailed-kundali",
+  }));
 
 const cleanLabel = (value) =>
   String(value || "")
@@ -113,6 +134,15 @@ const displayValue = (value) => {
 
 const pageIcon = getServiceIcon("detailed-kundali");
 
+const detailCellClass =
+  "rounded-2xl border border-[#E6D7BA] bg-white px-4 py-3 shadow-sm transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]";
+const detailLabelClass = "text-[11px] font-black uppercase tracking-[0.16em] text-slate-500";
+const detailValueClass = "mt-1 text-sm font-black text-[#1E3557]";
+const tableWrapClass = "overflow-x-auto rounded-2xl border border-[#E6D7BA] bg-white shadow-sm";
+const tableHeadCellClass = "border border-[#D7AF4B] px-3 py-3 font-black";
+const tableBodyRowClass = "border-b border-gray-100 transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE] odd:bg-white even:bg-[#F8FAFC]";
+const tableBodyCellClass = "border border-gray-200 px-3 py-3 align-top text-slate-700";
+
 const objectTableRows = (value, skip = []) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
   const skipSet = new Set(skip.map((item) => String(item).toLowerCase()));
@@ -145,20 +175,278 @@ const planetRowsFromPayload = (kundli) => {
   const rows = findFirstArray(planetPayload, planetPayload?.data, planetPayload?.planets);
 
   return rows.map((planet) => ({
+    planetId: displayValue(planet?.id ?? planet?.planet_id ?? planet?.planetId),
     planet: displayValue(planet?.name || planet?.planet || planet?.full_name),
     sign: displayValue(planet?.sign || planet?.zodiac || planet?.rasi || planet?.house_sign),
-    signLord: displayValue(planet?.sign_lord || planet?.lord || planet?.rasi_lord),
-    degree: displayValue(planet?.degree || planet?.norm_degree || planet?.full_degree || planet?.local_degree),
+    signLord: displayValue(planet?.sign_lord || planet?.lord || planet?.rasi_lord || planet?.signLord),
+    fullDegree: displayValue(planet?.fullDegree ?? planet?.full_degree),
+    normDegree: displayValue(planet?.normDegree ?? planet?.norm_degree ?? planet?.degree ?? planet?.local_degree),
+    speed: displayValue(planet?.speed),
+    retrograde: displayValue(planet?.isRetro ?? planet?.is_retro),
     nakshatra: displayValue(planet?.nakshatra || planet?.nakshatra_name),
     nakshatraLord: displayValue(planet?.nakshatra_lord || planet?.nakshatraLord),
+    nakshatraPad: displayValue(planet?.nakshatra_pad || planet?.nakshatraPad || planet?.pada),
     house: displayValue(planet?.house || planet?.house_number),
     motion: displayValue(planet?.is_retro === true ? "Retrograde" : planet?.is_retro === false ? "Direct" : planet?.motion),
+    isPlanetSet: displayValue(planet?.is_planet_set ?? planet?.isPlanetSet),
+    planetAwastha: displayValue(planet?.planet_awastha || planet?.planetAwastha || planet?.awastha),
   }));
 };
 
 const providerData = (kundli, key) => {
   const raw = kundli?.provider_payload?.[key];
   return raw?.data || raw || kundli?.[key] || {};
+};
+
+const providerEntry = (kundli, key) => kundli?.provider_payload?.[key] || kundli?.[key] || null;
+
+const providerEntryData = (entry) => (entry?.data !== undefined ? entry.data : entry);
+
+const providerEntryHasData = (entry) => {
+  const data = providerEntryData(entry);
+  if (!entry || entry.status === "error" || entry.status === "pending") return false;
+  if (data === null || data === undefined || data === "") return false;
+  if (Array.isArray(data)) return data.length > 0;
+  if (typeof data === "object") return Object.keys(data).length > 0;
+  return true;
+};
+
+const astroDetailModules = [
+  { key: "bhav_madhya", title: "Bhav Madhya" },
+  { key: "bhavabala", title: "Bhavabala" },
+  { key: "shadbala", title: "Shadbala" },
+  { key: "ayanamsha", title: "Ayanamsha" },
+  { key: "ghat_chakra", title: "Ghat Chakra" },
+];
+
+const biorhythmModules = [
+  { key: "biorhythm", title: "Biorhythm" },
+  { key: "moon_biorhythm", title: "Moon Biorhythm" },
+];
+
+const ProviderModulePanels = ({ kundli, modules, emptyText }) => {
+  const visibleModules = modules
+    .map((module) => ({ ...module, entry: providerEntry(kundli, module.key) }))
+    .filter((module) => providerEntryHasData(module.entry));
+
+  if (!visibleModules.length) {
+    return (
+      <p className="rounded-2xl border border-gray-100 bg-slate-50 p-4 text-sm text-slate-500">
+        {emptyText || "No data returned for this section."}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {visibleModules.map((module) => (
+        <ReportPanel
+          key={module.key}
+          title={module.title}
+        >
+          <ReportDataBlock title={module.title} data={providerEntryData(module.entry)} />
+        </ReportPanel>
+      ))}
+    </div>
+  );
+};
+
+const hiddenRendererKeys = new Set([
+  "status",
+  "endpoint",
+  "api",
+  "url",
+  "provider_payload",
+  "provider_sections",
+  "raw",
+  "data",
+]);
+
+const unwrapProviderData = (value) => {
+  let current = providerEntryData(value);
+  while (
+    current &&
+    typeof current === "object" &&
+    !Array.isArray(current) &&
+    current.data &&
+    current.data !== current &&
+    Object.keys(current).filter((key) => !["status", "message", "data"].includes(key)).length === 0
+  ) {
+    current = current.data;
+  }
+  return current;
+};
+
+const isScalarValue = (value) =>
+  value === null ||
+  value === undefined ||
+  ["string", "number", "boolean"].includes(typeof value);
+
+const cleanEntries = (value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.entries(value).filter(
+    ([key, item]) =>
+      !hiddenRendererKeys.has(String(key).toLowerCase()) &&
+      item !== null &&
+      item !== undefined &&
+      item !== ""
+  );
+};
+
+const scalarEntries = (value) => cleanEntries(value).filter(([, item]) => isScalarValue(item));
+
+const complexEntries = (value) =>
+  cleanEntries(value).filter(([, item]) => item && typeof item === "object");
+
+const BiorhythmValueGrid = ({ entries }) => {
+  if (!entries.length) return null;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {entries.map(([key, value]) => (
+        <div key={key} className={detailCellClass}>
+          <span className={detailLabelClass}>{cleanLabel(key)}</span>
+          <span className={`block ${detailValueClass}`}>{displayValue(value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const BiorhythmArrayTable = ({ title, rows }) => {
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const objectRows = rows.filter((row) => row && typeof row === "object" && !Array.isArray(row));
+  const primitiveRows = rows.filter((row) => !row || typeof row !== "object" || Array.isArray(row));
+  const headers = objectRows.length
+    ? Array.from(
+        objectRows.reduce((set, row) => {
+          cleanEntries(row).forEach(([key, value]) => {
+            if (isScalarValue(value) || Array.isArray(value)) set.add(key);
+          });
+          return set;
+        }, new Set())
+      )
+    : ["Value"];
+
+  return (
+    <div className="rounded-2xl border border-[#E6D7BA] bg-white shadow-sm">
+      {title && (
+        <h5 className="border-b border-[#E6D7BA] bg-[#FFF3C4] px-4 py-3 text-sm font-black text-[#1E3557]">
+          {cleanLabel(title)}
+        </h5>
+      )}
+      <div data-horizontal-scroll="true" className="overflow-x-auto">
+        <table className="w-full min-w-[520px] border-collapse text-left text-xs">
+          <thead>
+            <tr className="bg-[#D7AF4B] text-[#1E3557]">
+              <th className={tableHeadCellClass}>S.N.</th>
+              {headers.map((heading) => (
+                <th key={heading} className={tableHeadCellClass}>
+                  {cleanLabel(heading)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {objectRows.map((row, index) => (
+              <tr key={index} className={tableBodyRowClass}>
+                <td className={tableBodyCellClass}>{index + 1}</td>
+                {headers.map((heading) => (
+                  <td key={heading} className={tableBodyCellClass}>
+                    {displayValue(row?.[heading])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {primitiveRows.map((row, index) => (
+              <tr key={`primitive-${index}`} className={tableBodyRowClass}>
+                <td className={tableBodyCellClass}>{objectRows.length + index + 1}</td>
+                <td className={tableBodyCellClass}>{displayValue(row)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const BiorhythmObjectCard = ({ title, value }) => {
+  const data = unwrapProviderData(value);
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return (
+      <div className={detailCellClass}>
+        <span className={detailLabelClass}>{cleanLabel(title)}</span>
+        <span className={`block ${detailValueClass}`}>{displayValue(data)}</span>
+      </div>
+    );
+  }
+
+  const scalars = scalarEntries(data);
+  const children = complexEntries(data);
+
+  return (
+    <div className="rounded-2xl border border-[#E6D7BA] bg-[#FFFDF7] p-4 shadow-sm">
+      {title && <h5 className="mb-4 text-base font-black text-[#1E3557]">{cleanLabel(title)}</h5>}
+      <BiorhythmValueGrid entries={scalars} />
+      {children.length > 0 && (
+        <div className="mt-4 space-y-4">
+          {children.map(([key, item]) =>
+            Array.isArray(item) ? (
+              <BiorhythmArrayTable key={key} title={key} rows={item} />
+            ) : (
+              <BiorhythmObjectCard key={key} title={key} value={item} />
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const BiorhythmPanels = ({ kundli }) => {
+  const visibleModules = biorhythmModules
+    .map((module) => ({ ...module, entry: providerEntry(kundli, module.key) }))
+    .filter((module) => providerEntryHasData(module.entry));
+
+  if (!visibleModules.length) {
+    return (
+      <p className="rounded-2xl border border-gray-100 bg-slate-50 p-4 text-sm text-slate-500">
+        No biorhythm data was returned for this profile.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {visibleModules.map((module) => {
+        const data = unwrapProviderData(module.entry);
+        const moduleScalars = scalarEntries(data);
+        const moduleChildren = complexEntries(data);
+
+        return (
+          <section key={module.key} className="overflow-hidden rounded-3xl border border-[#E6D7BA] bg-white shadow-sm">
+            <div className="border-b border-[#E6D7BA] bg-[#D7AF4B] px-5 py-4">
+              <h4 className="text-lg font-black text-[#1E3557]">{module.title}</h4>
+            </div>
+            <div className="space-y-4 p-4">
+              <BiorhythmValueGrid entries={moduleScalars} />
+              {Array.isArray(data) ? (
+                <BiorhythmArrayTable rows={data} />
+              ) : moduleChildren.length ? (
+                moduleChildren.map(([key, item]) =>
+                  Array.isArray(item) ? (
+                    <BiorhythmArrayTable key={key} title={key} rows={item} />
+                  ) : (
+                    <BiorhythmObjectCard key={key} title={key} value={item} />
+                  )
+                )
+              ) : null}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
 };
 
 const splitCoordinates = (coordinates = "") => {
@@ -232,6 +520,41 @@ const predictionBlocks = (payload) => {
   return [{ title: "Prediction", body: displayValue(payload) }];
 };
 
+const firstArrayFromObject = (value) => {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  for (const key of ["dasha_period", "periods", "major", "data", "dashas", "dasha"]) {
+    if (Array.isArray(value[key])) return value[key];
+  }
+  return Object.values(value).find((item) => Array.isArray(item)) || [];
+};
+
+const dashaPeriodRows = (payload) =>
+  firstArrayFromObject(payload)
+    .filter((item) => item && typeof item === "object")
+    .map((item, index) => {
+      const knownKeys = new Set(["planet", "dasha_name", "name", "lord", "planet_id", "id", "start", "start_date", "end", "end_date", "duration", "dasha_year", "years"]);
+      const extraDetails = Object.entries(item)
+        .filter(([key, value]) => !knownKeys.has(key) && value !== null && value !== undefined && value !== "")
+        .map(([key, value]) => `${cleanLabel(key)}: ${displayValue(value)}`)
+        .join(" | ");
+
+      return {
+        id: index,
+        planet: displayValue(item.planet || item.dasha_name || item.name || item.lord),
+        planetId: displayValue(item.planet_id ?? item.id),
+        start: displayValue(item.start || item.start_date),
+        end: displayValue(item.end || item.end_date),
+        duration: displayValue(item.duration || item.dasha_year || item.years),
+        extraDetails,
+      };
+    });
+
+const currentDashaRows = (payload) => {
+  if (!payload || typeof payload !== "object") return [];
+  return objectTableRows(payload);
+};
+
 export default function DetailedKundali() {
   const { user } = useAuth();
   const [form, setForm] = useState(initialForm);
@@ -244,9 +567,12 @@ export default function DetailedKundali() {
   // Tab states
   const [activeDossierTab, setActiveDossierTab] = useState("birth");
   const [selectedChartType, setSelectedChartType] = useState("rasi");
-  const [activePredictionArea, setActivePredictionArea] = useState("career");
+  const [activePredictionArea, setActivePredictionArea] = useState("health");
   const [loadingChart, setLoadingChart] = useState(false);
   const [loadedCharts, setLoadedCharts] = useState({});
+  const resultAreaRef = useRef(null);
+  const tabButtonRefs = useRef({});
+  const touchStartRef = useRef(null);
 
   const isPaid = Boolean(user);
 
@@ -272,6 +598,59 @@ export default function DetailedKundali() {
     const timer = window.setTimeout(() => setToast(""), 3500);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const activeButton = tabButtonRefs.current[activeDossierTab];
+    activeButton?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeDossierTab]);
+
+  useEffect(() => {
+    if (!reportData?.datetime) return undefined;
+    const timer = window.setTimeout(() => {
+      resultAreaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [reportData?.datetime]);
+
+  const selectDossierTab = (tabId) => {
+    setActiveDossierTab(tabId);
+  };
+
+  const shouldIgnoreSwipe = (target) => {
+    if (!target || typeof target.closest !== "function") return false;
+    return Boolean(
+      target.closest(
+        "button, a, input, select, textarea, [data-horizontal-scroll='true'], [data-dossier-tabs='true']"
+      )
+    );
+  };
+
+  const handleResultTouchStart = (event) => {
+    if (shouldIgnoreSwipe(event.target)) {
+      touchStartRef.current = null;
+      return;
+    }
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleResultTouchEnd = (event) => {
+    if (!touchStartRef.current) return;
+    const touch = event.changedTouches?.[0];
+    if (!touch) return;
+
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    if (Math.abs(deltaX) < 70 || Math.abs(deltaY) > 60) return;
+
+    const currentIndex = dossierTabs.findIndex((tab) => tab.id === activeDossierTab);
+    const nextIndex = deltaX < 0 ? currentIndex + 1 : currentIndex - 1;
+    const nextTab = dossierTabs[nextIndex];
+    if (nextTab) selectDossierTab(nextTab.id);
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -349,20 +728,17 @@ export default function DetailedKundali() {
       setLoading(true);
       setReportData(null);
       setLoadedCharts({});
+      setActiveDossierTab("birth");
       const datetime = `${form.date_of_birth}T${form.time_of_birth}:00+05:30`;
 
-      // Fetch primary Kundli core calculations, predictions, suggestions, and dosha summaries.
-      const [kundliRes, predictionsRes, gemstoneRes, rudrakshaRes, mangalRes, pitraRes, kaalRes] = await Promise.allSettled([
+      // Fetch the approved detailed Kundli bundle and the selected daily nakshatra prediction only.
+      const [kundliRes, predictionsRes] = await Promise.allSettled([
         generateKundli(datetime, form.coordinates, 1, {
+          chart_type: selectedChartType,
           chart_style: form.chart_style,
           la: form.language,
         }),
         getPredictions(datetime, form.coordinates, activePredictionArea, { la: form.language }),
-        getVedicCalculator("basic-gem-suggestion", { datetime, coordinates: form.coordinates, la: form.language }),
-        getVedicCalculator("rudraksha-suggestion", { datetime, coordinates: form.coordinates, la: form.language }),
-        getVedicCalculator("mangal-dosha", { datetime, coordinates: form.coordinates, la: form.language }),
-        getVedicCalculator("pitra-dosha", { datetime, coordinates: form.coordinates, la: form.language }),
-        getVedicCalculator("kaal-sarp-dosha", { datetime, coordinates: form.coordinates, la: form.language }),
       ]);
 
       const mainKundli = kundliRes.status === "fulfilled" ? kundliRes.value.data : null;
@@ -380,20 +756,21 @@ export default function DetailedKundali() {
       // Extract D1 chart if generated by default
       const defaultCharts = {};
       if (mainKundli?.chart) {
-        defaultCharts["rasi"] = mainKundli.chart;
+        defaultCharts[selectedChartType] = mainKundli.chart;
       }
+      const providerPayload = mainKundli?.provider_payload || {};
 
       setReportData({
         kundli: mainKundli,
         predictions: {
           [activePredictionArea]: predictionsRes.status === "fulfilled" ? predictionsRes.value.data : null,
         },
-        gemstones: gemstoneRes.status === "fulfilled" ? gemstoneRes.value.data : null,
-        rudraksha: rudrakshaRes.status === "fulfilled" ? rudrakshaRes.value.data : null,
+        gemstones: providerPayload.basic_gem_suggestion || null,
+        rudraksha: providerPayload.rudraksha_suggestion || null,
         doshas: {
-          mangal: mangalRes.status === "fulfilled" ? mangalRes.value.data : null,
-          pitra: pitraRes.status === "fulfilled" ? pitraRes.value.data : null,
-          kaal: kaalRes.status === "fulfilled" ? kaalRes.value.data : null,
+          mangal: providerPayload.manglik || null,
+          pitra: providerPayload.pitra_dosha_report || null,
+          kaal: providerPayload.kalsarpa_details || null,
         },
         datetime,
       });
@@ -580,17 +957,13 @@ export default function DetailedKundali() {
         </section>
       ) : (
         <section className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-16 md:px-10">
-          <div className="grid gap-8 xl:grid-cols-[400px_minmax(0,1fr)]">
-            <aside className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-6 shadow-sm self-start">
-              <h2 className="text-2xl font-bold">Birth Particulars</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Lal Kitab and detailed natal models require precise time and location details.
-              </p>
-              <div className="mt-4">
-                <RecentProfilePicker onSelect={applyRecentProfile} />
-              </div>
-
-              <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          <div className="space-y-8">
+            <ToolInputPanel
+              title="Birth Particulars"
+              description="Detailed Kundali Analysis requires precise time and location details."
+              action={<RecentProfilePicker onSelect={applyRecentProfile} />}
+            >
+              <form onSubmit={handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-600">Full Name</label>
                   <input
@@ -682,7 +1055,7 @@ export default function DetailedKundali() {
                 </div>
 
                 {form.coordinates && (
-                  <div className="rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-xs text-slate-500">
+                  <div className="rounded-2xl border border-slate-100 bg-[#f8f9fc] px-4 py-3 text-xs text-slate-500 md:col-span-2 xl:col-span-4">
                     Coordinates: {form.coordinates}
                   </div>
                 )}
@@ -690,7 +1063,7 @@ export default function DetailedKundali() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-2xl bg-[#1E3C72] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#162C54] disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1E3C72] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#162C54] disabled:opacity-60 md:col-span-2 xl:col-span-4"
                 >
                   {loading ? (
                     <>
@@ -702,9 +1075,11 @@ export default function DetailedKundali() {
                   )}
                 </button>
               </form>
-            </aside>
+            </ToolInputPanel>
 
-            <main className="space-y-6">
+            <RelatedToolTabs title="Reports" items={reportTabs} />
+
+            <main ref={resultAreaRef} className="space-y-6 scroll-mt-28">
               {!reportData ? (
                 <div className="rounded-[2.2rem] border border-[#EFE3D1] bg-white p-10 text-center shadow-sm">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF4FC] border border-gray-100 text-[#1E3C72] mb-4">
@@ -716,23 +1091,32 @@ export default function DetailedKundali() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-6 animate-fadeIn">
+                <div
+                  className="space-y-6 animate-fadeIn"
+                  onTouchStart={handleResultTouchStart}
+                  onTouchEnd={handleResultTouchEnd}
+                >
                   {/* Digital Dossier Tabs */}
-                  <div className="grid gap-3 border-b border-slate-200 pb-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {dossierTabs.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => setActiveDossierTab(t.id)}
-                        className={`min-h-[46px] rounded-2xl px-4 py-3 text-sm font-extrabold transition ${
-                          activeDossierTab === t.id
-                            ? "bg-[#1E3C72] text-white shadow-sm"
-                            : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
+                  <div data-dossier-tabs="true" className="-mx-1 overflow-x-auto border-b border-slate-200 px-1 pb-4 [scrollbar-width:thin]">
+                    <div className="flex min-w-max gap-3">
+                      {dossierTabs.map((t) => (
+                        <button
+                          key={t.id}
+                          ref={(node) => {
+                            if (node) tabButtonRefs.current[t.id] = node;
+                          }}
+                          type="button"
+                          onClick={() => selectDossierTab(t.id)}
+                          className={`min-h-[42px] min-w-[9rem] rounded-full px-4 py-2.5 text-sm font-extrabold transition md:min-w-[10rem] ${
+                            activeDossierTab === t.id
+                              ? "bg-[#1E3C72] text-white shadow-sm"
+                              : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
                     {false && [
                       { id: "birth", label: "Birth details", icon: "📝" },
                       { id: "charts", label: "Divisional Charts", icon: "📊" },
@@ -755,13 +1139,16 @@ export default function DetailedKundali() {
                   {activeDossierTab === "birth" && (
                     <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
                       <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3557]">Birth Details</h3>
-                      <div className="grid gap-4 sm:grid-cols-2 p-6 mt-0 pt-0">
-                        {kundliSummaryRows(reportData.kundli, form).map(([k, v], i) => (
-                          <div key={i} className="flex justify-between border-b border-gray-100 pb-2 text-xs">
-                            <span className="font-semibold text-slate-500">{k}</span>
-                            <span className="text-right font-bold text-[#1E3557]">{displayValue(v)}</span>
-                          </div>
-                        ))}
+                      <div className="p-6 mt-0 pt-0 space-y-6">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {kundliSummaryRows(reportData.kundli, form).map(([k, v], i) => (
+                            <div key={i} className={detailCellClass}>
+                              <span className={detailLabelClass}>{k}</span>
+                              <span className={`block ${detailValueClass}`}>{displayValue(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+
                       </div>
                     </div>
                   )}
@@ -774,21 +1161,21 @@ export default function DetailedKundali() {
                         {objectTableRows(providerData(reportData.kundli, "astro_details")).length > 0 && (
                           <div className="grid gap-4 sm:grid-cols-2">
                             {objectTableRows(providerData(reportData.kundli, "astro_details")).map(([k, v], i) => (
-                              <div key={`${k}-${i}`} className="flex justify-between border-b border-gray-100 pb-2 text-xs">
-                                <span className="font-semibold text-slate-500">{k}</span>
-                                <span className="text-right font-bold text-[#1E3557]">{displayValue(v)}</span>
+                              <div key={`${k}-${i}`} className={detailCellClass}>
+                                <span className={detailLabelClass}>{k}</span>
+                                <span className={`block ${detailValueClass}`}>{displayValue(v)}</span>
                               </div>
                             ))}
                           </div>
                         )}
 
                         {planetRowsFromPayload(reportData.kundli).length > 0 && (
-                          <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                          <div className={tableWrapClass}>
                             <table className="w-full min-w-[760px] border-collapse text-left text-xs">
                               <thead>
                                 <tr className="bg-[#D7AF4B] text-[#1E3557]">
-                                  {["Planet", "Sign", "Sign Lord", "Degree", "Nakshatra", "Nakshatra Lord", "House", "Motion"].map((heading) => (
-                                    <th key={heading} className="border-b border-amber-100 px-3 py-3 font-black">
+                                  {["Planet ID", "Planet", "Sign", "Sign Lord", "Full Degree", "Norm Degree", "Speed", "Retrograde", "Nakshatra", "Nakshatra Lord", "Nakshatra Pad", "House", "Motion", "Is Planet Set", "Planet Awastha"].map((heading) => (
+                                    <th key={heading} className={tableHeadCellClass}>
                                       {heading}
                                     </th>
                                   ))}
@@ -796,15 +1183,22 @@ export default function DetailedKundali() {
                               </thead>
                               <tbody>
                                 {planetRowsFromPayload(reportData.kundli).map((planet, index) => (
-                                  <tr key={`${planet.planet}-${index}`} className="border-b border-gray-100 last:border-b-0 odd:bg-white even:bg-slate-50">
-                                    <td className="px-3 py-3 font-bold text-[#1E3557]">{planet.planet}</td>
-                                    <td className="px-3 py-3 text-slate-600">{planet.sign}</td>
-                                    <td className="px-3 py-3 text-slate-600">{planet.signLord}</td>
-                                    <td className="px-3 py-3 text-slate-600">{planet.degree}</td>
-                                    <td className="px-3 py-3 text-slate-600">{planet.nakshatra}</td>
-                                    <td className="px-3 py-3 text-slate-600">{planet.nakshatraLord}</td>
-                                    <td className="px-3 py-3 text-slate-600">{planet.house}</td>
-                                    <td className="px-3 py-3 text-slate-600">{planet.motion}</td>
+                                  <tr key={`${planet.planet}-${index}`} className={tableBodyRowClass}>
+                                    <td className={tableBodyCellClass}>{planet.planetId}</td>
+                                    <td className={`${tableBodyCellClass} font-bold text-[#1E3557]`}>{planet.planet}</td>
+                                    <td className={tableBodyCellClass}>{planet.sign}</td>
+                                    <td className={tableBodyCellClass}>{planet.signLord}</td>
+                                    <td className={tableBodyCellClass}>{planet.fullDegree}</td>
+                                    <td className={tableBodyCellClass}>{planet.normDegree}</td>
+                                    <td className={tableBodyCellClass}>{planet.speed}</td>
+                                    <td className={tableBodyCellClass}>{planet.retrograde}</td>
+                                    <td className={tableBodyCellClass}>{planet.nakshatra}</td>
+                                    <td className={tableBodyCellClass}>{planet.nakshatraLord}</td>
+                                    <td className={tableBodyCellClass}>{planet.nakshatraPad}</td>
+                                    <td className={tableBodyCellClass}>{planet.house}</td>
+                                    <td className={tableBodyCellClass}>{planet.motion}</td>
+                                    <td className={tableBodyCellClass}>{planet.isPlanetSet}</td>
+                                    <td className={tableBodyCellClass}>{planet.planetAwastha}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -818,7 +1212,7 @@ export default function DetailedKundali() {
                             <h4 className="font-bold text-sm text-[#1E3557] mb-3">Positive Yogas Present In Chart:</h4>
                             <div className="grid gap-3">
                               {reportData.kundli.yoga_details.flatMap(g => g.yoga_list || []).filter(y => y.has_yoga).slice(0, 4).map((y, index) => (
-                                <div key={index} className="rounded-xl bg-[#FAF9F6] border border-[#EFECE6] p-4 text-xs">
+                                <div key={index} className="rounded-2xl bg-[#FAF9F6] border border-[#E6D7BA] p-4 text-xs transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]">
                                   <p className="font-bold text-[#B05B35]">{y.name}</p>
                                   <p className="mt-1 leading-5 text-gray-500">{y.description}</p>
                                 </div>
@@ -826,6 +1220,14 @@ export default function DetailedKundali() {
                             </div>
                           </div>
                         )}
+
+                        <div className="border-t border-gray-100 pt-6">
+                          <ProviderModulePanels
+                            kundli={reportData.kundli}
+                            modules={astroDetailModules}
+                            emptyText="No additional astro details were returned for this profile."
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
@@ -871,7 +1273,11 @@ export default function DetailedKundali() {
                               key={area.id}
                               type="button"
                               onClick={() => setActivePredictionArea(area.id)}
-                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activePredictionArea === area.id ? "bg-[#1E3557] text-white" : "bg-[#f8f9fc] text-gray-500 hover:bg-gray-100"}`}
+                              className={`rounded-2xl border px-4 py-3 text-xs font-black transition ${
+                                activePredictionArea === area.id
+                                  ? `border-transparent bg-gradient-to-br ${area.tone} ${area.accent} shadow-sm`
+                                  : "border-[#E6D7BA] bg-white text-gray-600 hover:bg-[#FFF7DF]"
+                              }`}
                             >
                               {area.label}
                             </button>
@@ -883,8 +1289,11 @@ export default function DetailedKundali() {
                             predictionBlocks(reportData.predictions[activePredictionArea]).length ? (
                               <div className="space-y-4">
                                 {predictionBlocks(reportData.predictions[activePredictionArea]).map((block, index) => (
-                                  <div key={`${block.title}-${index}`} className="rounded-2xl border border-gray-100 bg-slate-50 p-4">
-                                    <h4 className="text-sm font-black text-[#1E3557]">{block.title}</h4>
+                                  <div
+                                    key={`${block.title}-${index}`}
+                                    className={`rounded-3xl border border-[#E6D7BA] bg-gradient-to-br ${predictionTabs.find((area) => area.id === activePredictionArea)?.tone || "from-[#F8FAFC] to-white"} p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0`}
+                                  >
+                                    <h4 className={`text-sm font-black ${predictionTabs.find((area) => area.id === activePredictionArea)?.accent || "text-[#1E3557]"}`}>{block.title}</h4>
                                     <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{block.body}</p>
                                   </div>
                                 ))}
@@ -904,9 +1313,94 @@ export default function DetailedKundali() {
                     </div>
                   )}
 
+                  {activeDossierTab === "biorhythm" && (
+                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm">
+                      <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3557]">Biorhythm</h3>
+                      <div className="p-6">
+                        <BiorhythmReport kundli={reportData.kundli} />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Dashas Tab Content */}
                   {activeDossierTab === "dashas" && (
-                    <VimshottariDashaReport result={{ data: { provider_payload: reportData.kundli?.provider_payload || {} } }} />
+                    (() => {
+                      const currentVdasha = providerData(reportData.kundli, "current_vdasha");
+                      const majorVdasha = providerData(reportData.kundli, "major_vdasha");
+                      const currentRows = currentDashaRows(currentVdasha);
+                      const majorRows = dashaPeriodRows(majorVdasha);
+
+                      return (
+                        <div className="space-y-6">
+                          <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm">
+                            <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3C72]">Current Vimshottari Dasha</h3>
+                            <div className="p-6">
+                              {currentRows.length ? (
+                                <div className={tableWrapClass}>
+                                  <table className="w-full text-left text-sm border-collapse">
+                                    <tbody>
+                                      {currentRows.map(([label, value], index) => (
+                                        <tr key={label} className={`${index % 2 === 0 ? "bg-white" : "bg-[#F8FAFC]"} transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]`}>
+                                          <th className="w-1/3 border border-gray-200 p-3 font-extrabold text-[#1E3C72]">{label}</th>
+                                          <td className="border border-gray-200 p-3 text-gray-700">{value}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <p className="rounded-2xl border border-gray-100 bg-slate-50 p-4 text-sm text-slate-500">No current dasha data returned.</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm">
+                            <h3 className="bg-[#D7AF4B] px-6 py-5 text-2xl font-black text-[#1E3C72]">Vimshottari Maha Dasha</h3>
+                            <div className="p-6">
+                              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Major planetary periods</p>
+                              <div className={tableWrapClass}>
+                                <table className="w-full text-left text-xs border-collapse">
+                                  <thead>
+                                    <tr className="bg-[#D7AF4B] font-bold text-[#1E3C72]">
+                                      <th className={tableHeadCellClass}>Planet</th>
+                                      <th className={tableHeadCellClass}>Planet ID</th>
+                                      <th className={tableHeadCellClass}>Start Date</th>
+                                      <th className={tableHeadCellClass}>End Date</th>
+                                      {majorRows.some((row) => row.duration && row.duration !== "-") && (
+                                        <th className={tableHeadCellClass}>Duration</th>
+                                      )}
+                                      {majorRows.some((row) => row.extraDetails) && (
+                                        <th className={tableHeadCellClass}>Other Details</th>
+                                      )}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {majorRows.length ? majorRows.map((row) => (
+                                      <tr key={row.id} className={`${tableBodyRowClass} font-semibold`}>
+                                        <td className={`${tableBodyCellClass} font-extrabold text-[#1E3C72]`}>{row.planet}</td>
+                                        <td className={tableBodyCellClass}>{row.planetId}</td>
+                                        <td className={tableBodyCellClass}>{row.start}</td>
+                                        <td className={tableBodyCellClass}>{row.end}</td>
+                                        {majorRows.some((item) => item.duration && item.duration !== "-") && (
+                                          <td className={tableBodyCellClass}>{row.duration}</td>
+                                        )}
+                                        {majorRows.some((item) => item.extraDetails) && (
+                                          <td className={tableBodyCellClass}>{row.extraDetails || "-"}</td>
+                                        )}
+                                      </tr>
+                                    )) : (
+                                      <tr>
+                                        <td className="p-4 text-center text-gray-500" colSpan={5}>No major dasha data returned.</td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
                   )}
 
                   {/* Gemstone / Rudraksha Tab Content */}

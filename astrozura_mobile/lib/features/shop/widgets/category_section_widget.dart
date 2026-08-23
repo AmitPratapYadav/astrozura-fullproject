@@ -60,7 +60,7 @@ class CategorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 136,
+      height: 154,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -89,7 +89,7 @@ class CategorySection extends StatelessWidget {
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
               width: 110,
-              margin: const EdgeInsets.only(right: 12),
+              margin: const EdgeInsets.only(right: 12, bottom: 10),
               decoration: BoxDecoration(
                 // Selected → gold gradient  |  Unselected → white card
                 gradient: isSelected
@@ -172,7 +172,7 @@ class CategorySection extends StatelessWidget {
                           ? _navy.withOpacity(0.2)
                           : _gold.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
-                     ),
+                    ),
                     child: Text(
                       '$count items',
                       style: GoogleFonts.poppins(

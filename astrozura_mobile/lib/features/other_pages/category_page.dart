@@ -10,10 +10,12 @@ class SparkCategorySheet {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.45),
+      barrierColor: Colors.black.withValues(alpha: 0.50),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       builder: (_) => const _SheetRoot(),
     );
@@ -27,13 +29,9 @@ class SparkCategorySheet {
 class _C {
   static const gold = Color(0xFFD4A84F);
   static const goldLight = Color(0xFFF5EDDA);
-  static const goldMid = Color(0xFFEDD99A);
-  static const darkBlue = Color(0xFF0d437b);
   static const textDark = Color(0xFF1A1A1A);
-  static const textMid = Color(0xFF666666);
   static const textLight = Color(0xFFAAAAAA);
   static const divider = Color(0xFFF0F0F0);
-  static const bg = Color(0xFFFAFAFA);
   static const white = Color(0xFFFFFFFF);
 }
 
@@ -89,6 +87,8 @@ class _SheetRootState extends State<_SheetRoot>
   }
 
   void _handleLeafNavigation(BuildContext ctx, String id, String title) {
+    if (activateCategoryTarget(id)) return;
+
     final builder = categoryRoutes[id];
 
     if (builder == null) {
@@ -109,43 +109,58 @@ class _SheetRootState extends State<_SheetRoot>
   @override
   Widget build(BuildContext context) {
     final screenH = MediaQuery.of(context).size.height;
-    return Container(
-      height: screenH * 0.70,
-      decoration: const BoxDecoration(
-        color: _C.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: Stack(
-          children: [
-            _MainCategoryPage(
-              onCategoryTap: (cat) {
-                if (cat.hasSubCategories) {
-                  _openSubPage(cat);
-                } else {
-                  Navigator.pop(context);
-                  _handleLeafNavigation(context, cat.id, cat.title);
-                }
-              },
-              onClose: () => Navigator.pop(context),
+      child: Container(
+        height: screenH * 0.76,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: _C.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 26,
+              offset: const Offset(0, -8),
             ),
-            if (_activeCat != null)
-              FadeTransition(
-                opacity: _fadeAnim,
-                child: SlideTransition(
-                  position: _slideAnim,
-                  child: _SubCategoryPage(
-                    category: _activeCat!,
-                    onBack: _goBack,
-                    onSubTap: (sub) {
-                      Navigator.pop(context);
-                      _handleLeafNavigation(context, sub.id, sub.title);
-                    },
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          child: Stack(
+            children: [
+              _MainCategoryPage(
+                onCategoryTap: (cat) {
+                  if (cat.hasSubCategories) {
+                    _openSubPage(cat);
+                  } else {
+                    Navigator.pop(context);
+                    _handleLeafNavigation(context, cat.id, cat.title);
+                  }
+                },
+                onClose: () => Navigator.pop(context),
+              ),
+              if (_activeCat != null)
+                FadeTransition(
+                  opacity: _fadeAnim,
+                  child: SlideTransition(
+                    position: _slideAnim,
+                    child: _SubCategoryPage(
+                      category: _activeCat!,
+                      onBack: _goBack,
+                      onSubTap: (sub) {
+                        Navigator.pop(context);
+                        _handleLeafNavigation(context, sub.id, sub.title);
+                      },
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -213,7 +228,7 @@ class _MainCategoryPageState extends State<_MainCategoryPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Services',
+                    const Text('Explore AstroZura',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -221,8 +236,8 @@ class _MainCategoryPageState extends State<_MainCategoryPage> {
                           letterSpacing: -0.3,
                         )),
                     const SizedBox(height: 2),
-                    Text('${allCategories.length} services',
-                        style: const TextStyle(
+                    const Text('Choose your spiritual path',
+                        style: TextStyle(
                           fontSize: 12,
                           color: _C.textLight,
                           fontWeight: FontWeight.w400,
@@ -385,7 +400,7 @@ class _CategoryTile extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             splashColor: _C.goldLight,
-            highlightColor: _C.goldLight.withOpacity(0.5),
+            highlightColor: _C.goldLight.withValues(alpha: 0.5),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
               child: Row(
@@ -476,7 +491,7 @@ class _SubTile extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             splashColor: _C.goldLight,
-            highlightColor: _C.goldLight.withOpacity(0.5),
+            highlightColor: _C.goldLight.withValues(alpha: 0.5),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
               child: Row(
@@ -545,12 +560,12 @@ class _DragHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: Container(
-          margin: const EdgeInsets.only(top: 12, bottom: 4),
-          width: 36,
-          height: 4,
+          margin: const EdgeInsets.only(top: 12, bottom: 6),
+          width: 48,
+          height: 5,
           decoration: BoxDecoration(
-            color: const Color(0xFFDDDDDD),
-            borderRadius: BorderRadius.circular(2),
+            color: _C.gold.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(999),
           ),
         ),
       );

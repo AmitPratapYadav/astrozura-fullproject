@@ -32,7 +32,7 @@ class ServiceToolsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 118,
+          height: 128,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
@@ -42,35 +42,45 @@ class ServiceToolsSection extends StatelessWidget {
               final service = services[index];
               return InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        MainNavigation(initialIndex: service.targetIndex),
-                  ),
-                ),
+                onTap: () {
+                  if (activateCategoryTarget(service.id)) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          MainNavigation(initialIndex: service.targetIndex),
+                    ),
+                  );
+                },
                 child: SizedBox(
-                  width: 104,
+                  width: 112,
                   child: Column(
                     children: [
                       Container(
-                        height: 78,
-                        width: 104,
-                        padding: const EdgeInsets.all(10),
+                        height: 90,
+                        width: 112,
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color:
                                 const Color(0xFFD4A73C).withValues(alpha: 0.2),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Image.asset(
                           service.assetPath,
                           fit: BoxFit.contain,
                         ),
                       ),
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 8),
                       Text(
                         service.title,
                         maxLines: 1,

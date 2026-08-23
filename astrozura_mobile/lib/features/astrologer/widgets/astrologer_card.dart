@@ -66,7 +66,7 @@ class AstrologerCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        astrologer.name ?? "Astrologer",
+                        astrologer.name,
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -82,6 +82,10 @@ class AstrologerCard extends StatelessWidget {
                           color: Colors.grey,
                         ),
                       ),
+
+                      const SizedBox(height: 8),
+
+                      _statusBadge(astrologer),
 
                       const SizedBox(height: 8),
 
@@ -195,5 +199,47 @@ class AstrologerCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _statusBadge(AstrologerModel astrologer) {
+    final color = _statusColor(astrologer.availabilityLabel);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            astrologer.availabilityLabel,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Busy':
+        return const Color(0xFFB86A10);
+      case 'Offline':
+        return const Color(0xFFD43F3A);
+      default:
+        return const Color(0xFF0F9F6E);
+    }
   }
 }

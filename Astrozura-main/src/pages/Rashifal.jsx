@@ -212,8 +212,10 @@ export default function Rashifal() {
             ))}
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
-            <div className="relative bg-white p-8 text-center text-[#1E3557]">
+          <div className={`mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-white/80 ${selectedSign.surface} shadow-xl`}>
+            <div className={`relative overflow-hidden ${selectedSign.surface} p-8 text-center text-[#1E3557]`}>
+              <div className={`pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-gradient-to-br ${selectedSign.tone} opacity-20`} />
+              <div className={`pointer-events-none absolute -left-20 bottom-0 h-40 w-40 rounded-full bg-gradient-to-br ${selectedSign.tone} opacity-10`} />
               <button
                 type="button"
                 onClick={() => {
@@ -225,14 +227,14 @@ export default function Rashifal() {
               >
                 {t("horoscope.back")}
               </button>
-              <div className="mx-auto mb-3 grid h-24 w-24 place-items-center rounded-2xl border-2 border-[#F0E4CB] bg-white shadow-sm">
+              <div className="relative mx-auto mb-3 grid h-24 w-24 place-items-center rounded-2xl border-2 border-[#F0E4CB] bg-white shadow-lg shadow-slate-900/10">
                 <img src={getZodiacIcon(selectedSign.key)} alt="" className="h-20 w-20 object-contain" />
               </div>
-              <h2 className="text-3xl font-bold">{t("horoscope.sign_heading", { sign: t(`horoscope.signs.${selectedSign.key}`) })}</h2>
-              <p className="mt-1 text-slate-400">{selectedSign.date}</p>
+              <h2 className="relative text-3xl font-bold">{t("horoscope.sign_heading", { sign: t(`horoscope.signs.${selectedSign.key}`) })}</h2>
+              <p className={`relative mt-1 font-semibold ${selectedSign.accent}`}>{selectedSign.date}</p>
             </div>
 
-            <div className="p-6 md:p-10">
+            <div className="bg-white/80 p-6 backdrop-blur md:p-10">
               <div className="mx-auto mb-10 flex w-max flex-wrap justify-center gap-2 rounded-xl border bg-gray-50 p-2">
                 {["yesterday", "today", "tomorrow", "monthly", "yearly"].map((day) => (
                   <button

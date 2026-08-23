@@ -44,7 +44,11 @@ export default function GuideBookDetail() {
 
           <div className="mt-10 space-y-6 text-gray-700">
             {(blog.content_blocks || []).map((block, index) => {
+              const richHtml = block.html || "";
               if (block.type === "heading") {
+                if (richHtml) {
+                  return <div key={index} className="text-2xl font-black text-[#1E3557] [&_*]:font-inherit" dangerouslySetInnerHTML={{ __html: richHtml }} />;
+                }
                 return <h2 key={index} className="text-2xl font-black text-[#1E3557]">{block.text}</h2>;
               }
               if (block.type === "image") {
@@ -53,6 +57,15 @@ export default function GuideBookDetail() {
                     <CatalogImage src={assetUrl(block.url)} alt={block.alt || ""} className="max-h-[480px] w-full rounded-2xl object-cover" />
                     {block.caption && <figcaption className="mt-2 text-center text-xs text-gray-400">{block.caption}</figcaption>}
                   </figure>
+                );
+              }
+              if (richHtml) {
+                return (
+                  <div
+                    key={index}
+                    className="text-base leading-8 [&_a]:font-bold [&_a]:text-[#D4A73C] [&_li]:my-1 [&_ol]:ml-6 [&_ol]:list-decimal [&_strong]:text-gray-900 [&_ul]:ml-6 [&_ul]:list-disc"
+                    dangerouslySetInnerHTML={{ __html: richHtml }}
+                  />
                 );
               }
               return <p key={index} className="whitespace-pre-wrap text-base leading-8">{block.text}</p>;

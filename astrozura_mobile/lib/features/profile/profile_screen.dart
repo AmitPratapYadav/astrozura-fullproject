@@ -18,14 +18,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/contants/app_colors.dart';
+import '../../core/services/auth_services.dart';
 import '../../core/services/booking_service.dart';
 import './widgets/app_drawer.dart';
 import './edit_profile_page.dart';
 import './my_booking_page.dart';
 import './my_orders_page.dart';
 import '../main_navigation.dart';
+import '../auth/login_screen.dart';
+import '../web/in_app_web_page.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/profile_provider.dart';
 
@@ -50,12 +53,18 @@ class UserProfile {
   final String name;
   final String phone;
   final String? avatarUrl;
+  final String? email;
+  final String? gender;
+  final String? dob;
   final bool hasBirthDetails;
 
   const UserProfile({
     required this.name,
     required this.phone,
     this.avatarUrl,
+    this.email,
+    this.gender,
+    this.dob,
     this.hasBirthDetails = false,
   });
 
@@ -71,6 +80,9 @@ class UserProfile {
       name: prefs.getString('user_name') ?? 'User',
       phone: prefs.getString('user_phone') ?? '',
       avatarUrl: prefs.getString('user_avatar'),
+      email: prefs.getString('user_email'),
+      gender: prefs.getString('user_gender'),
+      dob: prefs.getString('user_dob'),
       hasBirthDetails: hasBirthDetails,
     );
   }
@@ -196,9 +208,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       // so it always has the latest session token.
       final result = await BookingService.getMyBookings();
       if (!mounted) return;
+      final normalized = _normalizeBookingLists(
+        result['upcoming'] ?? const <BookingModel>[],
+        result['history'] ?? const <BookingModel>[],
+      );
       setState(() {
-        _upcoming = result['upcoming'] ?? [];
-        _history = result['history'] ?? [];
+        _upcoming = normalized.upcoming;
+        _history = normalized.history;
         _bookingsLoading = false;
         _bookingsError = null;
       });
@@ -235,10 +251,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _openSupportPage(String path) async {
-    await launchUrl(
-      Uri.parse('https://astrozura.com$path'),
-      mode: LaunchMode.externalApplication,
-    );
+    final title = switch (path) {
+      '/about-us' => 'About Us',
+      '/contact-support' => 'Contact Support',
+      '/privacy-policy' => 'Privacy Policy',
+      '/terms-and-conditions' => 'Terms & Conditions',
+      _ => 'AstroZura',
+    };
+    await InAppWebPage.open(context, title: title, pathOrUrl: path);
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -370,15 +390,14 @@ class _ProfileHeader extends StatelessWidget {
             onTap: onMenuTap,
             child: const Icon(Icons.menu, color: Colors.black, size: 30),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Profile',
+              'My Profile',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.playfairDisplay(
                 fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: _navy,
-                letterSpacing: 0.3,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primaryBlue,
               ),
             ),
           ),
@@ -448,6 +467,33 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final details = [
+      if (_clean(user.phone) != null)
+        _ProfileInfoItem(
+          icon: Icons.call_outlined,
+          label: 'Mobile',
+          value: _formatIndianMobile(_clean(user.phone)!),
+        ),
+      if (_clean(user.email) != null)
+        _ProfileInfoItem(
+          icon: Icons.email_outlined,
+          label: 'Email',
+          value: _clean(user.email)!,
+        ),
+      if (_clean(user.dob) != null)
+        _ProfileInfoItem(
+          icon: Icons.cake_outlined,
+          label: 'DOB',
+          value: _formatDate(user.dob!),
+        ),
+      if (_clean(user.gender) != null)
+        _ProfileInfoItem(
+          icon: Icons.transgender_rounded,
+          label: 'Gender',
+          value: _clean(user.gender)!,
+        ),
+    ];
+
     return Container(
       decoration: BoxDecoration(
         color: _cardBg,
@@ -489,9 +535,25 @@ class _ProfileCard extends StatelessWidget {
                     letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(user.phone,
-                    style: const TextStyle(fontSize: 13, color: _textSec)),
+                if (details.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: details
+                          .map(
+                            (detail) => SizedBox(
+                              width:
+                                  (MediaQuery.of(context).size.width - 104) / 2,
+                              child: detail,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -521,6 +583,100 @@ class _ProfileCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String? _clean(String? value) {
+    final text = value?.trim();
+    if (text == null || text.isEmpty) return null;
+    return text;
+  }
+
+  static String _formatDate(String value) {
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
+  }
+
+  static String _formatIndianMobile(String value) {
+    final compact = value.replaceAll(RegExp(r'\s+'), '');
+    final withoutCountry = compact.replaceFirst(RegExp(r'^\+?91-?'), '');
+    return '+91-$withoutCountry';
+  }
+}
+
+class _ProfileInfoItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _ProfileInfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 72),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _goldSoft,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _goldLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: _gold),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _textSec,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Text(
+            value,
+            maxLines: label == 'Email' ? 2 : 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
             ),
           ),
         ],
@@ -763,10 +919,7 @@ class _RecentActivitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Always show upcoming sessions; fall back to recent history
-    final displayItems = upcoming.isNotEmpty
-        ? upcoming.take(3).toList()
-        : history.take(3).toList();
+    final displayItems = upcoming.take(2).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,6 +1177,16 @@ class _MenuCard extends StatelessWidget {
 
   const _MenuCard({required this.onOpen});
 
+  Future<void> _logout(BuildContext context) async {
+    await AuthService.logout();
+    if (!context.mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return _BaseCard(
@@ -1052,8 +1215,14 @@ class _MenuCard extends StatelessWidget {
           _MenuItem(
             icon: Icons.description_outlined,
             label: 'Terms & Conditions',
-            isLast: true,
             onTap: () => onOpen('/terms-and-conditions'),
+          ),
+          const _Divider(),
+          _MenuItem(
+            icon: Icons.logout_rounded,
+            label: 'Logout',
+            isLast: true,
+            onTap: () => _logout(context),
           ),
         ],
       ),
@@ -1283,13 +1452,11 @@ class _BookingActivityCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onAction,
               icon: Icon(
-                isChat
-                    ? Icons.chat_bubble_outline_rounded
-                    : Icons.videocam_outlined,
+                isChat ? Icons.chat_bubble_outline_rounded : Icons.call_rounded,
                 size: 18,
               ),
               label: Text(
-                isChat ? 'Open Chat Session' : 'Join Video Session',
+                isChat ? 'Connect Chat' : 'Connect Call',
                 style:
                     const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
@@ -1494,6 +1661,88 @@ class _BaseCard extends StatelessWidget {
 // ─── Booking helpers ──────────────────────────────────────────────────────────
 bool _isChatConsultation(BookingModel b) =>
     b.consultationType.toLowerCase().contains('chat');
+
+({List<BookingModel> upcoming, List<BookingModel> history})
+    _normalizeBookingLists(
+  List<BookingModel> backendUpcoming,
+  List<BookingModel> backendHistory,
+) {
+  final seen = <int>{};
+  final all = <BookingModel>[];
+  for (final booking in [...backendUpcoming, ...backendHistory]) {
+    if (seen.add(booking.id)) all.add(booking);
+  }
+
+  final upcoming = all.where((booking) => !_isPastBooking(booking)).toList()
+    ..sort((a, b) {
+      final aDate = _bookingDateTime(a) ?? DateTime(9999);
+      final bDate = _bookingDateTime(b) ?? DateTime(9999);
+      return aDate.compareTo(bDate);
+    });
+
+  final history = all.where(_isPastBooking).toList()
+    ..sort((a, b) {
+      final aDate = _bookingDateTime(a) ?? DateTime(1900);
+      final bDate = _bookingDateTime(b) ?? DateTime(1900);
+      return bDate.compareTo(aDate);
+    });
+
+  return (upcoming: upcoming, history: history);
+}
+
+bool _isPastBooking(BookingModel booking) {
+  final status = booking.status.toLowerCase();
+  if (status.contains('complete') ||
+      status.contains('cancel') ||
+      status.contains('closed') ||
+      status.contains('expired')) {
+    return true;
+  }
+
+  final scheduled = _bookingDateTime(booking);
+  if (scheduled == null) return false;
+  return scheduled
+      .isBefore(DateTime.now().subtract(const Duration(minutes: 5)));
+}
+
+DateTime? _bookingDateTime(BookingModel booking) {
+  DateTime? parsed = _tryParseDateTime(booking.scheduledAt);
+  if (parsed != null) return parsed;
+
+  final date = booking.bookingDate.trim();
+  final time = booking.bookingTime.trim();
+  if (date.isEmpty) return null;
+  parsed = _tryParseDateTime('$date $time');
+  if (parsed != null) return parsed;
+  return _tryParseDateTime(date);
+}
+
+DateTime? _tryParseDateTime(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+  final normalized = value.contains('T') ? value : value.replaceFirst(' ', 'T');
+  try {
+    return DateTime.parse(normalized).toLocal();
+  } catch (_) {
+    final parts = value.split(RegExp(r'\s+'));
+    if (parts.isEmpty) return null;
+    try {
+      final date = DateTime.parse(parts.first);
+      if (parts.length == 1) return date;
+      final match = RegExp(r'^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?$')
+          .firstMatch(parts.sublist(1).join(' '));
+      if (match == null) return date;
+      var hour = int.parse(match.group(1)!);
+      final minute = int.parse(match.group(2)!);
+      final meridian = match.group(3)?.toLowerCase();
+      if (meridian == 'pm' && hour < 12) hour += 12;
+      if (meridian == 'am' && hour == 12) hour = 0;
+      return DateTime(date.year, date.month, date.day, hour, minute);
+    } catch (_) {
+      return null;
+    }
+  }
+}
 
 String _formatDate(String dateStr) {
   if (dateStr.isEmpty) return '—';

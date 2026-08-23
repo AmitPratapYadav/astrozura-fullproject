@@ -2,10 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   FaArrowLeft,
-  FaBolt,
+  FaCamera,
+  FaCheckDouble,
   FaClock,
+  FaCompress,
   FaComments,
-  FaImage,
+  FaExpand,
+  FaPaperclip,
   FaMicrophone,
   FaMicrophoneSlash,
   FaPaperPlane,
@@ -14,13 +17,20 @@ import {
   FaPlayCircle,
   FaPowerOff,
   FaRegCircle,
+  FaReply,
+  FaSpinner,
+  FaStop,
+  FaTimes,
+  FaTrash,
   FaUserCircle,
+  FaVolumeUp,
 } from "react-icons/fa";
-import { ZIM, ZIMConversationType, ZIMMessagePriority, ZIMMessageType } from "zego-zim-web";
 import { ZegoExpressEngine } from "zego-express-engine-webrtc";
 
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { decryptChatText, encryptChatText } from "../lib/chatCrypto";
+import { disconnectReverbEcho, getReverbEcho } from "../lib/reverbEcho";
 import {
   endBookingSession,
   extendBookingSession,
@@ -29,15 +39,26 @@ import {
   pingBookingSession,
   startBookingSession,
 } from "../api/sessionApi";
-import { ReportDataBlock } from "../components/report/ReportDataRenderer";
+import {
+  getRitualContextForBooking,
+  sendRitualAstrologerResponse,
+  sendRitualPaymentRequest,
+} from "../api/bookingApi";
+import { getDivisionalCharts, getMarriageMatching, searchLocation } from "../api/prokeralaApi";
+import MatchDivisionalCharts, {
+  MATCH_DIVISIONAL_CHART_TYPES,
+  normalizeMatchCharts,
+} from "../components/report/MatchDivisionalCharts";
 
 const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 const CLOSED_STATUSES = new Set(["completed", "cancelled", "declined"]);
-const IMAGE_MESSAGE_PREFIX = "[[image]]";
 const ZEGO_STANDARD_VIDEO_CALL_SCENARIO = 4;
-const TYPING_COMMAND_EVENT = "astrozura.typing";
 const TYPING_NOTIFY_INTERVAL_MS = 1400;
 const TYPING_VISIBLE_TIMEOUT_MS = 3000;
+const VOICE_NOTE_LIMIT_SECONDS = 300;
+const CHAT_SYNC_INTERVAL_CONNECTED_MS = 15000;
+const CHAT_SYNC_INTERVAL_FALLBACK_MS = 5000;
+const TYPING_SYNC_INTERVAL_FALLBACK_MS = 5000;
 
 const resolveImageUrl = (path) => {
   if (!path) return "";
@@ -59,8 +80,22 @@ const formatTime = (value) =>
     ? new Date(value).toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Asia/Kolkata",
     })
     : "-";
+
+const normalizeMessageTimestamp = (value) => {
+  const timestamp = Number(value);
+
+  if (!Number.isFinite(timestamp) || timestamp <= 0) {
+    return Date.now();
+  }
+
+  const now = Date.now();
+  const futureToleranceMs = 60 * 1000;
+
+  return timestamp > now + futureToleranceMs ? now : timestamp;
+};
 
 const formatCountdown = (seconds) => {
   const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
@@ -79,7 +114,7 @@ const getRealtimeErrorMessage = (error, fallback) => {
   const code = error?.code ?? error?.response?.data?.code;
 
   if (code === 6000014) {
-    return "ZEGO chat service is not active for this project yet. Booking details are still available.";
+    return "Secure chat service is not active yet. Booking details are still available.";
   }
 
   return error?.message || error?.response?.data?.message || fallback;
@@ -153,41 +188,40 @@ const formatBirthDetails = (birthDetails) => {
   ].filter(Boolean);
 };
 
-const mapStoredMessage = (message, selfUserId) => {
-  const kind = message?.message_type === "image" ? "image" : "text";
-  const mediaUrl = kind === "image" ? resolveImageUrl(message?.media_url || "") : "";
+const mapStoredMessage = async (message, selfUserId, encryptionKey = "") => {
+  const kind = ["image", "pdf", "video", "audio", "file"].includes(message?.message_type) ? message.message_type : "text";
+  const mediaUrl = kind !== "text" ? resolveImageUrl(message?.media_url || "") : "";
+  const text = kind === "text"
+    ? await decryptChatText(message, encryptionKey)
+    : message?.text || message?.attachment_name || "Attachment";
+  const reply = message?.reply_to_message
+    ? {
+      id: message.reply_to_message.id,
+      senderName: message.reply_to_message.sender_name || "Message",
+      senderRole: message.reply_to_message.sender_role || "",
+      kind: message.reply_to_message.message_type || "text",
+      text: message.reply_to_message.message_type === "text"
+        ? await decryptChatText(message.reply_to_message, encryptionKey)
+        : message.reply_to_message.attachment_name || "Attachment",
+    }
+    : null;
 
   return {
     id: message?.zego_message_id || message?.client_uuid || `db-${message?.id}`,
+    dbId: message?.id,
     senderUserId: message?.sender_user_id || "",
-    text: kind === "image" ? "Image attachment" : message?.text || "",
+    text,
     kind,
     mediaUrl,
+    attachmentName: message?.attachment_name || "",
+    attachmentMime: message?.attachment_mime || "",
+    attachmentSize: message?.attachment_size || 0,
+    reply,
     clientUuid: message?.client_uuid || "",
-    timestamp: message?.timestamp || Date.now(),
+    timestamp: normalizeMessageTimestamp(message?.timestamp),
+    readAt: message?.read_at || null,
     isSelf: String(message?.sender_user_id || "") === selfUserId,
   };
-};
-
-const encodeTypingCommand = ({ bookingId, isTyping }) =>
-  new TextEncoder().encode(JSON.stringify({
-    event: TYPING_COMMAND_EVENT,
-    bookingId: String(bookingId || ""),
-    isTyping: Boolean(isTyping),
-    sentAt: Date.now(),
-  }));
-
-const decodeTypingCommand = (message) => {
-  if (message?.type !== ZIMMessageType.Command || !message?.message) {
-    return null;
-  }
-
-  try {
-    const payload = JSON.parse(new TextDecoder().decode(message.message));
-    return payload?.event === TYPING_COMMAND_EVENT ? payload : null;
-  } catch {
-    return null;
-  }
 };
 
 const cleanKundaliLabel = (value) =>
@@ -213,6 +247,397 @@ const cleanKundaliValue = (value) => {
   return String(value);
 };
 
+const isPlainObject = (value) => value && typeof value === "object" && !Array.isArray(value);
+const isPrimitiveKundaliValue = (value) =>
+  value === null || value === undefined || ["string", "number", "boolean"].includes(typeof value);
+
+const hiddenKundaliKeys = new Set([
+  "endpoint",
+  "provider",
+  "provider_payload",
+  "provider_sections",
+  "raw_response",
+  "api_url",
+  "status",
+]);
+const imageKundaliKeys = new Set(["img_url", "image_url", "image", "img", "photo", "picture"]);
+
+const shouldHideKundaliKey = (key, options = {}) => {
+  const normalized = String(key || "").toLowerCase();
+  if (hiddenKundaliKeys.has(normalized)) return true;
+  if (options.hideImageKeys && imageKundaliKeys.has(normalized)) return true;
+  return false;
+};
+
+const getKundaliEntries = (data, options = {}) =>
+  Object.entries(data || {}).filter(([key, value]) => {
+    if (shouldHideKundaliKey(key, options)) return false;
+    if (value === null || value === undefined || value === "") return false;
+    if (Array.isArray(value) && value.length === 0) return false;
+    if (isPlainObject(value) && Object.keys(value).length === 0) return false;
+    return true;
+  });
+
+const findKundaliImageUrl = (data) => {
+  if (!isPlainObject(data)) return "";
+  const imageEntry = Object.entries(data).find(
+    ([key, value]) => imageKundaliKeys.has(String(key || "").toLowerCase()) && typeof value === "string" && value.trim(),
+  );
+  return imageEntry ? resolveImageUrl(imageEntry[1].trim()) : "";
+};
+
+const isFlatObjectArray = (items) =>
+  Array.isArray(items) &&
+  items.length > 0 &&
+  items.every((item) => isPlainObject(item)) &&
+  items.every((item) =>
+    getKundaliEntries(item).every(
+      ([, value]) => isPrimitiveKundaliValue(value) || (Array.isArray(value) && value.every(isPrimitiveKundaliValue)),
+    ),
+  );
+
+const getFlatTableColumns = (rows) => {
+  const columns = [];
+  rows.forEach((row) => {
+    getKundaliEntries(row).forEach(([key]) => {
+      if (!columns.includes(key)) columns.push(key);
+    });
+  });
+  return columns;
+};
+
+function KundaliFlatTable({ rows }) {
+  const columns = getFlatTableColumns(rows);
+  if (!columns.length) return null;
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-[#E5D3A8] bg-white">
+      <table className="w-full min-w-[620px] text-left text-sm">
+        <thead className="bg-[#FFF2C1] text-[#6F4A04]">
+          <tr>
+            {columns.map((column) => (
+              <th key={column} className="px-4 py-3 font-black">
+                {cleanKundaliLabel(column)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index} className="border-t border-gray-100 odd:bg-white even:bg-slate-50">
+              {columns.map((column) => (
+                <td key={column} className="whitespace-pre-line px-4 py-3 align-top text-[#1E3557]">
+                  {cleanKundaliValue(row?.[column])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function KundaliValueGrid({ entries }) {
+  if (!entries.length) return null;
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {entries.map(([key, value]) => (
+        <div key={key} className="rounded-2xl border border-[#E8D8B8] bg-white px-4 py-3 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#8A98AE]">{cleanKundaliLabel(key)}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-sm font-semibold leading-6 text-[#1E3557]">
+            {cleanKundaliValue(value)}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CleanKundaliDataView({ data, title, hideImageKeys = false }) {
+  if (data === null || data === undefined || data === "") return null;
+
+  if (isPrimitiveKundaliValue(data)) {
+    return (
+      <div className="rounded-2xl border border-[#E8D8B8] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#1E3557]">
+        {cleanKundaliValue(data)}
+      </div>
+    );
+  }
+
+  if (Array.isArray(data)) {
+    if (!data.length) return null;
+    if (isFlatObjectArray(data)) {
+      return <KundaliFlatTable rows={data} />;
+    }
+
+    return (
+      <div className="grid gap-3">
+        {data.map((item, index) => (
+          <div key={index} className="rounded-2xl border border-[#E8D8B8] bg-[#FFFDF7] p-4">
+            <p className="mb-3 text-sm font-black text-[#6F4A04]">
+              {title ? `${title} ${index + 1}` : `Item ${index + 1}`}
+            </p>
+            <CleanKundaliDataView data={item} hideImageKeys={hideImageKeys} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!isPlainObject(data)) return null;
+
+  const entries = getKundaliEntries(data, { hideImageKeys });
+  const primitiveEntries = entries.filter(([, value]) => isPrimitiveKundaliValue(value));
+  const nestedEntries = entries.filter(([, value]) => !isPrimitiveKundaliValue(value));
+
+  return (
+    <div className="space-y-4">
+      <KundaliValueGrid entries={primitiveEntries} />
+      {nestedEntries.map(([key, value]) => (
+        <section key={key} className="overflow-hidden rounded-2xl border border-[#E5D3A8] bg-[#FFF9EC]">
+          <h5 className="bg-[#FFF2C1] px-4 py-3 text-sm font-black text-[#6F4A04]">
+            {cleanKundaliLabel(key)}
+          </h5>
+          <div className="p-4">
+            <CleanKundaliDataView data={value} title={cleanKundaliLabel(key)} hideImageKeys={hideImageKeys} />
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function KundaliAccordion({ title, description, open, onToggle, children }) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[#E5D3A8] bg-white shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full flex-col gap-2 bg-[#FFF3C7] px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-between"
+      >
+        <span>
+          <span className="block text-base font-black text-[#1E3557]">{title}</span>
+          {description && <span className="mt-1 block text-xs font-semibold text-[#7A6B4A]">{description}</span>}
+        </span>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#7A4C00]">
+          {open ? "Hide" : "Open"}
+        </span>
+      </button>
+      {open && <div className="space-y-4 p-4">{children}</div>}
+    </section>
+  );
+}
+
+function KundaliChartSelector({ charts }) {
+  const validCharts = Array.isArray(charts) ? charts.filter((chart) => chart?.chart_svg) : [];
+  const [selectedChart, setSelectedChart] = useState(validCharts[0]?.chart_id || validCharts[0]?.label || "");
+  const activeChart =
+    validCharts.find((chart) => (chart.chart_id || chart.label) === selectedChart) || validCharts[0];
+
+  if (!validCharts.length) {
+    return <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">No chart returned.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2 sm:max-w-sm">
+        <label className="text-xs font-black uppercase tracking-[0.16em] text-[#8A98AE]">Select Chart</label>
+        <select
+          value={activeChart?.chart_id || activeChart?.label || ""}
+          onChange={(event) => setSelectedChart(event.target.value)}
+          className="rounded-2xl border border-[#E5D3A8] bg-white px-4 py-3 text-sm font-bold text-[#1E3557] outline-none focus:border-[#D4A73C]"
+        >
+          {validCharts.map((chart) => {
+            const value = chart.chart_id || chart.label;
+            return (
+              <option key={value} value={value}>
+                {chart.label || chart.chart_id}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      {activeChart && (
+        <div className="rounded-2xl border border-[#E5D3A8] bg-white p-4">
+          <p className="mb-3 text-sm font-black text-[#1E3557]">{activeChart.label || activeChart.chart_id}</p>
+          <div
+            className="mx-auto max-w-[420px] overflow-hidden [&_svg]:h-auto [&_svg]:w-full"
+            dangerouslySetInnerHTML={{ __html: activeChart.chart_svg }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GemstoneSuggestions({ data }) {
+  if (!data) return null;
+  const groups = isPlainObject(data) ? Object.entries(data) : [];
+  if (!groups.length) return <CleanKundaliDataView data={data} />;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {groups.map(([type, value]) => (
+        <div key={type} className="rounded-2xl border border-[#E5D3A8] bg-[#FFFDF7] p-4">
+          <h5 className="mb-3 text-sm font-black uppercase tracking-[0.14em] text-[#6F4A04]">
+            {cleanKundaliLabel(type)}
+          </h5>
+          <CleanKundaliDataView data={value} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RudrakshaSuggestion({ data }) {
+  if (!data) return null;
+  const imageUrl = findKundaliImageUrl(data);
+
+  return (
+    <div className="rounded-2xl border border-[#E5D3A8] bg-[#FFFDF7] p-4">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={cleanKundaliValue(data?.name || "Rudraksha")}
+            className="h-28 w-28 rounded-2xl border border-[#E5D3A8] bg-white object-contain p-2 shadow-sm"
+          />
+        ) : (
+          <div className="flex h-28 w-28 items-center justify-center rounded-2xl border border-[#E5D3A8] bg-white text-xs font-bold text-[#8A98AE]">
+            Image unavailable
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h5 className="text-base font-black text-[#1E3557]">{cleanKundaliValue(data?.name || "Rudraksha")}</h5>
+          {data?.recommend && <p className="mt-2 text-sm font-semibold leading-6 text-[#1E3557]">{cleanKundaliValue(data.recommend)}</p>}
+        </div>
+      </div>
+      <CleanKundaliDataView data={data} hideImageKeys />
+    </div>
+  );
+}
+
+const matchSectionTitleMap = {
+  "match-birth-details": "Birth Details",
+  "match-astro-details": "Astro Details",
+  "match-ashtakoot-points": "Ashtakoot Points",
+  "match-dashakoot-points": "Dashakoot Points",
+  "match-obstructions": "Obstructions",
+  "match-manglik-report": "Manglik Report",
+  "match-planet-details": "Planet Details",
+  match_birth_details: "Birth Details",
+  match_astro_details: "Astro Details",
+  match_ashtakoot_points: "Ashtakoot Points",
+  match_dashakoot_points: "Dashakoot Points",
+  match_obstructions: "Obstructions",
+  match_manglik_report: "Manglik Report",
+  match_planet_details: "Planet Details",
+};
+
+const attachMatchCharts = (data, charts) => ({
+  ...(data || {}),
+  match_charts: charts,
+});
+
+const getMatchSectionPayload = (section) => {
+  if (!section) return null;
+  if (section.data) return section.data;
+  if (!section.items || !isPlainObject(section.items)) return section;
+
+  const firstItem = Object.values(section.items)[0];
+  if (!firstItem) return null;
+  return firstItem?.data || firstItem;
+};
+
+const getMatchReportSections = (result) => {
+  const source = result?.provider_sections || result?.data?.provider_sections || [];
+  if (Array.isArray(source) && source.length) {
+    return source
+      .map((section, index) => ({
+        id: section.id || `match-section-${index}`,
+        title: matchSectionTitleMap[section.id] || section.title || `Section ${index + 1}`,
+        payload: getMatchSectionPayload(section),
+      }))
+      .filter((section) => section.payload);
+  }
+
+  const fallback = result?.data && isPlainObject(result.data) ? result.data : result;
+  return getKundaliEntries(fallback)
+    .filter(([key]) => !["message", "exceptions"].includes(String(key).toLowerCase()))
+    .map(([key, value]) => ({
+      id: key,
+      title: matchSectionTitleMap[key] || cleanKundaliLabel(key),
+      payload: value,
+    }));
+};
+
+function MatchmakingResultView({ result }) {
+  const [openSection, setOpenSection] = useState("");
+  const sections = getMatchReportSections(result);
+  const matchData = result?.data && isPlainObject(result.data) ? result.data : result;
+  const score = matchData?.guna_milan;
+  const message = matchData?.message;
+  const exceptions = Array.isArray(matchData?.exceptions) ? matchData.exceptions : [];
+  const matchCharts = matchData?.match_charts || result?.match_charts;
+
+  if (!sections.length) {
+    return <CleanKundaliDataView data={result?.data || result} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      {(score || message || exceptions.length > 0) && (
+        <div className="grid gap-3 rounded-2xl border border-[#EAD79D] bg-[#FFFDF7] p-4 md:grid-cols-3">
+          {score && (
+            <div className="rounded-2xl border border-[#E8D8B8] bg-white px-4 py-3">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-[#8A98AE]">Guna Milan</p>
+              <p className="mt-1 text-xl font-black text-[#1E3557]">
+                {cleanKundaliValue(score.total_points)} / {cleanKundaliValue(score.maximum_points || 36)}
+              </p>
+            </div>
+          )}
+          {message && (
+            <div className="rounded-2xl border border-[#E8D8B8] bg-white px-4 py-3 md:col-span-2">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-[#8A98AE]">
+                {cleanKundaliValue(message.type || "Compatibility")}
+              </p>
+              <p className="mt-1 text-sm font-semibold leading-6 text-[#1E3557]">
+                {cleanKundaliValue(message.description || message)}
+              </p>
+            </div>
+          )}
+          {exceptions.length > 0 && (
+            <div className="rounded-2xl border border-[#E8D8B8] bg-white px-4 py-3 md:col-span-3">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-[#8A98AE]">Important Notes</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm font-semibold leading-6 text-[#1E3557]">
+                {exceptions.map((item, index) => (
+                  <li key={index}>{cleanKundaliValue(item)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {sections.map((section) => (
+        <KundaliAccordion
+          key={section.id}
+          title={section.title}
+          open={openSection === section.id}
+          onToggle={() => setOpenSection((current) => (current === section.id ? "" : section.id))}
+        >
+          <CleanKundaliDataView data={section.payload} />
+          {section.id === "match-astro-details" && (
+            <MatchDivisionalCharts charts={matchCharts} />
+          )}
+        </KundaliAccordion>
+      ))}
+    </div>
+  );
+}
+
 const clientPlanetRows = (planets) => {
   const rows = Array.isArray(planets) ? planets : Object.values(planets || {}).find(Array.isArray) || [];
   return rows.map((planet) => ({
@@ -224,19 +649,9 @@ const clientPlanetRows = (planets) => {
   }));
 };
 
-const doshaSummary = (label, payload) => {
-  if (!payload) return null;
-  const present =
-    payload.is_present !== undefined
-      ? payload.is_present
-      : payload.present !== undefined
-        ? payload.present
-        : payload.status || payload.manglik_status || payload.is_pitri_dosha_present || payload.is_kalsarpa_present;
-  const report = payload.report || payload.manglik_report || payload.conclusion || payload.one_line || payload.description;
-  return { label, present: cleanKundaliValue(present), report: cleanKundaliValue(report) };
-};
-
 function ClientKundaliPanel({ data, loading, error }) {
+  const [openSection, setOpenSection] = useState("");
+
   if (loading) {
     return (
       <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -262,12 +677,7 @@ function ClientKundaliPanel({ data, loading, error }) {
     .filter(([, value]) => value !== null && value !== undefined && value !== "")
     .map(([key, value]) => [cleanKundaliLabel(key), cleanKundaliValue(value)]);
   const planets = clientPlanetRows(data.planets);
-  const chartSvg = data.charts?.find((chart) => chart?.chart_svg)?.chart_svg;
-  const doshas = [
-    doshaSummary("Mangal Dosha", data.doshas?.mangal),
-    doshaSummary("Pitra Dosha", data.doshas?.pitra),
-    doshaSummary("Kaal Sarp Dosha", data.doshas?.kaal_sarp),
-  ].filter(Boolean);
+  const toggleSection = (section) => setOpenSection((current) => (current === section ? "" : section));
 
   return (
     <div className="rounded-3xl border border-[#EFE3D1] bg-white p-6 shadow-sm">
@@ -285,70 +695,408 @@ function ClientKundaliPanel({ data, loading, error }) {
         </div>
       )}
 
-      {chartSvg && (
-        <div className="mt-5 rounded-2xl border border-gray-100 bg-[#FFF9EC] p-4">
-          <p className="mb-3 text-sm font-black text-[#1E3557]">D1 Rasi Chart</p>
-          <div
-            className="mx-auto max-w-[360px] overflow-hidden [&_svg]:h-auto [&_svg]:w-full"
-            dangerouslySetInnerHTML={{ __html: chartSvg }}
+      <div className="mt-5 space-y-4">
+        <KundaliAccordion
+          title="Astro Details"
+          description="Planet positions and astrology details for the client."
+          open={openSection === "astro"}
+          onToggle={() => toggleSection("astro")}
+        >
+          {planets.length > 0 && <KundaliFlatTable rows={planets} />}
+          <CleanKundaliDataView data={data.astro_details} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Divisional Charts"
+          description="Choose one chart to inspect at a time."
+          open={openSection === "charts"}
+          onToggle={() => toggleSection("charts")}
+        >
+          <KundaliChartSelector charts={data.charts} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Life Predictions"
+          description="Daily guidance from the saved birth details."
+          open={openSection === "predictions"}
+          onToggle={() => toggleSection("predictions")}
+        >
+          <CleanKundaliDataView data={data.predictions} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Vimshottari Dasha"
+          description="Current and major planetary periods."
+          open={openSection === "dasha"}
+          onToggle={() => toggleSection("dasha")}
+        >
+          <CleanKundaliDataView data={data.dasha} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Gemstone & Rudraksha"
+          description="Recommendations and remedies."
+          open={openSection === "remedies"}
+          onToggle={() => toggleSection("remedies")}
+        >
+          <section>
+            <h5 className="mb-3 text-sm font-black text-[#1E3557]">Gemstone Suggestions</h5>
+            <GemstoneSuggestions data={data.gemstones} />
+          </section>
+          <section>
+            <h5 className="mb-3 text-sm font-black text-[#1E3557]">Rudraksha Suggestions</h5>
+            <RudrakshaSuggestion data={data.rudraksha} />
+          </section>
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Mangal Dosha"
+          open={openSection === "mangal"}
+          onToggle={() => toggleSection("mangal")}
+        >
+          <CleanKundaliDataView data={data.doshas?.mangal} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Pitra Dosha"
+          open={openSection === "pitra"}
+          onToggle={() => toggleSection("pitra")}
+        >
+          <CleanKundaliDataView data={data.doshas?.pitra} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Kaal Sarp Dosha"
+          open={openSection === "kaal-sarp"}
+          onToggle={() => toggleSection("kaal-sarp")}
+        >
+          <CleanKundaliDataView data={data.doshas?.kaal_sarp} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Krishnamurti Paddhati"
+          description="KP planets, house cusps, birth chart, and significators."
+          open={openSection === "kp"}
+          onToggle={() => toggleSection("kp")}
+        >
+          <CleanKundaliDataView data={data.kp} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Yogini Dasha"
+          description="Current, major, and sub Yogini periods."
+          open={openSection === "yogini"}
+          onToggle={() => toggleSection("yogini")}
+        >
+          <CleanKundaliDataView data={data.yogini_dasha} />
+        </KundaliAccordion>
+
+        <KundaliAccordion
+          title="Pooja Suggestions"
+          open={openSection === "pooja"}
+          onToggle={() => toggleSection("pooja")}
+        >
+          <CleanKundaliDataView data={data.puja_suggestions} />
+        </KundaliAccordion>
+      </div>
+    </div>
+  );
+}
+
+const emptyMatchPerson = {
+  name: "",
+  dob: "",
+  time: "",
+  place: "",
+  coordinates: "",
+};
+
+const normalizeMatchDate = (value) => {
+  if (!value) return "";
+  const stringValue = String(value).slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) return stringValue;
+  const parts = String(value).split(/[-/]/);
+  if (parts.length === 3 && parts[2]?.length === 4) {
+    const [day, month, year] = parts;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+  return stringValue;
+};
+
+const normalizeMatchTime = (value) => (value ? String(value).slice(0, 5) : "");
+
+const coordinatesFromPlace = (place) => {
+  const latitude = place?.coordinates?.latitude ?? place?.latitude ?? place?.lat;
+  const longitude = place?.coordinates?.longitude ?? place?.longitude ?? place?.lon ?? place?.lng;
+  return latitude !== undefined && longitude !== undefined ? `${latitude},${longitude}` : "";
+};
+
+function ChatMatchmakingTool({ clientBirthDetails, clientName = "" }) {
+  const [form, setForm] = useState({
+    male: { ...emptyMatchPerson },
+    female: { ...emptyMatchPerson },
+  });
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [placeSearch, setPlaceSearch] = useState({
+    person: "",
+    results: [],
+    loading: false,
+  });
+
+  const clientCoordinates =
+    clientBirthDetails?.coordinates ||
+    (clientBirthDetails?.latitude && clientBirthDetails?.longitude
+      ? `${clientBirthDetails.latitude},${clientBirthDetails.longitude}`
+      : "");
+  const clientProfile = {
+    name: clientName || clientBirthDetails?.name || clientBirthDetails?.full_name || "Booked user",
+    dob: normalizeMatchDate(clientBirthDetails?.date_of_birth || clientBirthDetails?.dob || ""),
+    time: normalizeMatchTime(clientBirthDetails?.time_of_birth || clientBirthDetails?.birth_time || ""),
+    place: clientBirthDetails?.birth_place || clientBirthDetails?.place || clientBirthDetails?.location || "",
+    coordinates: clientCoordinates,
+  };
+
+  const updateField = (person, event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({
+      ...current,
+      [person]: {
+        ...current[person],
+        [name]: value,
+      },
+    }));
+  };
+
+  const importClientAs = (person) => {
+    setResult(null);
+    setError("");
+    setPlaceSearch({ person: "", results: [], loading: false });
+    setForm((current) => ({
+      ...current,
+      [person]: clientProfile,
+    }));
+  };
+
+  const handlePlaceSearch = async (person, value) => {
+    setResult(null);
+    setError("");
+    setForm((current) => ({
+      ...current,
+      [person]: {
+        ...current[person],
+        place: value,
+        coordinates: "",
+      },
+    }));
+
+    if (value.trim().length < 3) {
+      setPlaceSearch({ person, results: [], loading: false });
+      return;
+    }
+
+    try {
+      setPlaceSearch({ person, results: [], loading: true });
+      const response = await searchLocation(value.trim(), "en");
+      setPlaceSearch({
+        person,
+        results: Array.isArray(response?.data) ? response.data : [],
+        loading: false,
+      });
+    } catch {
+      setPlaceSearch({ person, results: [], loading: false });
+    }
+  };
+
+  const selectPlace = (person, place) => {
+    setForm((current) => ({
+      ...current,
+      [person]: {
+        ...current[person],
+        place: place?.name || current[person].place,
+        coordinates: coordinatesFromPlace(place) || current[person].coordinates,
+      },
+    }));
+    setPlaceSearch({ person: "", results: [], loading: false });
+  };
+
+  const buildIso = (date, time) => `${date}T${String(time || "00:00").slice(0, 5)}:00+05:30`;
+
+  const generateMatch = async (event) => {
+    event.preventDefault();
+    setError("");
+    setResult(null);
+
+    if (!form.male.dob || !form.male.time || !form.male.coordinates || !form.female.dob || !form.female.time || !form.female.coordinates) {
+      setError("Enter date, time, and coordinates for both Male and Female.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const boy = {
+        coordinates: form.male.coordinates,
+        dob: buildIso(form.male.dob, form.male.time),
+      };
+      const girl = {
+        coordinates: form.female.coordinates,
+        dob: buildIso(form.female.dob, form.female.time),
+      };
+
+      const response = await getMarriageMatching(girl.coordinates, girl.dob, boy.coordinates, boy.dob, {
+        girl_timezone: "+05:30",
+        boy_timezone: "+05:30",
+        la: "en",
+        detailed_report: true,
+      });
+
+      if (response?.status === "success" && response.data) {
+        const [maleChartsResult, femaleChartsResult] = await Promise.allSettled([
+          getDivisionalCharts(
+            boy.dob,
+            boy.coordinates,
+            MATCH_DIVISIONAL_CHART_TYPES,
+            "north-indian",
+            { la: "en" },
+          ),
+          getDivisionalCharts(
+            girl.dob,
+            girl.coordinates,
+            MATCH_DIVISIONAL_CHART_TYPES,
+            "north-indian",
+            { la: "en" },
+          ),
+        ]);
+
+        setResult(attachMatchCharts(response.data, {
+          male: maleChartsResult.status === "fulfilled" ? normalizeMatchCharts(maleChartsResult.value) : [],
+          female: femaleChartsResult.status === "fulfilled" ? normalizeMatchCharts(femaleChartsResult.value) : [],
+        }));
+        return;
+      }
+
+      setError(response?.message || "Matchmaking result is unavailable.");
+    } catch (matchError) {
+      setError(matchError?.response?.data?.message || "Unable to generate matchmaking report.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderPersonFields = (person, title) => (
+    <div className="rounded-2xl border border-[#EAD79D] bg-[#FFFDF7] p-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h5 className="text-base font-black text-[#1E3557]">{title}</h5>
+          <p className="mt-1 text-xs font-semibold text-gray-500">Birth details used for matchmaking.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => importClientAs(person)}
+          disabled={!clientProfile.dob || !clientProfile.time || !clientProfile.coordinates}
+          className="rounded-xl border border-[#D4A73C] bg-[#FFF8E6] px-4 py-2 text-xs font-black text-[#7A4C00] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Import booked user
+        </button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Name</label>
+          <input
+            name="name"
+            value={form[person].name}
+            onChange={(event) => updateField(person, event)}
+            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+            placeholder="Name"
           />
         </div>
-      )}
-
-      {planets.length > 0 && (
-        <div className="mt-5 overflow-x-auto rounded-2xl border border-gray-100">
-          <table className="w-full min-w-[620px] text-left text-xs">
-            <thead className="bg-[#FFF7DF] text-[#7A4C00]">
-              <tr>
-                {["Planet", "Sign", "Degree", "Nakshatra", "House"].map((heading) => (
-                  <th key={heading} className="px-3 py-3 font-black">{heading}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {planets.map((planet, index) => (
-                <tr key={`${planet.planet}-${index}`} className="border-t border-gray-100 odd:bg-white even:bg-slate-50">
-                  <td className="px-3 py-3 font-bold text-[#1E3557]">{planet.planet}</td>
-                  <td className="px-3 py-3 text-slate-600">{planet.sign}</td>
-                  <td className="px-3 py-3 text-slate-600">{planet.degree}</td>
-                  <td className="px-3 py-3 text-slate-600">{planet.nakshatra}</td>
-                  <td className="px-3 py-3 text-slate-600">{planet.house}</td>
-                </tr>
+        <div>
+          <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Date of Birth</label>
+          <input
+            type="date"
+            name="dob"
+            value={form[person].dob}
+            onChange={(event) => updateField(person, event)}
+            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Time of Birth</label>
+          <input
+            type="time"
+            name="time"
+            value={form[person].time}
+            onChange={(event) => updateField(person, event)}
+            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="relative">
+          <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Birth Place</label>
+          <input
+            name="place"
+            value={form[person].place}
+            onChange={(event) => handlePlaceSearch(person, event.target.value)}
+            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+            placeholder="Search city, country"
+            autoComplete="off"
+          />
+          {placeSearch.loading && placeSearch.person === person && (
+            <div className="absolute right-3 top-9 h-4 w-4 animate-spin rounded-full border-2 border-[#D4A73C] border-t-transparent" />
+          )}
+          {placeSearch.person === person && placeSearch.results.length > 0 && (
+            <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-[#E5D3A8] bg-white shadow-xl">
+              {placeSearch.results.map((place, index) => (
+                <button
+                  key={`${place?.name || "place"}-${index}`}
+                  type="button"
+                  onClick={() => selectPlace(person, place)}
+                  className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs font-semibold text-[#1E3557] hover:bg-[#FFF8E6] last:border-0"
+                >
+                  {place?.name || "Unnamed place"}
+                </button>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {doshas.length > 0 && (
-        <div className="mt-5 grid gap-3">
-          {doshas.map((item) => (
-            <div key={item.label} className="rounded-2xl border border-gray-100 bg-[#F8F9FC] px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="font-black text-[#1E3557]">{item.label}</p>
-                <span className="rounded-full bg-[#F6E8BF] px-3 py-1 text-xs font-black text-[#7A4C00]">{item.present}</span>
-              </div>
-              {item.report !== "-" && <p className="mt-2 text-sm leading-6 text-gray-600">{item.report}</p>}
             </div>
-          ))}
+          )}
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Coordinates</label>
+          <input
+            name="coordinates"
+            value={form[person].coordinates}
+            onChange={(event) => updateField(person, event)}
+            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+            placeholder="lat,lon"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <section className="mt-5 overflow-hidden rounded-3xl border border-[#EAD79D] bg-white shadow-sm">
+      <div className="bg-[#FFF3C7] px-5 py-4">
+        <h4 className="text-lg font-black text-[#1E3557]">Independent Matchmaking Report</h4>
+        <p className="mt-1 text-sm font-semibold text-[#7A6B4A]">
+          Import the booked user as Male or Female, then enter the second profile manually.
+        </p>
+      </div>
+      <form onSubmit={generateMatch} className="space-y-4 p-4">
+        <div className="grid gap-4 lg:grid-cols-2">
+          {renderPersonFields("male", "Male Details")}
+          {renderPersonFields("female", "Female Details")}
+        </div>
+        <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#1E3557] px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
+          {loading ? "Generating Matchmaking..." : "Generate Matchmaking"}
+        </button>
+      </form>
+      {error && <div className="mx-4 mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+      {result && (
+        <div className="border-t border-[#EAD79D] p-4">
+          <MatchmakingResultView result={result} />
         </div>
       )}
-
-      {[
-        ["Dasha Timeline", data.dasha],
-        ["Predictions", data.predictions],
-        ["Gemstone Suggestions", data.gemstones],
-        ["Rudraksha Suggestions", data.rudraksha],
-        ["Puja Suggestions", data.puja_suggestions],
-      ].filter(([, value]) => value).map(([title, value]) => (
-        <section key={title} className="mt-5 overflow-hidden rounded-md border border-[#EAD79D] bg-white">
-          <h4 className="bg-[#FFF3C7] px-4 py-3 font-black text-[#6F4A04]">{title}</h4>
-          <div className="p-4">
-            <ReportDataBlock title={title} data={value} />
-          </div>
-        </section>
-      ))}
-    </div>
+    </section>
   );
 }
 
@@ -373,6 +1121,7 @@ export default function ChatPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [messageLoadError, setMessageLoadError] = useState("");
   const [counterpartTyping, setCounterpartTyping] = useState(false);
+  const [selectedReply, setSelectedReply] = useState(null);
   const [startingSession, setStartingSession] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
   const [extendingDuration, setExtendingDuration] = useState(null);
@@ -380,16 +1129,27 @@ export default function ChatPage() {
   const [callState, setCallState] = useState("idle");
   const [callStatus, setCallStatus] = useState("Audio call is not connected.");
   const [callMuted, setCallMuted] = useState(false);
+  const [callAudioBlocked, setCallAudioBlocked] = useState(false);
   const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
   const [serverClockOffsetMs, setServerClockOffsetMs] = useState(0);
   const [clientKundali, setClientKundali] = useState(null);
   const [clientKundaliLoading, setClientKundaliLoading] = useState(false);
   const [clientKundaliError, setClientKundaliError] = useState("");
+  const [isChatFullscreen, setIsChatFullscreen] = useState(false);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [recordingState, setRecordingState] = useState("idle");
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [recordedAudio, setRecordedAudio] = useState(null);
+  const [ritualContext, setRitualContext] = useState(null);
+  const [ritualReply, setRitualReply] = useState("");
+  const [ritualPaymentAmount, setRitualPaymentAmount] = useState("");
+  const [ritualPaymentNote, setRitualPaymentNote] = useState("");
+  const [sendingRitualAction, setSendingRitualAction] = useState(false);
 
   const messageViewportRef = useRef(null);
-  const zimRef = useRef(null);
-  const zimContextKeyRef = useRef("");
+  const echoChannelRef = useRef(null);
+  const echoContextKeyRef = useRef("");
   const zegoEngineRef = useRef(null);
   const localStreamRef = useRef(null);
   const publishedStreamIdRef = useRef("");
@@ -398,13 +1158,20 @@ export default function ChatPage() {
   const pollTimerRef = useRef(null);
   const pingTimerRef = useRef(null);
   const chatSyncTimerRef = useRef(null);
+  const typingStatusTimerRef = useRef(null);
   const fileInputRef = useRef(null);
-  const callAutoJoinKeyRef = useRef("");
-  const sessionAutoStartKeyRef = useRef("");
   const shouldStickToBottomRef = useRef(true);
   const previousMessageCountRef = useRef(0);
   const typingClearTimerRef = useRef(null);
   const lastTypingNotifyAtRef = useRef(0);
+  const cameraInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordingStreamRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+  const forceScrollToBottomRef = useRef(false);
+  const lastMarkedReadKeyRef = useRef("");
+  const recordingCancelledRef = useRef(false);
 
   const isAstrologerViewer =
     user?.id && booking ? Number(user.id) === Number(booking.astrologer_id) : user?.role === "astrologer";
@@ -414,12 +1181,26 @@ export default function ChatPage() {
   }, [booking, isAstrologerViewer]);
   const astrologerDetail =
     booking?.astrologer?.astrologer_detail || booking?.astrologer?.astrologerDetail || null;
+  const counterpartImage = useMemo(() => {
+    if (!booking || !counterpart) return "";
+    if (isAstrologerViewer) {
+      return resolveImageUrl(counterpart.profile_image || counterpart.avatar || "");
+    }
+
+    return resolveImageUrl(
+      counterpart?.astrologer_detail?.profile_image ||
+        counterpart?.astrologerDetail?.profile_image ||
+        counterpart?.profile_image ||
+        astrologerDetail?.profile_image ||
+        ""
+    );
+  }, [booking, counterpart, isAstrologerViewer, astrologerDetail]);
   const callEnabled = booking?.consultation_type === "call";
   const currentUserId = user?.id ? String(user.id) : "";
   const viewerZegoId = session?.viewer?.zego_user_id || "";
-  const chatServiceEnabled = Boolean(session?.zego?.chat);
   const isClosed = CLOSED_STATUSES.has(booking?.status) || session?.state === "closed";
-  const canSendChatMessage = Boolean(session?.can_join && !isClosed);
+  const chatServiceEnabled = Boolean(session?.chat?.channel_name);
+  const canSendChatMessage = Boolean(session?.is_live && !isClosed);
   const canJoinCall = Boolean(callEnabled && session?.can_join && session?.zego?.call);
   const isCallConnected = callState === "live" || callState === "room-connected";
   const backHref = isAstrologerViewer ? "/astrologer/dashboard" : "/my-bookings";
@@ -450,6 +1231,8 @@ export default function ChatPage() {
   const showLowTimeWarning = Boolean(session?.is_live && displayRemainingSeconds > 0 && displayRemainingSeconds <= 120);
   const extensionOptions = session?.extension?.options || [];
   const availableExtensionOptions = extensionOptions.filter((option) => option.is_available);
+  const isRitualConsultation = booking?.service_context === "ritual-consultation";
+  const canSendRitualFollowUp = Boolean(isAstrologerViewer && isRitualConsultation && booking?.status === "completed" && ritualContext?.id);
 
   useEffect(() => {
     setClientKundali(null);
@@ -504,20 +1287,16 @@ export default function ChatPage() {
     return "Chat room access is scheduled.";
   }, [callEnabled, chatReady, isAstrologerViewer, isClosed, session?.can_join, session?.can_start, session?.is_live]);
   const sessionSummary = useMemo(() => {
-    const testingNote = session?.test_mode
-      ? " Testing mode is enabled, so this booking can be opened before the exact slot."
-      : "";
-
     if (callEnabled) {
-      return `Scheduled start: ${scheduledStartLabel}. Scheduled end: ${scheduledEndLabel}.${testingNote}`;
+      return `Scheduled start: ${scheduledStartLabel}. Scheduled end: ${scheduledEndLabel}.`;
     }
 
     if (chatReady) {
-      return `Scheduled start: ${scheduledStartLabel}. Scheduled end: ${scheduledEndLabel}. Messages and attachments are live.${testingNote}`;
+      return `Scheduled start: ${scheduledStartLabel}. Scheduled end: ${scheduledEndLabel}. Messages and attachments are live.`;
     }
 
-    return `Scheduled start: ${scheduledStartLabel}. Scheduled end: ${scheduledEndLabel}.${testingNote}`;
-  }, [callEnabled, chatReady, scheduledEndLabel, scheduledStartLabel, session?.test_mode]);
+    return `Scheduled start: ${scheduledStartLabel}. Scheduled end: ${scheduledEndLabel}.`;
+  }, [callEnabled, chatReady, scheduledEndLabel, scheduledStartLabel]);
   const callActionLabel = useMemo(() => {
     if (callLoading || callState === "connecting") {
       return "Connecting...";
@@ -552,19 +1331,49 @@ export default function ChatPage() {
     }
 
     const wasEmpty = previousMessageCountRef.current === 0;
+    const messageWasAdded = visibleMessages.length > previousMessageCountRef.current;
+    const latestMessage = visibleMessages[visibleMessages.length - 1];
+    const shouldForceScroll = forceScrollToBottomRef.current || latestMessage?.isSelf;
 
-    if (shouldStickToBottomRef.current || wasEmpty) {
+    if (shouldForceScroll || shouldStickToBottomRef.current || wasEmpty) {
       viewport.scrollTop = viewport.scrollHeight;
+      setHasNewMessages(false);
+      shouldStickToBottomRef.current = true;
+    } else if (messageWasAdded && latestMessage && !latestMessage.isSelf) {
+      setHasNewMessages(true);
     }
 
+    forceScrollToBottomRef.current = false;
     previousMessageCountRef.current = visibleMessages.length;
   }, [visibleMessages]);
+
+  useEffect(() => {
+    if (!isChatFullscreen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isChatFullscreen]);
 
   useEffect(() => {
     if (!banner) return undefined;
     const timer = window.setTimeout(() => setBanner(""), 2800);
     return () => window.clearTimeout(timer);
   }, [banner]);
+
+  useEffect(() => {
+    if (!visibleMessages.some((message) => message.dbId && !message.isSelf && !message.readAt)) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      void markVisibleMessagesRead();
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [bookingId, currentUserId, visibleMessages]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setClockNowMs(Date.now()), 1000);
@@ -575,6 +1384,19 @@ export default function ChatPage() {
     setMessages(nextMessages);
   };
 
+  const scrollMessagesToBottom = () => {
+    const viewport = messageViewportRef.current;
+    shouldStickToBottomRef.current = true;
+    forceScrollToBottomRef.current = true;
+    setHasNewMessages(false);
+
+    if (viewport) {
+      window.requestAnimationFrame(() => {
+        viewport.scrollTop = viewport.scrollHeight;
+      });
+    }
+  };
+
   const handleMessageViewportScroll = () => {
     const viewport = messageViewportRef.current;
 
@@ -582,53 +1404,23 @@ export default function ChatPage() {
 
     const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
     shouldStickToBottomRef.current = distanceFromBottom < 80;
+    if (shouldStickToBottomRef.current) {
+      setHasNewMessages(false);
+    }
   };
 
-  const destroyChatConnection = async (roomId = "") => {
-    const zim = zimRef.current;
-
-    if (zim) {
+  const destroyChatConnection = () => {
+    if (echoChannelRef.current && echoContextKeyRef.current) {
       try {
-        zim.off("roomMessageReceived");
+        echoChannelRef.current.unsubscribe?.();
       } catch {
         /* Ignore cleanup failures. */
       }
-
-      try {
-        zim.off("connectionStateChanged");
-      } catch {
-        /* Ignore cleanup failures. */
-      }
-
-      try {
-        zim.off("tokenWillExpire");
-      } catch {
-        /* Ignore cleanup failures. */
-      }
-
-      try {
-        if (roomId) {
-          await zim.leaveRoom(roomId);
-        }
-      } catch {
-        /* Ignore cleanup failures. */
-      }
-
-      try {
-        zim.logout();
-      } catch {
-        /* Ignore cleanup failures. */
-      }
-
-      try {
-        zim.destroy();
-      } catch {
-        /* Ignore cleanup failures. */
-      }
+      disconnectReverbEcho();
     }
 
-    zimRef.current = null;
-    zimContextKeyRef.current = "";
+    echoChannelRef.current = null;
+    echoContextKeyRef.current = "";
     setChatReady(false);
     setChatStatus("Chat room disconnected.");
   };
@@ -691,13 +1483,15 @@ export default function ChatPage() {
     zegoEngineRef.current = null;
     publishedStreamIdRef.current = "";
     setCallMuted(false);
+    setCallAudioBlocked(false);
     setCallState("idle");
     setCallStatus("Audio call is not connected.");
   };
 
   const teardownRealtime = async () => {
     destroyCallConnection(session?.rooms?.call || "");
-    await destroyChatConnection(session?.rooms?.chat || "");
+    destroyChatConnection();
+    disconnectReverbEcho();
   };
 
   const fetchPersistedMessages = async () => {
@@ -707,8 +1501,11 @@ export default function ChatPage() {
 
     try {
       const response = await api.get(`/bookings/${bookingId}/messages`);
-      const normalized = (response.data?.messages || [])
-        .map((message) => mapStoredMessage(message, currentUserId))
+      const normalized = (await Promise.all(
+        (response.data?.messages || []).map((message) =>
+          mapStoredMessage(message, currentUserId, session?.chat?.encryption_key || "")
+        )
+      ))
         .filter((message) => message.text || message.mediaUrl)
         .sort((left, right) => left.timestamp - right.timestamp);
 
@@ -737,8 +1534,11 @@ export default function ChatPage() {
     messageType,
     text = "",
     mediaUrl = "",
-    zegoMessageId = "",
+    attachmentName = "",
+    attachmentMime = "",
+    attachmentSize = 0,
     clientUuid = "",
+    replyToMessageId = null,
   }) => {
     if (!bookingId) {
       return null;
@@ -751,28 +1551,36 @@ export default function ChatPage() {
         (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`),
-      zego_message_id: zegoMessageId || null,
-      sent_at: new Date(effectiveNowMs).toISOString(),
+      reply_to_message_id: replyToMessageId || null,
     };
 
-    if (messageType === "image") {
+    if (messageType !== "text") {
       payload.media_url = mediaUrl;
+      payload.text = text || attachmentName || "Attachment";
+      payload.attachment_name = attachmentName || null;
+      payload.attachment_mime = attachmentMime || null;
+      payload.attachment_size = attachmentSize || null;
     } else {
-      payload.text = text;
+      Object.assign(payload, await encryptChatText(text, session?.chat?.encryption_key || ""));
     }
 
     const response = await api.post(`/bookings/${bookingId}/messages`, payload);
-    return response.data?.message ? mapStoredMessage(response.data.message, currentUserId) : null;
+    return response.data?.message
+      ? mapStoredMessage(response.data.message, currentUserId, session?.chat?.encryption_key || "")
+      : null;
   };
 
-  const createOptimisticMessage = ({ clientUuid, text = "", kind = "text", mediaUrl = "" }) => ({
+  const createOptimisticMessage = ({ clientUuid, text = "", kind = "text", mediaUrl = "", attachmentName = "", reply = null }) => ({
     id: `optimistic-${clientUuid}`,
     senderUserId: viewerZegoId || currentUserId,
-    text: kind === "image" ? "Image attachment" : text,
+    text: kind === "text" ? text : attachmentName || "Attachment",
     kind,
     mediaUrl,
+    attachmentName,
+    reply,
     clientUuid,
     timestamp: Date.now(),
+    readAt: null,
     isSelf: true,
   });
 
@@ -785,7 +1593,7 @@ export default function ChatPage() {
   };
 
   const sendTypingCommand = (isTyping) => {
-    if (!chatReady || !zimRef.current || !session?.rooms?.chat || !bookingId) {
+    if (!bookingId || !canSendChatMessage) {
       return;
     }
 
@@ -799,18 +1607,20 @@ export default function ChatPage() {
       lastTypingNotifyAtRef.current = 0;
     }
 
-    zimRef.current.sendMessage(
-      {
-        type: ZIMMessageType.Command,
-        message: encodeTypingCommand({ bookingId, isTyping }),
-      },
-      session.rooms.chat,
-      ZIMConversationType.Room,
-      {
-        priority: ZIMMessagePriority.Low,
-      }
-    ).catch((error) => {
-      console.error("Failed to send typing status", error);
+    try {
+      echoChannelRef.current?.whisper?.("typing", {
+        booking_id: bookingId,
+        sender_id: currentUserId,
+        sender_role: session?.viewer?.role || "",
+        is_typing: isTyping,
+        sent_at: Date.now(),
+      });
+    } catch (error) {
+      console.error("Failed to whisper typing status", error);
+    }
+
+    api.post(`/bookings/${bookingId}/typing`, { is_typing: isTyping }).catch((typingError) => {
+      console.error("Failed to send typing status", typingError);
     });
   };
 
@@ -840,89 +1650,127 @@ export default function ChatPage() {
     sendTypingCommand(value.trim().length > 0);
   };
 
+  const fetchTypingStatus = async () => {
+    if (!bookingId || !canSendChatMessage) {
+      clearCounterpartTyping();
+      return;
+    }
+
+    const response = await api.get(`/bookings/${bookingId}/typing-status`);
+    if (response.data?.is_typing) {
+      showCounterpartTyping();
+    } else {
+      clearCounterpartTyping();
+    }
+  };
+
+  const markVisibleMessagesRead = async () => {
+    if (!bookingId || !currentUserId) {
+      return;
+    }
+
+    const unreadIncomingIds = visibleMessages
+      .filter((message) => message.dbId && !message.isSelf && !message.readAt)
+      .map((message) => message.dbId)
+      .sort((left, right) => Number(left) - Number(right));
+
+    if (!unreadIncomingIds.length) {
+      lastMarkedReadKeyRef.current = "";
+      return;
+    }
+
+    const readKey = unreadIncomingIds.join(",");
+    if (lastMarkedReadKeyRef.current === readKey) {
+      return;
+    }
+
+    lastMarkedReadKeyRef.current = readKey;
+
+    try {
+      await api.post(`/bookings/${bookingId}/messages/read`);
+      const readAt = Date.now();
+      setMessages((previous) =>
+        previous.map((message) =>
+          unreadIncomingIds.includes(message.dbId) ? { ...message, readAt } : message
+        )
+      );
+    } catch (error) {
+      console.error("Failed to mark chat messages as read", error);
+      lastMarkedReadKeyRef.current = "";
+    }
+  };
+
   const ensureChatConnection = async (currentBooking, currentSession) => {
-    if (!currentSession?.can_join || !currentSession?.zego?.chat) {
-      if (zimRef.current) {
-        await destroyChatConnection(currentSession?.rooms?.chat || "");
+    if (!currentSession?.chat?.channel_name) {
+      if (echoChannelRef.current) {
+        destroyChatConnection();
       }
       return;
     }
 
-    const chatConfig = currentSession.zego.chat;
-    const roomId = currentSession.rooms.chat;
-    const roomKey = `${chatConfig.app_id}:${chatConfig.user_id}:${roomId}`;
+    const chatConfig = currentSession.chat;
+    const roomKey = `${chatConfig.app_key}:${chatConfig.host}:${chatConfig.port}:${chatConfig.channel_name}`;
 
-    if (zimRef.current && zimContextKeyRef.current === roomKey) {
+    if (echoChannelRef.current && echoContextKeyRef.current === roomKey) {
       setChatReady(true);
-      setChatStatus("Connected to live chat.");
+      setChatStatus(currentSession.is_live ? "Chat connected." : "Waiting for astrologer to start the chat.");
       return;
     }
 
-    await destroyChatConnection(roomId);
+    destroyChatConnection();
 
-    const zimInstance = ZIM.create({ appID: chatConfig.app_id }) || ZIM.getInstance();
-    if (!zimInstance) {
-      throw new Error("Unable to initialize the chat engine.");
-    }
+    const echo = getReverbEcho(chatConfig);
+    const channel = echo.private(chatConfig.channel_name);
+    echoChannelRef.current = channel;
+    echoContextKeyRef.current = roomKey;
 
-    zimRef.current = zimInstance;
-    zimContextKeyRef.current = roomKey;
+    channel.listen(".booking.message.created", async (payload) => {
+      if (String(payload?.booking_id || "") !== String(currentBooking?.id || bookingId || "")) {
+        return;
+      }
 
-    zimInstance.on("connectionStateChanged", (_zim, data) => {
-      const nextStatus =
-        data?.state === 2
-          ? "Connected to live chat."
-          : data?.state === 1
-            ? "Connecting to live chat..."
-            : "Chat connection lost.";
-      setChatStatus(nextStatus);
+      const incoming = await mapStoredMessage(payload.message, currentUserId, chatConfig.encryption_key || "");
+      setMessages((previous) => [
+        ...previous.filter(
+          (message) =>
+            message.id !== incoming.id &&
+            (!message.clientUuid || !incoming.clientUuid || message.clientUuid !== incoming.clientUuid)
+        ),
+        incoming,
+      ].sort((left, right) => left.timestamp - right.timestamp));
+      removeOptimisticMessage(incoming.clientUuid);
     });
 
-    zimInstance.on("tokenWillExpire", async () => {
-      try {
-        const refreshed = await getBookingSession(currentBooking.id);
-        const refreshedChat = refreshed?.session?.zego?.chat;
-        if (refreshedChat?.token) {
-          await zimInstance.renewToken(refreshedChat.token);
-        }
-      } catch (error) {
-        console.error("Failed to renew ZIM token", error);
+    channel.listen(".booking.typing", (payload) => {
+      if (String(payload?.sender_id || "") === currentUserId) {
+        return;
+      }
+
+      if (payload?.is_typing) {
+        showCounterpartTyping();
+      } else {
+        clearCounterpartTyping();
       }
     });
 
-    zimInstance.on("roomMessageReceived", (_zim, data) => {
-      const incomingMessages = data?.messageList || [];
-      const typingMessage = incomingMessages.find((message) => {
-        const payload = decodeTypingCommand(message);
-        return payload?.bookingId === String(bookingId || "") && message?.senderUserID !== currentSession.viewer.zego_user_id;
-      });
-
-      if (typingMessage) {
-        const payload = decodeTypingCommand(typingMessage);
-        if (payload?.isTyping) {
-          showCounterpartTyping();
-        } else {
-          clearCounterpartTyping();
-        }
+    channel.listenForWhisper("typing", (payload) => {
+      if (String(payload?.sender_id || "") === currentUserId) {
+        return;
       }
 
-      void fetchPersistedMessages().catch((error) => {
-        console.error("Failed to refresh stored messages after room update", error);
-      });
+      if (payload?.is_typing) {
+        showCounterpartTyping();
+      } else {
+        clearCounterpartTyping();
+      }
     });
 
-    await zimInstance.login(chatConfig.user_id, {
-      token: chatConfig.token,
-      userName: chatConfig.user_name,
-    });
-
-    await zimInstance.enterRoom({
-      roomID: roomId,
-      roomName: roomId,
+    channel.listen(".booking.session.changed", () => {
+      void refreshSession({ silent: true });
     });
 
     setChatReady(true);
-    setChatStatus("Connected to live chat.");
+    setChatStatus(currentSession.is_live ? "Chat connected." : "Waiting for astrologer to start the chat.");
   };
 
   const playRemoteStream = async (engine, streamId) => {
@@ -935,11 +1783,21 @@ export default function ChatPage() {
     audioEl.autoplay = true;
     audioEl.playsInline = true;
     audioEl.srcObject = mediaStream;
-    await audioEl.play().catch(() => undefined);
 
     activeRemoteStreamsRef.current.add(streamId);
     remoteAudioMapRef.current.set(streamId, audioEl);
     setRemoteParticipantCount(activeRemoteStreamsRef.current.size);
+
+    try {
+      await audioEl.play();
+      setCallAudioBlocked(false);
+      return { playbackBlocked: false };
+    } catch (error) {
+      console.warn("Remote audio playback needs user activation", error);
+      setCallAudioBlocked(true);
+      setCallStatus("Remote audio is ready. Tap Enable Audio to hear the call.");
+      return { playbackBlocked: true };
+    }
   };
 
   const stopRemoteStream = (engine, streamId) => {
@@ -1022,13 +1880,50 @@ export default function ChatPage() {
         }
 
         try {
-          await playRemoteStream(engine, stream.streamID);
-          setCallStatus("Remote participant connected.");
+          const playback = await playRemoteStream(engine, stream.streamID);
+          if (!playback?.playbackBlocked) {
+            setCallStatus("Remote participant connected.");
+          }
         } catch (error) {
           console.error("Failed to play remote stream", error);
           setCallState("error");
           setCallStatus("Remote audio could not be played.");
         }
+      }
+    });
+
+    engine.on("publisherStateUpdate", (_streamId, state, errorCode) => {
+      if (state === "PUBLISHING") {
+        setCallStatus("Publishing microphone audio...");
+        return;
+      }
+
+      if (state === "PUBLISHING_SUCCESS") {
+        setCallState("live");
+        setCallStatus("Microphone is live.");
+        return;
+      }
+
+      if (errorCode) {
+        setCallState("error");
+        setCallStatus(`Microphone could not publish audio (${errorCode}).`);
+      }
+    });
+
+    engine.on("playerStateUpdate", (_streamId, state, errorCode) => {
+      if (state === "PLAYING") {
+        setCallStatus("Connecting remote audio...");
+        return;
+      }
+
+      if (state === "PLAYING_SUCCESS") {
+        setCallStatus("Remote audio connected.");
+        return;
+      }
+
+      if (errorCode) {
+        setCallState("error");
+        setCallStatus(`Remote audio could not connect (${errorCode}).`);
       }
     });
 
@@ -1038,7 +1933,7 @@ export default function ChatPage() {
       throw new Error("This browser does not support ZEGO WebRTC calls in the current environment.");
     }
 
-    await engine.loginRoom(
+    const loginResult = await engine.loginRoom(
       currentSession.rooms.call,
       callConfig.token,
       {
@@ -1049,6 +1944,10 @@ export default function ChatPage() {
         userUpdate: true,
       }
     );
+
+    if (loginResult === false || loginResult?.errorCode) {
+      throw new Error(`Audio room login failed${loginResult?.errorCode ? ` (${loginResult.errorCode})` : ""}.`);
+    }
 
     zegoEngineRef.current = engine;
     return engine;
@@ -1069,7 +1968,11 @@ export default function ChatPage() {
     localStreamRef.current = localStream;
     const streamId = currentSession.rooms.stream;
     publishedStreamIdRef.current = streamId;
-    engine.startPublishingStream(streamId, localStream);
+    const publishResult = await engine.startPublishingStream(streamId, localStream);
+
+    if (publishResult === false || publishResult?.errorCode) {
+      throw new Error(`Microphone audio publish failed${publishResult?.errorCode ? ` (${publishResult.errorCode})` : ""}.`);
+    }
 
     setCallState("live");
     setCallStatus("Audio call is live.");
@@ -1096,6 +1999,17 @@ export default function ChatPage() {
       const response = await getBookingSession(bookingId);
       setBooking(response.booking);
       setSession(response.session);
+      if (response.booking?.service_context === "ritual-consultation") {
+        try {
+          const ritualResponse = await getRitualContextForBooking(bookingId);
+          setRitualContext(ritualResponse?.ritual_booking || null);
+        } catch (error) {
+          console.error("Failed to load ritual context", error);
+          setRitualContext(null);
+        }
+      } else {
+        setRitualContext(null);
+      }
       if (response.session?.server_now) {
         const serverNowMs = new Date(response.session.server_now).getTime();
         if (Number.isFinite(serverNowMs)) {
@@ -1103,16 +2017,16 @@ export default function ChatPage() {
         }
       }
 
-      if (response.session?.can_join && response.session?.zego?.chat) {
+      if (response.session?.chat?.channel_name) {
         try {
           await ensureChatConnection(response.booking, response.session);
         } catch (error) {
           console.error("Failed to connect chat room", error);
           setChatReady(false);
-          setChatStatus(getRealtimeErrorMessage(error, "Live chat is currently unavailable."));
+          setChatStatus(getRealtimeErrorMessage(error, "Secure chat is currently unavailable."));
         }
-      } else if (zimRef.current) {
-        await destroyChatConnection(response.session?.rooms?.chat || "");
+      } else if (echoChannelRef.current) {
+        destroyChatConnection();
       }
 
       if (CLOSED_STATUSES.has(response.booking?.status) || response.session?.state === "closed") {
@@ -1195,23 +2109,50 @@ export default function ChatPage() {
       return undefined;
     }
 
+    const syncInterval = chatReady ? CHAT_SYNC_INTERVAL_CONNECTED_MS : CHAT_SYNC_INTERVAL_FALLBACK_MS;
     chatSyncTimerRef.current = window.setInterval(() => {
       void fetchPersistedMessages().catch((error) => {
         console.error("Stored chat sync failed", error);
       });
-    }, 1500);
+    }, syncInterval);
 
     return () => {
       if (chatSyncTimerRef.current) {
         window.clearInterval(chatSyncTimerRef.current);
       }
     };
-  }, [bookingId, loading]);
+  }, [bookingId, chatReady, loading]);
+
+  useEffect(() => {
+    if (typingStatusTimerRef.current) {
+      window.clearInterval(typingStatusTimerRef.current);
+    }
+
+    if (!bookingId || loading || !canSendChatMessage || chatReady) {
+      clearCounterpartTyping();
+      return undefined;
+    }
+
+    typingStatusTimerRef.current = window.setInterval(() => {
+      void fetchTypingStatus().catch((error) => {
+        console.error("Typing status sync failed", error);
+      });
+    }, TYPING_SYNC_INTERVAL_FALLBACK_MS);
+
+    return () => {
+      if (typingStatusTimerRef.current) {
+        window.clearInterval(typingStatusTimerRef.current);
+      }
+    };
+  }, [bookingId, canSendChatMessage, chatReady, loading]);
 
   useEffect(() => {
     return () => {
       if (chatSyncTimerRef.current) {
         window.clearInterval(chatSyncTimerRef.current);
+      }
+      if (typingStatusTimerRef.current) {
+        window.clearInterval(typingStatusTimerRef.current);
       }
       if (typingClearTimerRef.current) {
         window.clearTimeout(typingClearTimerRef.current);
@@ -1219,13 +2160,6 @@ export default function ChatPage() {
       void teardownRealtime();
     };
   }, []);
-
-  useEffect(() => {
-    if (!bookingId) {
-      callAutoJoinKeyRef.current = "";
-      sessionAutoStartKeyRef.current = "";
-    }
-  }, [bookingId]);
 
   const handleStartSession = async () => {
     if (!bookingId) return null;
@@ -1235,6 +2169,9 @@ export default function ChatPage() {
       const response = await startBookingSession(bookingId);
       setBooking(response.booking);
       setSession(response.session);
+      void ensureChatConnection(response.booking, response.session).catch((error) => {
+        console.error("Failed to reconnect secure chat after start", error);
+      });
       setBanner("Consultation started.");
       return response;
     } catch (error) {
@@ -1261,6 +2198,51 @@ export default function ChatPage() {
       setBanner(error?.response?.data?.message || "Unable to end the consultation.");
     } finally {
       setEndingSession(false);
+    }
+  };
+
+  const refreshRitualContext = async () => {
+    if (!bookingId || !isRitualConsultation) return;
+    const response = await getRitualContextForBooking(bookingId);
+    setRitualContext(response?.ritual_booking || null);
+  };
+
+  const handleSendRitualReply = async () => {
+    if (!ritualContext?.id || !ritualReply.trim()) return;
+
+    try {
+      setSendingRitualAction(true);
+      const response = await sendRitualAstrologerResponse(ritualContext.id, {
+        message: ritualReply.trim(),
+      });
+      setRitualContext(response?.ritual_booking || ritualContext);
+      setRitualReply("");
+      setBanner("Ritual response sent to the user.");
+    } catch (error) {
+      setBanner(error?.response?.data?.message || "Unable to send ritual response.");
+    } finally {
+      setSendingRitualAction(false);
+    }
+  };
+
+  const handleSendRitualPaymentRequest = async () => {
+    if (!ritualContext?.id || !Number(ritualPaymentAmount)) return;
+
+    try {
+      setSendingRitualAction(true);
+      const response = await sendRitualPaymentRequest(ritualContext.id, {
+        amount: Number(ritualPaymentAmount),
+        message: ritualPaymentNote.trim(),
+      });
+      setRitualContext(response?.ritual_booking || ritualContext);
+      setRitualPaymentAmount("");
+      setRitualPaymentNote("");
+      setBanner("Ritual payment request sent to the user.");
+      await refreshRitualContext();
+    } catch (error) {
+      setBanner(error?.response?.data?.message || "Unable to send ritual payment request.");
+    } finally {
+      setSendingRitualAction(false);
     }
   };
 
@@ -1303,14 +2285,18 @@ export default function ChatPage() {
           clientUuid,
           text: trimmed,
           kind: "text",
+          reply: selectedReply,
         }),
       ]);
       setDraft("");
+      const replyToMessageId = selectedReply?.dbId || null;
+      setSelectedReply(null);
       sendTypingCommand(false);
       const persistedMessage = await persistBookingMessage({
         messageType: "text",
         text: trimmed,
         clientUuid,
+        replyToMessageId,
       });
       if (persistedMessage) {
         setMessages((previous) => [
@@ -1326,26 +2312,7 @@ export default function ChatPage() {
         removeOptimisticMessage(clientUuid);
       }
 
-      if (chatReady && zimRef.current && session?.rooms?.chat) {
-        zimRef.current.sendMessage(
-          {
-            type: ZIMMessageType.Text,
-            message: trimmed,
-          },
-          session.rooms.chat,
-          ZIMConversationType.Room,
-          {
-            priority: ZIMMessagePriority.Low,
-          }
-        ).catch((error) => {
-          console.error("Failed to notify ZEGO room after saving message", error);
-          setChatStatus("Messages are saved. Live delivery is reconnecting...");
-        });
-      }
-
-      void fetchPersistedMessages().catch((error) => {
-        console.error("Failed to refresh stored messages after send", error);
-      });
+      clearCounterpartTyping();
     } catch (error) {
       console.error("Failed to send message", error);
       removeOptimisticMessage(clientUuid);
@@ -1354,9 +2321,7 @@ export default function ChatPage() {
     }
   };
 
-  const handleSendImage = async (event) => {
-    const file = event.target.files?.[0];
-
+  const uploadAndSendAttachment = async (file, { successMessage = "Attachment sent." } = {}) => {
     if (!file || !canSendChatMessage) {
       return;
     }
@@ -1370,33 +2335,42 @@ export default function ChatPage() {
       setUploadingImage(true);
 
       const payload = new FormData();
-      payload.append("image", file);
+      payload.append("attachment", file);
 
-      const uploadResponse = await api.post("/media/chat-image", payload, {
+      const uploadResponse = await api.post("/media/chat-attachment", payload, {
         headers: {
           Accept: "application/json",
         },
       });
 
-      const imageUrl = uploadResponse.data?.url;
+      const attachmentUrl = uploadResponse.data?.url;
 
-      if (!imageUrl) {
-        throw new Error("Image upload did not return a valid URL.");
+      if (!attachmentUrl) {
+        throw new Error("Attachment upload did not return a valid URL.");
       }
 
+      const messageType = uploadResponse.data?.message_type || "file";
+      const replyToMessageId = selectedReply?.dbId || null;
       setPendingMessages((previous) => [
         ...previous,
         createOptimisticMessage({
           clientUuid,
-          kind: "image",
-          mediaUrl: imageUrl,
+          kind: messageType,
+          mediaUrl: attachmentUrl,
+          attachmentName: uploadResponse.data?.name || file.name,
+          reply: selectedReply,
         }),
       ]);
+      setSelectedReply(null);
 
       const persistedMessage = await persistBookingMessage({
-        messageType: "image",
-        mediaUrl: imageUrl,
+        messageType,
+        mediaUrl: attachmentUrl,
+        attachmentName: uploadResponse.data?.name || file.name,
+        attachmentMime: uploadResponse.data?.mime || file.type,
+        attachmentSize: uploadResponse.data?.size || file.size,
         clientUuid,
+        replyToMessageId,
       });
       if (persistedMessage) {
         setMessages((previous) => [
@@ -1412,38 +2386,177 @@ export default function ChatPage() {
         removeOptimisticMessage(clientUuid);
       }
 
-      if (chatReady && zimRef.current && session?.rooms?.chat) {
-        zimRef.current.sendMessage(
-          {
-            type: ZIMMessageType.Text,
-            message: `${IMAGE_MESSAGE_PREFIX}${imageUrl}`,
-          },
-          session.rooms.chat,
-          ZIMConversationType.Room,
-          {
-            priority: ZIMMessagePriority.Low,
-          }
-        ).catch((error) => {
-          console.error("Failed to notify ZEGO room after saving image", error);
-          setChatStatus("Messages are saved. Live delivery is reconnecting...");
-        });
-      }
-
-      void fetchPersistedMessages().catch((error) => {
-        console.error("Failed to refresh stored messages after image send", error);
-      });
-      setBanner("Image sent.");
+      setBanner(successMessage);
     } catch (error) {
-      console.error("Failed to send chat image", error);
+      console.error("Failed to send chat attachment", error);
       removeOptimisticMessage(clientUuid);
-      setBanner(error?.response?.data?.message || error?.message || "Image could not be sent.");
+      setBanner(error?.response?.data?.message || error?.message || "Attachment could not be sent.");
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  const handleSendAttachment = async (event) => {
+    const file = event.target.files?.[0];
+    await uploadAndSendAttachment(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSendCameraCapture = async (event) => {
+    const file = event.target.files?.[0];
+    await uploadAndSendAttachment(file, { successMessage: "Photo sent." });
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
+  };
+
+  const stopRecordingStream = () => {
+    recordingStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+    recordingStreamRef.current = null;
+  };
+
+  const clearRecordingTimer = () => {
+    if (recordingTimerRef.current) {
+      window.clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  };
+
+  const resetVoiceRecording = () => {
+    clearRecordingTimer();
+    recordingCancelledRef.current = true;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {
+        /* Ignore recorder cleanup failures. */
+      }
+    }
+    stopRecordingStream();
+    mediaRecorderRef.current = null;
+    recordingChunksRef.current = [];
+    if (recordedAudio?.url) {
+      URL.revokeObjectURL(recordedAudio.url);
+    }
+    setRecordingState("idle");
+    setRecordingSeconds(0);
+    setRecordedAudio(null);
+  };
+
+  const startVoiceRecording = async () => {
+    if (!canSendChatMessage || recordingState === "recording") {
+      return;
+    }
+
+    if (!navigator?.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setBanner("Voice recording is not supported in this browser.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const preferredTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/ogg;codecs=opus",
+      ];
+      const mimeType = preferredTypes.find((type) => MediaRecorder.isTypeSupported?.(type));
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+
+      if (recordedAudio?.url) {
+        URL.revokeObjectURL(recordedAudio.url);
+      }
+
+      recordingChunksRef.current = [];
+      recordingStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      recordingCancelledRef.current = false;
+      setRecordedAudio(null);
+      setRecordingSeconds(0);
+      setRecordingState("recording");
+
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        clearRecordingTimer();
+        stopRecordingStream();
+
+        if (recordingCancelledRef.current || !recordingChunksRef.current.length) {
+          recordingChunksRef.current = [];
+          setRecordingState("idle");
+          return;
+        }
+
+        const blob = new Blob(recordingChunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        });
+        const extension = blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm";
+        const file = new File([blob], `voice-note-${Date.now()}.${extension}`, { type: blob.type || "audio/webm" });
+        setRecordedAudio({
+          file,
+          url: URL.createObjectURL(blob),
+        });
+        setRecordingState("ready");
+      };
+
+      recorder.start();
+      recordingTimerRef.current = window.setInterval(() => {
+        setRecordingSeconds((seconds) => {
+          const nextSeconds = seconds + 1;
+          if (nextSeconds >= VOICE_NOTE_LIMIT_SECONDS && mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+          }
+          return Math.min(nextSeconds, VOICE_NOTE_LIMIT_SECONDS);
+        });
+      }, 1000);
+    } catch (error) {
+      const errorName = error?.name;
+      if (errorName === "NotAllowedError" || errorName === "SecurityError") {
+        setBanner("Microphone permission was blocked. Allow microphone access to record voice notes.");
+      } else if (errorName === "NotFoundError") {
+        setBanner("No microphone device was found.");
+      } else {
+        setBanner("Voice recording could not be started.");
+      }
+      stopRecordingStream();
+      clearRecordingTimer();
+      setRecordingState("idle");
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const sendVoiceRecording = async () => {
+    if (!recordedAudio?.file) {
+      return;
+    }
+
+    await uploadAndSendAttachment(recordedAudio.file, { successMessage: "Voice note sent." });
+    resetVoiceRecording();
+  };
+
+  useEffect(() => {
+    return () => {
+      resetVoiceRecording();
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-    }
-  };
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = "";
+      }
+    };
+  }, []);
 
   const handleJoinAudioCall = async () => {
     if (!canJoinCall) {
@@ -1493,57 +2606,28 @@ export default function ChatPage() {
     }
   };
 
-  useEffect(() => {
-    if (callEnabled || !isAstrologerViewer || isClosed || startingSession || session?.is_live || !session?.can_start) {
-      return;
-    }
-
-    const autoStartKey = [bookingId, session?.state || "scheduled", session?.scheduled_at || ""].join(":");
-    if (sessionAutoStartKeyRef.current === autoStartKey) {
-      return;
-    }
-
-    sessionAutoStartKeyRef.current = autoStartKey;
-    void handleStartSession();
-  }, [bookingId, callEnabled, isAstrologerViewer, isClosed, session?.can_start, session?.is_live, session?.scheduled_at, session?.state, startingSession]);
-
-  useEffect(() => {
-    if (!callEnabled || isClosed || !canJoinCall || callLoading || zegoEngineRef.current || isCallConnected) {
-      return;
-    }
-
-    if (!isAstrologerViewer && !session?.is_live) {
-      return;
-    }
-
-    const autoJoinKey = [
-      bookingId,
-      session?.state || "unknown",
-      session?.is_live ? "live" : "pending",
-      isAstrologerViewer ? "astrologer" : "user",
-    ].join(":");
-
-    if (callAutoJoinKeyRef.current === autoJoinKey) {
-      return;
-    }
-
-    callAutoJoinKeyRef.current = autoJoinKey;
-    void handleJoinAudioCall();
-  }, [
-    bookingId,
-    callEnabled,
-    callLoading,
-    canJoinCall,
-    isCallConnected,
-    isAstrologerViewer,
-    isClosed,
-    session?.is_live,
-    session?.state,
-  ]);
-
   const handleLeaveAudioCall = () => {
     destroyCallConnection(session?.rooms?.call || "");
     setBanner("Audio call disconnected.");
+  };
+
+  const handleEnableRemoteAudio = async () => {
+    const audioElements = Array.from(remoteAudioMapRef.current.values());
+
+    if (!audioElements.length) {
+      setCallAudioBlocked(false);
+      setCallStatus("Waiting for remote audio.");
+      return;
+    }
+
+    try {
+      await Promise.all(audioElements.map((audioEl) => audioEl.play()));
+      setCallAudioBlocked(false);
+      setCallStatus("Remote audio connected.");
+    } catch (error) {
+      console.error("Failed to enable remote audio", error);
+      setBanner("Browser blocked audio playback. Tap again or check site sound permissions.");
+    }
   };
 
   const handleToggleMute = () => {
@@ -1560,6 +2644,25 @@ export default function ChatPage() {
       setBanner("Microphone setting could not be updated.");
     }
   };
+
+  const pageClassName = isChatFullscreen
+    ? "fixed inset-0 z-[80] h-[100dvh] overflow-hidden bg-[#f3f5fb] font-sans"
+    : "min-h-screen bg-[#f3f5fb] font-sans";
+  const contentClassName = isChatFullscreen
+    ? "flex h-full flex-col"
+    : "mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:px-8";
+  const gridClassName = isChatFullscreen
+    ? "min-h-0 flex-1"
+    : "grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start";
+  const chatColumnClassName = isChatFullscreen ? "min-h-0 h-full" : "min-w-0 space-y-6";
+  const chatSectionClassName = isChatFullscreen
+    ? "flex h-full min-h-0 flex-col overflow-hidden rounded-none border-0 bg-white shadow-none"
+    : "flex min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm xl:h-[calc(100vh-12.5rem)] xl:min-h-0 xl:max-h-[820px]";
+  const chatViewportClassName =
+    "relative flex-1 overflow-y-auto bg-[#efe7dc] bg-[radial-gradient(circle_at_12px_12px,rgba(30,53,87,0.08)_1.5px,transparent_1.5px),radial-gradient(circle_at_24px_24px,rgba(212,167,60,0.10)_1px,transparent_1px)] bg-[length:36px_36px] px-3 py-4 sm:px-5 sm:py-5";
+  const inputBarStyle = isChatFullscreen
+    ? { paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }
+    : undefined;
 
   if (!bookingId) {
     return (
@@ -1581,13 +2684,14 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f5fb] font-sans">
+    <div className={pageClassName}>
       {banner && (
-              <div className="fixed left-1/2 top-24 z-[70] -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg">
+        <div className={`fixed left-1/2 z-[90] -translate-x-1/2 rounded-full bg-[#1E3557] px-6 py-3 text-sm font-semibold text-white shadow-lg ${isChatFullscreen ? "top-4" : "top-24"}`}>
           {banner}
         </div>
       )}
 
+      {!isChatFullscreen && (
       <div className="border-b border-[#E3E8F3] bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 lg:px-8">
           <div className="flex items-center gap-4">
@@ -1626,9 +2730,10 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:px-8">
-        {showLowTimeWarning && (
+      <div className={contentClassName}>
+        {!isChatFullscreen && showLowTimeWarning && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -1662,6 +2767,7 @@ export default function ChatPage() {
           </div>
         )}
 
+        {!isChatFullscreen && (
         <div className="rounded-3xl border border-[#D9E3F3] bg-white px-5 py-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -1683,6 +2789,7 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
+        )}
 
         {pageError && (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">
@@ -1695,9 +2802,9 @@ export default function ChatPage() {
             <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#D4A73C]"></div>
           </div>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-            <div className="min-w-0 space-y-6">
-              <section className="flex min-h-[70vh] flex-col rounded-3xl border border-gray-200 bg-white shadow-sm xl:h-[calc(100vh-12.5rem)] xl:min-h-0 xl:max-h-[820px]">
+          <div className={gridClassName}>
+            <div className={chatColumnClassName}>
+              <section className={chatSectionClassName}>
               <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F6E8BF] text-[#1E3557]">
@@ -1722,15 +2829,31 @@ export default function ChatPage() {
                     </p>
                   </div>
                 </div>
-                <span className="rounded-full bg-[#F8F9FC] px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#1E3557]">
-                  {booking?.consultation_type === "call" ? "Backup Chat" : "Chat"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-[#F8F9FC] px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#1E3557]">
+                    {chatReady ? "Live" : chatServiceEnabled ? "Syncing" : "Fallback"}
+                  </span>
+                  <span className="hidden rounded-full bg-[#F8F9FC] px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#1E3557] sm:inline-flex">
+                    {booking?.consultation_type === "call" ? "Backup Chat" : "Chat"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsChatFullscreen((value) => !value);
+                      window.setTimeout(scrollMessagesToBottom, 50);
+                    }}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C]"
+                    aria-label={isChatFullscreen ? "Exit full screen chat" : "Open full screen chat"}
+                  >
+                    {isChatFullscreen ? <FaCompress /> : <FaExpand />}
+                  </button>
+                </div>
               </div>
 
               <div
                 ref={messageViewportRef}
                 onScroll={handleMessageViewportScroll}
-                className="flex-1 overflow-y-auto px-5 py-5"
+                className={chatViewportClassName}
               >
                 {messageLoadError ? (
                   <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -1746,11 +2869,17 @@ export default function ChatPage() {
                         className={`flex ${message.isSelf ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm shadow-sm ${message.isSelf
-                              ? "bg-[#1E3557] text-white"
-                              : "border border-gray-100 bg-[#F8F9FC] text-[#1E3557]"
+                          className={`group relative max-w-[82%] rounded-2xl px-4 py-3 text-sm shadow-sm ${message.isSelf
+                              ? "bg-[#DCF8C6] text-[#12320C]"
+                              : "border border-gray-100 bg-white text-[#1E3557]"
                             }`}
                         >
+                          {message.reply && (
+                            <div className={`mb-3 rounded-xl border-l-4 px-3 py-2 text-xs ${message.isSelf ? "border-[#1E3557] bg-white/55" : "border-[#D4A73C] bg-[#FFF9EC]"}`}>
+                              <p className="font-black">{message.reply.senderName}</p>
+                              <p className="mt-1 line-clamp-2 opacity-80">{message.reply.text}</p>
+                            </div>
+                          )}
                           {message.kind === "image" && message.mediaUrl ? (
                             <a href={message.mediaUrl} target="_blank" rel="noreferrer" className="block">
                               <img
@@ -1758,19 +2887,44 @@ export default function ChatPage() {
                                 alt="Chat attachment"
                                 className="max-h-64 w-full rounded-2xl object-cover"
                               />
-                              <p className={`mt-3 text-xs font-semibold ${message.isSelf ? "text-white/80" : "text-[#D4A73C]"}`}>
+                              <p className={`mt-3 text-xs font-semibold ${message.isSelf ? "text-[#1E3557]" : "text-[#D4A73C]"}`}>
                                 Open full image
                               </p>
+                            </a>
+                          ) : message.kind === "audio" && message.mediaUrl ? (
+                            <div className="min-w-[220px] max-w-full rounded-xl bg-white/70 px-3 py-3">
+                              <p className="mb-2 text-xs font-black uppercase tracking-wide opacity-70">Voice note</p>
+                              <audio controls src={message.mediaUrl} className="w-full max-w-[280px]" />
+                            </div>
+                          ) : ["pdf", "video", "file"].includes(message.kind) && message.mediaUrl ? (
+                            <a href={message.mediaUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl bg-white/70 px-3 py-3">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1E3557] text-white">
+                                {message.kind === "video" ? <FaPlayCircle /> : <FaPaperclip />}
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block truncate font-bold">{message.attachmentName || "Open attachment"}</span>
+                                <span className="text-xs opacity-70">{message.kind.toUpperCase()}</span>
+                              </span>
                             </a>
                           ) : (
                             <p className="leading-6">{message.text}</p>
                           )}
-                          <p
-                            className={`mt-2 text-[11px] ${message.isSelf ? "text-white/70" : "text-gray-400"
-                              }`}
-                          >
-                            {formatTime(message.timestamp)}
-                          </p>
+                          <div className="mt-2 flex items-center justify-between gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedReply(message)}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold opacity-0 transition group-hover:opacity-80"
+                            >
+                              <FaReply />
+                              Reply
+                            </button>
+                            <p className="ml-auto inline-flex items-center gap-1 text-[11px] opacity-60">
+                              {formatTime(message.timestamp)}
+                              {message.isSelf && (
+                                <FaCheckDouble className={message.readAt ? "text-[#2F80ED]" : "text-current"} title={message.readAt ? "Seen" : "Sent"} />
+                              )}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1824,28 +2978,127 @@ export default function ChatPage() {
                     </div>
                   </div>
                 )}
+                {hasNewMessages && (
+                  <button
+                    type="button"
+                    onClick={scrollMessagesToBottom}
+                    className="sticky bottom-3 left-1/2 z-10 mx-auto mt-4 flex -translate-x-1/2 items-center justify-center rounded-full bg-[#1E3557] px-4 py-2 text-xs font-bold text-white shadow-lg"
+                  >
+                    New messages
+                  </button>
+                )}
               </div>
 
-              <div className="border-t border-gray-100 px-5 py-4">
+              <div className="border-t border-gray-100 px-3 py-3 sm:px-5 sm:py-4" style={inputBarStyle}>
                 <div className="mb-2 h-5 text-xs font-semibold text-[#D4A73C]">
                   {counterpartTyping ? `${counterpart?.name || "Other user"} is typing...` : ""}
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#F8F9FC] px-4 py-3">
+                {recordingState !== "idle" && (
+                  <div className="mb-3 rounded-2xl border border-[#D4A73C]/30 bg-[#FFF9EC] px-4 py-3 text-sm">
+                    {recordingState === "recording" ? (
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 font-black text-[#1E3557]">
+                          <span className="h-3 w-3 animate-pulse rounded-full bg-rose-500" />
+                          Recording {formatCountdown(recordingSeconds)}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={stopVoiceRecording}
+                            className="inline-flex items-center gap-2 rounded-full bg-[#1E3557] px-4 py-2 text-xs font-bold text-white"
+                          >
+                            <FaStop />
+                            Stop
+                          </button>
+                          <button
+                            type="button"
+                            onClick={resetVoiceRecording}
+                            className="inline-flex items-center gap-2 rounded-full border border-rose-200 px-4 py-2 text-xs font-bold text-rose-600"
+                          >
+                            <FaTrash />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <audio controls src={recordedAudio?.url} className="w-full max-w-sm" />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void sendVoiceRecording()}
+                            disabled={uploadingImage}
+                            className="inline-flex items-center gap-2 rounded-full bg-[#D4A73C] px-4 py-2 text-xs font-black text-[#1E3557] disabled:opacity-60"
+                          >
+                            <FaPaperPlane />
+                            Send voice
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void startVoiceRecording()}
+                            disabled={uploadingImage}
+                            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-[#1E3557] disabled:opacity-60"
+                          >
+                            <FaMicrophone />
+                            Re-record
+                          </button>
+                          <button
+                            type="button"
+                            onClick={resetVoiceRecording}
+                            className="inline-flex items-center gap-2 rounded-full border border-rose-200 px-4 py-2 text-xs font-bold text-rose-600"
+                          >
+                            <FaTrash />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {selectedReply && (
+                  <div className="mb-3 flex items-start justify-between gap-3 rounded-2xl border border-[#D4A73C]/30 bg-[#FFF9EC] px-4 py-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="font-black text-[#1E3557]">Replying to {selectedReply.senderUserId === currentUserId ? "your message" : counterpart?.name || "message"}</p>
+                      <p className="mt-1 truncate text-gray-600">{selectedReply.text || selectedReply.attachmentName || "Attachment"}</p>
+                    </div>
+                    <button type="button" onClick={() => setSelectedReply(null)} className="text-[#1E3557]">
+                      <FaTimes />
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-[#F8F9FC] px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
                   <input
                     ref={fileInputRef}
                     type="file"
+                    accept="image/*,application/pdf,video/mp4,video/webm,video/quicktime,audio/*"
+                    onChange={(event) => void handleSendAttachment(event)}
+                    className="hidden"
+                  />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
                     accept="image/*"
-                    onChange={(event) => void handleSendImage(event)}
+                    capture="environment"
+                    onChange={(event) => void handleSendCameraCapture(event)}
                     className="hidden"
                   />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={!canSendChatMessage || uploadingImage}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C] disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Upload image"
+                    disabled={!canSendChatMessage || uploadingImage || recordingState === "recording"}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C] disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-11"
+                    aria-label="Upload attachment"
                   >
-                    <FaImage />
+                    <FaPaperclip />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={!canSendChatMessage || uploadingImage || recordingState === "recording"}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C] disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-11"
+                    aria-label="Take photo"
+                  >
+                    <FaCamera />
                   </button>
                   <input
                     type="text"
@@ -1857,7 +3110,7 @@ export default function ChatPage() {
                         void handleSendMessage();
                       }
                     }}
-                    disabled={!canSendChatMessage || uploadingImage}
+                    disabled={!canSendChatMessage || uploadingImage || recordingState === "recording"}
                     placeholder={
                       canSendChatMessage
                         ? callEnabled
@@ -1867,13 +3120,22 @@ export default function ChatPage() {
                           ? "Connecting live chat..."
                           : "Chat becomes active when the consultation opens."
                     }
-                    className="flex-1 bg-transparent text-sm text-[#1E3557] outline-none placeholder:text-gray-400 disabled:cursor-not-allowed"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-[#1E3557] outline-none placeholder:text-gray-400 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
+                    onClick={() => void startVoiceRecording()}
+                    disabled={!canSendChatMessage || uploadingImage || recordingState === "recording"}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-[#1E3557] transition hover:border-[#D4A73C] hover:text-[#D4A73C] disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-11"
+                    aria-label="Record voice note"
+                  >
+                    <FaMicrophone />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => void handleSendMessage()}
-                    disabled={!canSendChatMessage || uploadingImage || !draft.trim()}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#D4A73C] text-[#1E3557] transition hover:bg-[#c49530] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!canSendChatMessage || uploadingImage || recordingState === "recording" || !draft.trim()}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4A73C] text-[#1E3557] transition hover:bg-[#c49530] disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-11"
                   >
                     <FaPaperPlane />
                   </button>
@@ -1881,7 +3143,101 @@ export default function ChatPage() {
               </div>
               </section>
 
-              {isAstrologerViewer && (
+              {!isChatFullscreen && isAstrologerViewer && isRitualConsultation && (
+                <section className="rounded-3xl border border-[#EAD79D] bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-[#D4A73C]">Pooja Anusthan</p>
+                      <h2 className="mt-1 text-xl font-black text-[#1E3557]">
+                        {ritualContext?.ritual?.name || "Ritual Consultation Follow-up"}
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Send the user a ritual response after ending the consultation. Add a final amount only when the booking is ready for payment.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-[#FFF9EC] px-3 py-1 text-xs font-black uppercase text-[#7A4C00]">
+                      {ritualContext?.status || "consultation"}
+                    </span>
+                  </div>
+
+                  {!!ritualContext?.updates?.length && (
+                    <div className="mt-5 space-y-3">
+                      {ritualContext.updates.map((update) => (
+                        <div key={update.id} className="rounded-2xl border border-[#F1E1B8] bg-[#FFF9EC] px-4 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs font-black uppercase tracking-wide text-[#D4A73C]">
+                              {update.type === "payment_request" ? "Payment Request" : "Response"}
+                            </p>
+                            {Number(update.amount || 0) > 0 && (
+                              <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#1E3557]">
+                                Rs {Number(update.amount).toLocaleString("en-IN")}
+                              </span>
+                            )}
+                          </div>
+                          {update.message && <p className="mt-2 text-sm leading-6 text-[#1E3557]">{update.message}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!canSendRitualFollowUp ? (
+                    <div className="mt-5 rounded-2xl border border-dashed border-gray-200 bg-[#F8F9FC] px-4 py-4 text-sm text-gray-600">
+                      Ritual follow-up unlocks after you end this consultation.
+                    </div>
+                  ) : (
+                    <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                      <div className="rounded-2xl border border-gray-100 bg-[#F8F9FC] p-4">
+                        <h3 className="font-black text-[#1E3557]">Send Ritual Response</h3>
+                        <textarea
+                          value={ritualReply}
+                          onChange={(event) => setRitualReply(event.target.value)}
+                          rows={5}
+                          className="mt-3 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                          placeholder="Write preparation notes, sankalp guidance, or consultation summary for the user."
+                        />
+                        <button
+                          type="button"
+                          disabled={sendingRitualAction || !ritualReply.trim()}
+                          onClick={() => void handleSendRitualReply()}
+                          className="mt-3 rounded-xl bg-[#1E3557] px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
+                        >
+                          Send Response
+                        </button>
+                      </div>
+
+                      <div className="rounded-2xl border border-[#F1E1B8] bg-[#FFF9EC] p-4">
+                        <h3 className="font-black text-[#1E3557]">Request Final Payment</h3>
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={ritualPaymentAmount}
+                          onChange={(event) => setRitualPaymentAmount(event.target.value)}
+                          className="mt-3 w-full rounded-2xl border border-[#EAD79D] bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                          placeholder="Final amount in Rs"
+                        />
+                        <textarea
+                          value={ritualPaymentNote}
+                          onChange={(event) => setRitualPaymentNote(event.target.value)}
+                          rows={4}
+                          className="mt-3 w-full rounded-2xl border border-[#EAD79D] bg-white px-4 py-3 text-sm outline-none focus:border-[#D4A73C]"
+                          placeholder="Optional payment note shown in the user's notification."
+                        />
+                        <button
+                          type="button"
+                          disabled={sendingRitualAction || !Number(ritualPaymentAmount)}
+                          onClick={() => void handleSendRitualPaymentRequest()}
+                          className="mt-3 rounded-xl bg-[#D4A73C] px-5 py-3 text-sm font-black text-[#1E3557] disabled:opacity-60"
+                        >
+                          Send Payment Request
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {!isChatFullscreen && isAstrologerViewer && (
                 <section className="rounded-3xl border border-[#EAD79D] bg-[#FFF9EA] p-5 shadow-sm">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -1908,18 +3264,22 @@ export default function ChatPage() {
                   )}
                 </section>
               )}
+
+              {!isChatFullscreen && isAstrologerViewer && (
+                <ChatMatchmakingTool
+                  clientBirthDetails={booking?.birth_details || clientKundali?.birth_details}
+                  clientName={booking?.user?.name || counterpart?.name || ""}
+                />
+              )}
             </div>
 
-            <aside className="space-y-6">
-              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            {!isChatFullscreen && (
+            <aside className="flex flex-col gap-6">
+              <div className="order-2 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  {resolveImageUrl(counterpart?.astrologer_detail?.profile_image || counterpart?.astrologerDetail?.profile_image || astrologerDetail?.profile_image) ? (
+                  {counterpartImage ? (
                     <img
-                      src={resolveImageUrl(
-                        counterpart?.astrologer_detail?.profile_image ||
-                        counterpart?.astrologerDetail?.profile_image ||
-                        astrologerDetail?.profile_image
-                      )}
+                      src={counterpartImage}
                       alt={counterpart?.name || "Profile"}
                       className="h-16 w-16 rounded-2xl object-cover"
                     />
@@ -1986,7 +3346,7 @@ export default function ChatPage() {
 
               </div>
 
-              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="order-1 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F6E8BF] text-[#1E3557]">
                     <FaPhoneAlt />
@@ -2031,6 +3391,17 @@ export default function ChatPage() {
                       </button>
 
                       <div className="grid grid-cols-2 gap-3">
+                        {callAudioBlocked && (
+                          <button
+                            type="button"
+                            onClick={() => void handleEnableRemoteAudio()}
+                            className="col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-[#D4A73C] bg-[#FFF8E6] px-4 py-3 text-sm font-semibold text-[#1E3557] transition hover:bg-[#FFF1C9]"
+                          >
+                            <FaVolumeUp />
+                            Enable Audio
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={handleToggleMute}
@@ -2054,6 +3425,18 @@ export default function ChatPage() {
                     </>
                   )}
 
+                  {!callEnabled && isAstrologerViewer && !session?.is_live && (
+                    <button
+                      type="button"
+                      onClick={() => void handleStartSession()}
+                      disabled={!session?.can_start || startingSession || isClosed}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1E3557] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#162744] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <FaPlayCircle />
+                      {startingSession ? "Starting..." : "Start Chat"}
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => void handleEndSession()}
@@ -2065,70 +3448,8 @@ export default function ChatPage() {
                   </button>
                 </div>
               </div>
-
-              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-bold text-[#1E3557]">Session Metadata</h3>
-                <div className="mt-5 space-y-3 text-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Scheduled Start</span>
-                    <span className="text-right font-semibold text-[#1E3557]">{scheduledStartLabel}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Scheduled End</span>
-                    <span className="text-right font-semibold text-[#1E3557]">{scheduledEndLabel}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Booking Status</span>
-                    <span className="font-semibold capitalize text-[#1E3557]">{booking?.status || "-"}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Access Mode</span>
-                    <span className="text-right font-semibold text-[#1E3557]">
-                      {session?.test_mode ? "Testing window open" : "Slot-based access"}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Join Window Opens</span>
-                    <span className="text-right font-semibold text-[#1E3557]">
-                      {formatDateTime(session?.join_window?.starts_at)}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Join Window Closes</span>
-                    <span className="text-right font-semibold text-[#1E3557]">
-                      {formatDateTime(session?.join_window?.ends_at)}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Started At</span>
-                    <span className="text-right font-semibold text-[#1E3557]">
-                      {formatDateTime(session?.started_at)}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">Ended At</span>
-                    <span className="text-right font-semibold text-[#1E3557]">
-                      {formatDateTime(session?.ended_at)}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-500">End Reason</span>
-                    <span className="text-right font-semibold capitalize text-[#1E3557]">
-                      {(session?.end_reason || "-").replaceAll("_", " ")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm text-emerald-800 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <FaBolt className="mt-0.5 text-emerald-600" />
-                  <p>
-                    Real-time booking state, chat access, and audio room authentication are controlled from Laravel for this session. If timing or access changes, this page refreshes automatically.
-                  </p>
-                </div>
-              </div>
             </aside>
+            )}
           </div>
         )}
       </div>

@@ -486,6 +486,121 @@ class BookingService {
     throw Exception(_extractError(body, response.statusCode));
   }
 
+  static Future<Map<String, dynamic>> uploadChatAttachment({
+    required String filePath,
+    required String fileName,
+  }) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('Not authenticated.');
+
+    final request =
+        http.MultipartRequest('POST', Uri.parse(ApiConstants.chatAttachment))
+          ..headers.addAll({
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          })
+          ..files.add(await http.MultipartFile.fromPath(
+            'attachment',
+            filePath,
+            filename: fileName,
+          ));
+
+    final streamed = await request.send().timeout(const Duration(seconds: 45));
+    final response = await http.Response.fromStream(streamed);
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if ((response.statusCode == 200 || response.statusCode == 201) &&
+        body['success'] == true) {
+      final upload = body['attachment'] ?? body['file'] ?? body['data'] ?? body;
+      return Map<String, dynamic>.from(upload as Map);
+    }
+
+    throw Exception(_extractError(body, response.statusCode));
+  }
+
+  static Future<Map<String, dynamic>> sendAttachmentMessage({
+    required int bookingId,
+    required String messageType,
+    required Map<String, dynamic> attachment,
+  }) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('Not authenticated.');
+
+    final mediaUrl = attachment['media_url'] ??
+        attachment['url'] ??
+        attachment['path'] ??
+        attachment['file_url'];
+    if (mediaUrl == null || mediaUrl.toString().isEmpty) {
+      throw Exception('Attachment upload response was invalid.');
+    }
+
+    final response = await http
+        .post(
+          Uri.parse(ApiConstants.sendBookingMessage(bookingId)),
+          headers: _headers(token: token),
+          body: jsonEncode({
+            'message_type': messageType,
+            'media_url': mediaUrl.toString(),
+            'attachment_name': attachment['name']?.toString() ??
+                attachment['file_name']?.toString(),
+            'attachment_mime': attachment['mime_type']?.toString() ??
+                attachment['mime']?.toString(),
+            'attachment_size': attachment['size'],
+            'client_uuid': DateTime.now().microsecondsSinceEpoch.toString(),
+            'sent_at': DateTime.now().toIso8601String(),
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if ((response.statusCode == 200 || response.statusCode == 201) &&
+        body['success'] == true) {
+      return Map<String, dynamic>.from(body['message'] as Map);
+    }
+
+    throw Exception(_extractError(body, response.statusCode));
+  }
+
+  static Future<void> markMessagesRead(int bookingId) async {
+    final token = await _getToken();
+    if (token == null) return;
+    await http
+        .post(
+          Uri.parse(ApiConstants.bookingMessagesRead(bookingId)),
+          headers: _headers(token: token),
+        )
+        .timeout(const Duration(seconds: 8));
+  }
+
+  static Future<void> sendTyping(int bookingId, bool isTyping) async {
+    final token = await _getToken();
+    if (token == null) return;
+    await http
+        .post(
+          Uri.parse(ApiConstants.bookingTyping(bookingId)),
+          headers: _headers(token: token),
+          body: jsonEncode({'is_typing': isTyping}),
+        )
+        .timeout(const Duration(seconds: 8));
+  }
+
+  static Future<Map<String, dynamic>> getTypingStatus(int bookingId) async {
+    final token = await _getToken();
+    if (token == null) return {};
+    final response = await http
+        .get(
+          Uri.parse(ApiConstants.bookingTypingStatus(bookingId)),
+          headers: _headers(token: token),
+        )
+        .timeout(const Duration(seconds: 8));
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body;
+    }
+    return {};
+  }
+
   static Future<Map<String, dynamic>> _sessionAction(
       int bookingId, String action) async {
     final token = await _getToken();

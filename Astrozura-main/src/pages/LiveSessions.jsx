@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaBroadcastTower, FaPaperPlane, FaPlay, FaPowerOff, FaVideo } from "react-icons/fa";
 
@@ -9,18 +9,28 @@ import { useAuth } from "../context/AuthContext";
 import { usePushNotifications } from "../context/PushNotificationsContext";
 import { publishLiveStatusChange, subscribeToLiveStatusChanges } from "../lib/liveStatusBroadcast";
 
-const ZEGO_BROADCAST_SCENARIO = 8;
 const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
-let zegoExpressEnginePromise = null;
+let videoSdkPromise = null;
 
-const getZegoExpressEngineClass = async () => {
-  if (!zegoExpressEnginePromise) {
-    zegoExpressEnginePromise = import("zego-express-engine-webrtc").then(
-      (module) => module.ZegoExpressEngine
-    );
+const getVideoSdk = async () => {
+  if (!videoSdkPromise) {
+    videoSdkPromise = import("@videosdk.live/js-sdk").then((module) => {
+      const sdk =
+        module.VideoSDK ||
+        module.default?.VideoSDK ||
+        module.default?.default?.VideoSDK ||
+        module.default ||
+        module;
+
+      if (typeof sdk?.config !== "function" || typeof sdk?.initMeeting !== "function") {
+        throw new Error("VideoSDK live SDK could not be initialized.");
+      }
+
+      return sdk;
+    });
   }
 
-  return zegoExpressEnginePromise;
+  return videoSdkPromise;
 };
 
 const resolveImageUrl = (path) => {
@@ -37,6 +47,69 @@ const formatLiveTime = (value) =>
         timeZone: "Asia/Kolkata",
       })
     : "-";
+
+const getVideoSdkPayload = (viewer) => viewer?.viewer?.provider?.videosdk || viewer?.provider?.videosdk || null;
+const getViewerRole = (viewer) => viewer?.viewer?.role || viewer?.role || getVideoSdkPayload(viewer)?.role || "viewer";
+const getLiveCommentTopic = (liveSessionId) => `ASTROZURA_LIVE_COMMENTS_${liveSessionId}`;
+const LIVE_COMMENT_PAYLOAD_TYPE = "astrozura.live.comment.v1";
+
+const buildPubSubCommentPayload = (comment, liveSessionId) => ({
+  type: LIVE_COMMENT_PAYLOAD_TYPE,
+  live_session_id: liveSessionId,
+  comment: {
+    id: comment?.id,
+    message: comment?.message || "",
+    created_at: comment?.created_at || new Date().toISOString(),
+    user: {
+      id: comment?.user?.id,
+      name: comment?.user?.name || "Viewer",
+    },
+  },
+});
+
+const parsePubSubCommentPayload = (pubSubMessage, expectedSessionId) => {
+  if (!pubSubMessage?.message) {
+    return null;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(pubSubMessage.message);
+  } catch {
+    payload = {
+      type: LIVE_COMMENT_PAYLOAD_TYPE,
+      live_session_id: expectedSessionId,
+      comment: {
+        id: pubSubMessage.id,
+        message: pubSubMessage.message,
+        created_at: pubSubMessage.timestamp || new Date().toISOString(),
+        user: {
+          id: pubSubMessage.senderId,
+          name: pubSubMessage.senderName || "Viewer",
+        },
+      },
+    };
+  }
+
+  if (payload?.type !== LIVE_COMMENT_PAYLOAD_TYPE || String(payload.live_session_id) !== String(expectedSessionId)) {
+    return null;
+  }
+
+  const comment = payload.comment || payload;
+  if (!comment?.message) {
+    return null;
+  }
+
+  return {
+    id: comment.id || pubSubMessage.id,
+    message: comment.message,
+    created_at: comment.created_at || pubSubMessage.timestamp || new Date().toISOString(),
+    user: {
+      id: comment.user?.id || pubSubMessage.senderId,
+      name: comment.user?.name || pubSubMessage.senderName || "Viewer",
+    },
+  };
+};
 
 export default function LiveSessions() {
   const { user } = useAuth();
@@ -64,16 +137,18 @@ export default function LiveSessions() {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const engineRef = useRef(null);
-  const localStreamRef = useRef(null);
-  const playingStreamRef = useRef("");
+  const meetingRef = useRef(null);
+  const localMediaStreamRef = useRef(null);
+  const remoteMediaStreamRef = useRef(null);
   const liveRefreshTimerRef = useRef(null);
   const commentRefreshTimerRef = useRef(null);
   const autoJoinRequestedRef = useRef(false);
   const currentSessionIdRef = useRef(null);
+  const pubSubTopicRef = useRef("");
+  const pubSubListenersRef = useRef(null);
 
   const isFeaturedAstrologer = Boolean(user?.role === "astrologer" && astrologerDetail?.is_featured);
-  const isHost = Boolean(viewerConfig?.viewer?.role === "host");
+  const isHost = Boolean(getViewerRole(viewerConfig) === "host");
   const visibleComments = useMemo(() => {
     const combined = [...comments];
 
@@ -140,38 +215,205 @@ export default function LiveSessions() {
     );
   };
 
+  const appendLiveComment = useCallback((incomingComment) => {
+    if (!incomingComment?.message) {
+      return;
+    }
+
+    setPendingComments((previous) =>
+      previous.filter(
+        (pendingComment) =>
+          !(
+            pendingComment.id === incomingComment.id ||
+            (pendingComment.user?.id === incomingComment.user?.id &&
+              pendingComment.message === incomingComment.message &&
+              Math.abs(
+                new Date(pendingComment.created_at).getTime() - new Date(incomingComment.created_at).getTime()
+              ) < 15000)
+          )
+      )
+    );
+
+    setComments((previous) => {
+      const exists = previous.some(
+        (comment) =>
+          comment.id === incomingComment.id ||
+          (comment.user?.id === incomingComment.user?.id &&
+            comment.message === incomingComment.message &&
+            Math.abs(new Date(comment.created_at).getTime() - new Date(incomingComment.created_at).getTime()) < 15000)
+      );
+
+      return exists ? previous : [...previous, incomingComment];
+    });
+  }, []);
+
+  const unsubscribeLiveComments = async (meeting = meetingRef.current) => {
+    if (!meeting?.pubSub?.unsubscribe || !pubSubTopicRef.current || !pubSubListenersRef.current) {
+      pubSubTopicRef.current = "";
+      pubSubListenersRef.current = null;
+      return;
+    }
+
+    const topic = pubSubTopicRef.current;
+    const listeners = pubSubListenersRef.current;
+    pubSubTopicRef.current = "";
+    pubSubListenersRef.current = null;
+
+    try {
+      await meeting.pubSub.unsubscribe(topic, listeners);
+    } catch (error) {
+      const errorText = String(error?.message || error?.code || error || "").toLowerCase();
+      const isAlreadyDisconnected =
+        errorText.includes("pubsub_unsubscribe_failed") ||
+        errorText.includes("pubsub is not available") ||
+        errorText.includes("disconnected state");
+
+      if (!isAlreadyDisconnected) {
+        console.error("Failed to unsubscribe live comments", error);
+      }
+    }
+  };
+
+  const subscribeToLiveComments = async (meeting, liveSessionId) => {
+    if (!meeting?.pubSub?.subscribe || !liveSessionId) {
+      return;
+    }
+
+    await unsubscribeLiveComments(meeting);
+
+    const topic = getLiveCommentTopic(liveSessionId);
+    const listeners = {
+      onMessageReceived: (pubSubMessage) => {
+        const incomingComment = parsePubSubCommentPayload(pubSubMessage, liveSessionId);
+        appendLiveComment(incomingComment);
+      },
+      onBatchReceived: (pubSubMessages = []) => {
+        pubSubMessages.forEach((pubSubMessage) => {
+          const incomingComment = parsePubSubCommentPayload(pubSubMessage, liveSessionId);
+          appendLiveComment(incomingComment);
+        });
+      },
+      onOldMessagesReceived: (pubSubMessages = []) => {
+        pubSubMessages.forEach((pubSubMessage) => {
+          const incomingComment = parsePubSubCommentPayload(pubSubMessage, liveSessionId);
+          appendLiveComment(incomingComment);
+        });
+      },
+      onMessageDrop: (info) => {
+        console.warn("VideoSDK live comments dropped messages", info);
+      },
+    };
+
+    try {
+      await meeting.pubSub.subscribe(topic, listeners, {
+        oldMessageLimit: 0,
+        realtimeOverflow: "queue",
+        maxQueue: 100,
+        newMessageLimit: 20,
+      });
+      pubSubTopicRef.current = topic;
+      pubSubListenersRef.current = listeners;
+    } catch (error) {
+      console.error("Failed to subscribe live comments through VideoSDK", error);
+    }
+  };
+
+  const publishLiveComment = async (comment, liveSessionId = session?.id) => {
+    const meeting = meetingRef.current;
+    if (!meeting?.pubSub?.publish || !comment?.message || !liveSessionId) {
+      return;
+    }
+
+    try {
+      await meeting.pubSub.publish(
+        getLiveCommentTopic(liveSessionId),
+        JSON.stringify(buildPubSubCommentPayload(comment, liveSessionId)),
+        { persist: false }
+      );
+    } catch (error) {
+      console.error("Failed to publish live comment through VideoSDK", error);
+    }
+  };
+
+  const ensureMediaStream = (mediaStreamRef, videoRef) => {
+    if (!mediaStreamRef.current) {
+      mediaStreamRef.current = new MediaStream();
+    }
+
+    if (videoRef.current && videoRef.current.srcObject !== mediaStreamRef.current) {
+      videoRef.current.srcObject = mediaStreamRef.current;
+    }
+
+    return mediaStreamRef.current;
+  };
+
+  const attachTrackToVideo = (stream, mediaStreamRef, videoRef) => {
+    if (!stream?.track || !["audio", "video"].includes(stream.kind)) {
+      return;
+    }
+
+    const mediaStream = ensureMediaStream(mediaStreamRef, videoRef);
+    mediaStream
+      .getTracks()
+      .filter((track) => track.kind === stream.track.kind)
+      .forEach((track) => mediaStream.removeTrack(track));
+    mediaStream.addTrack(stream.track);
+
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => undefined);
+    }
+  };
+
+  const detachTrackFromVideo = (stream, mediaStreamRef) => {
+    if (!stream?.track || !mediaStreamRef.current) {
+      return;
+    }
+
+    mediaStreamRef.current
+      .getTracks()
+      .filter((track) => track.id === stream.track.id)
+      .forEach((track) => mediaStreamRef.current.removeTrack(track));
+  };
+
+  const bindParticipantStreams = (participant, target) => {
+    const mediaStreamRef = target === "local" ? localMediaStreamRef : remoteMediaStreamRef;
+    const videoRef = target === "local" ? localVideoRef : remoteVideoRef;
+
+    participant?.streams?.forEach((stream) => {
+      attachTrackToVideo(stream, mediaStreamRef, videoRef);
+    });
+
+    participant?.on?.("stream-enabled", (stream) => {
+      attachTrackToVideo(stream, mediaStreamRef, videoRef);
+      if (target === "remote") {
+        setLiveState("watching");
+        setLiveStatus("Watching the live broadcast.");
+      }
+    });
+
+    participant?.on?.("stream-disabled", (stream) => {
+      detachTrackFromVideo(stream, mediaStreamRef);
+    });
+  };
+
   const teardownLiveRoom = () => {
-    const engine = engineRef.current;
+    const meeting = meetingRef.current;
 
-    if (engine && playingStreamRef.current) {
+    if (meeting) {
       try {
-        engine.stopPlayingStream(playingStreamRef.current);
+        void unsubscribeLiveComments(meeting);
+        meeting.leave();
       } catch {}
     }
 
-    if (engine && localStreamRef.current) {
-      try {
-        engine.stopPublishingStream(session?.stream_id || "");
-      } catch {}
-    }
-
-    if (engine) {
-      try {
-        if (session?.room_id) {
-          engine.logoutRoom(session.room_id);
-        }
-      } catch {}
-
-      try {
-        engine.destroyEngine();
-      } catch {}
-    }
-
-    if (localStreamRef.current) {
-      try {
-        localStreamRef.current.getTracks().forEach((track) => track.stop());
-      } catch {}
-    }
+    [localMediaStreamRef, remoteMediaStreamRef].forEach((mediaStreamRef) => {
+      mediaStreamRef.current?.getTracks?.().forEach((track) => {
+        try {
+          track.stop();
+        } catch {}
+      });
+      mediaStreamRef.current = null;
+    });
 
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
@@ -181,46 +423,73 @@ export default function LiveSessions() {
       localVideoRef.current.srcObject = null;
     }
 
-    localStreamRef.current = null;
-    playingStreamRef.current = "";
-    engineRef.current = null;
+    meetingRef.current = null;
     setLiveState("idle");
   };
 
   const connectToLiveSession = async (targetSession, viewer) => {
-    const engine = await startEngine(targetSession, {
-      zego: viewer.viewer.zego,
+    const videoSdk = getVideoSdkPayload(viewer);
+    if (!videoSdk) {
+      throw new Error("VideoSDK viewer access could not be prepared.");
+    }
+
+    teardownLiveRoom();
+    setLiveState("connecting");
+    setLiveStatus("Connecting live room...");
+
+    const VideoSDK = await getVideoSdk();
+    VideoSDK.config(videoSdk.token);
+
+    const role = getViewerRole(viewer);
+    const mode = videoSdk.mode || (role === "host" ? "SEND_AND_RECV" : "RECV_ONLY");
+    const meeting = VideoSDK.initMeeting({
+      meetingId: videoSdk.room_id,
+      participantId: videoSdk.participant_id,
+      name: user?.name || `${role}-${user?.id || "guest"}`,
+      micEnabled: role === "host",
+      webcamEnabled: role === "host",
+      mode,
+      multiStream: true,
+      autoConsume: true,
+      maxResolution: "hd",
+      metaData: {
+        role,
+        astrozuraLiveSessionId: targetSession.id,
+      },
     });
 
-    if (viewer.viewer.role === "host") {
-      const localStream = await engine.createStream({
-        camera: {
-          audio: true,
-          video: true,
-        },
-      });
+    meetingRef.current = meeting;
 
-      localStreamRef.current = localStream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = localStream;
-        await localVideoRef.current.play().catch(() => undefined);
+    meeting.on("meeting-joined", () => {
+      bindParticipantStreams(meeting.localParticipant, "local");
+      meeting.participants?.forEach((participant) => bindParticipantStreams(participant, "remote"));
+      void subscribeToLiveComments(meeting, targetSession.id);
+      setLiveState(role === "host" ? "live" : "watching");
+      setLiveStatus(role === "host" ? "You are live now." : "Watching the live broadcast.");
+    });
+
+    meeting.on("participant-joined", (participant) => {
+      bindParticipantStreams(participant, "remote");
+    });
+
+    meeting.on("participant-left", () => {
+      if (role !== "host" && remoteMediaStreamRef.current?.getTracks?.().length === 0) {
+        setLiveStatus("Waiting for the astrologer video...");
       }
+    });
 
-      engine.startPublishingStream(targetSession.stream_id, localStream);
-      setLiveState("live");
-      setLiveStatus("You are live now.");
-      return;
-    }
+    meeting.on("meeting-left", () => {
+      setLiveState("idle");
+      setLiveStatus("Live room disconnected.");
+    });
 
-    const remoteStream = await engine.startPlayingStream(targetSession.stream_id).catch(() => null);
-    if (remoteStream && remoteVideoRef.current) {
-      playingStreamRef.current = targetSession.stream_id;
-      remoteVideoRef.current.srcObject = remoteStream;
-      await remoteVideoRef.current.play().catch(() => undefined);
-    }
+    meeting.on("error", (error) => {
+      console.error("VideoSDK live room error", error);
+      setLiveState("error");
+      setLiveStatus("Live room connection failed.");
+    });
 
-    setLiveState("watching");
-    setLiveStatus("Watching the live broadcast.");
+    await meeting.join();
   };
 
   const syncLiveSnapshot = async ({ silent = false } = {}) => {
@@ -237,7 +506,7 @@ export default function LiveSessions() {
       setComments([]);
       setPendingComments([]);
 
-      if (engineRef.current) {
+      if (meetingRef.current) {
         teardownLiveRoom();
       }
 
@@ -258,13 +527,13 @@ export default function LiveSessions() {
       publishLiveStatusChange(current);
     }
 
-    if (sessionChanged && engineRef.current) {
+    if (sessionChanged && meetingRef.current) {
       teardownLiveRoom();
     }
 
-    if (autoJoinRequestedRef.current && user && viewer?.viewer?.zego && (sessionChanged || !engineRef.current)) {
+    if (autoJoinRequestedRef.current && user && getVideoSdkPayload(viewer) && (sessionChanged || !meetingRef.current)) {
       await connectToLiveSession(current, viewer);
-    } else if (!silent && !engineRef.current) {
+    } else if (!silent && !meetingRef.current) {
       setLiveStatus("Active spiritual live session is ready.");
     }
 
@@ -277,13 +546,13 @@ export default function LiveSessions() {
     const idlePreload =
       typeof window !== "undefined" && "requestIdleCallback" in window
         ? window.requestIdleCallback(() => {
-            void getZegoExpressEngineClass().catch((error) => {
-              console.error("Failed to preload ZEGO live SDK", error);
+            void getVideoSdk().catch((error) => {
+              console.error("Failed to preload VideoSDK live SDK", error);
             });
           })
         : window.setTimeout(() => {
-            void getZegoExpressEngineClass().catch((error) => {
-              console.error("Failed to preload ZEGO live SDK", error);
+            void getVideoSdk().catch((error) => {
+              console.error("Failed to preload VideoSDK live SDK", error);
             });
           }, 1200);
 
@@ -384,76 +653,6 @@ export default function LiveSessions() {
     };
   }, []);
 
-  const startEngine = async (currentSession, config) => {
-    const ZegoExpressEngine = await getZegoExpressEngineClass();
-    const serverList = [config.zego.server_url, config.zego.secondary_server_url].filter(Boolean);
-    const engine = new ZegoExpressEngine(config.zego.app_id, serverList, {
-      scenario: ZEGO_BROADCAST_SCENARIO,
-    });
-
-    engine.setRoomScenario(ZEGO_BROADCAST_SCENARIO);
-
-    engine.on("roomStateUpdate", (_roomId, state, errorCode) => {
-      if (state === "CONNECTED") {
-        setLiveState("connected");
-        setLiveStatus(config.zego.role === "host" ? "Studio connected." : "Live stream connected.");
-        return;
-      }
-
-      if (state === "CONNECTING") {
-        setLiveState("connecting");
-        setLiveStatus("Connecting live room...");
-        return;
-      }
-
-      if (errorCode) {
-        setLiveState("error");
-        setLiveStatus(`Live room disconnected (${errorCode}).`);
-      }
-    });
-
-    engine.on("roomStreamUpdate", async (_roomId, updateType, streamList) => {
-      if (updateType !== "ADD") {
-        return;
-      }
-
-      for (const stream of streamList) {
-        if (stream.streamID !== currentSession?.stream_id || config.zego.role === "host") {
-          continue;
-        }
-
-        try {
-          const remoteStream = await engine.startPlayingStream(stream.streamID);
-          playingStreamRef.current = stream.streamID;
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStream;
-            await remoteVideoRef.current.play().catch(() => undefined);
-          }
-          setLiveStatus("Watching the live broadcast.");
-        } catch (error) {
-          console.error("Failed to play live stream", error);
-          setLiveState("error");
-          setLiveStatus("Live stream could not be played.");
-        }
-      }
-    });
-
-    await engine.loginRoom(
-      currentSession.room_id,
-      config.zego.token,
-      {
-        userID: config.zego.user_id,
-        userName: config.zego.user_name,
-      },
-      {
-        userUpdate: true,
-      }
-    );
-
-    engineRef.current = engine;
-    return engine;
-  };
-
   const handleStartLive = async () => {
     if (!isFeaturedAstrologer) {
       setBanner("Only featured astrologers can host a live session.");
@@ -470,8 +669,6 @@ export default function LiveSessions() {
       setViewerConfig({
         session: startedSession,
         viewer: startedViewer,
-        role: startedViewer?.role,
-        zego: startedViewer?.zego,
       });
       currentSessionIdRef.current = startedSession?.id || null;
       autoJoinRequestedRef.current = true;
@@ -503,8 +700,8 @@ export default function LiveSessions() {
     try {
       setJoining(true);
       const viewer = await loadViewerConfig();
-      if (!viewer?.viewer?.zego) {
-        throw new Error("Viewer access could not be prepared.");
+      if (!getVideoSdkPayload(viewer)) {
+        throw new Error("VideoSDK viewer access could not be prepared.");
       }
       autoJoinRequestedRef.current = true;
       await connectToLiveSession(session, viewer);
@@ -525,6 +722,14 @@ export default function LiveSessions() {
     const activeSession = session;
 
     try {
+      const currentMeeting = meetingRef.current;
+      if (currentMeeting && isHost) {
+        try {
+          await currentMeeting.end();
+        } catch {
+          await currentMeeting.leave().catch(() => undefined);
+        }
+      }
       teardownLiveRoom();
       autoJoinRequestedRef.current = false;
       currentSessionIdRef.current = null;
@@ -578,11 +783,8 @@ export default function LiveSessions() {
       });
 
       setPendingComments((previous) => previous.filter((comment) => comment.id !== optimisticId));
-      setComments((previous) =>
-        previous.some((comment) => comment.id === response.data.comment?.id)
-          ? previous
-          : [...previous, response.data.comment]
-      );
+      appendLiveComment(response.data.comment);
+      void publishLiveComment(response.data.comment, session.id);
       void loadComments(session.id).catch((syncError) => {
         console.error("Failed to refresh live comments after send", syncError);
       });

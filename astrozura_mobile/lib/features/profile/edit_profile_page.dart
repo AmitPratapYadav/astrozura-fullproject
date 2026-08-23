@@ -468,26 +468,8 @@ class _EditProfilePageState extends State<EditProfilePage>
                 child: Icon(Icons.star_rounded,
                     size: s[2], color: Colors.white.withValues(alpha: 0.22)),
               ),
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 200,
-              child: Align(
-                alignment: Alignment(0, 0.35),
-                child: Text(
-                  'My Profile',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-            ),
             Positioned(
-              bottom: _avatarOverlap - (_avatarRadius + 4),
+              bottom: 28,
               left: 0,
               right: 0,
               child: Center(child: _buildAvatarSection()),

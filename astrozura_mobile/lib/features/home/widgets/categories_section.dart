@@ -55,11 +55,11 @@ class CategoriesSection extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
         /// 🔹 Horizontal List
         SizedBox(
-          height: 106,
+          height: 122,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),

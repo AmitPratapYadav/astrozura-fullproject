@@ -35,13 +35,6 @@ class _GreetingWidgetState extends State<GreetingWidget> {
     }
   }
 
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -51,7 +44,7 @@ class _GreetingWidgetState extends State<GreetingWidget> {
           text: TextSpan(
             children: [
               TextSpan(
-                text: '$_greeting, ',
+                text: 'Hello, ',
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,

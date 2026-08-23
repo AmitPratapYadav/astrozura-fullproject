@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/contants/api_constants.dart';
 import '../../../core/services/api_client.dart';
+import '../../web/in_app_web_page.dart';
 
 class HomeBlogSection extends StatefulWidget {
   const HomeBlogSection({super.key});
@@ -54,9 +54,12 @@ class _HomeBlogSectionState extends State<HomeBlogSection> {
     }
   }
 
-  Future<void> _open(String path) async {
-    final uri = Uri.parse('https://astrozura.com$path');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _open(String title, String path) async {
+    await InAppWebPage.open(
+      context,
+      title: title,
+      pathOrUrl: path,
+    );
   }
 
   @override
@@ -90,7 +93,7 @@ class _HomeBlogSectionState extends State<HomeBlogSection> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => _open('/blogs'),
+                  onPressed: () => _open('Blogs', '/blogs'),
                   child: const Text(
                     'View More',
                     style: TextStyle(color: Colors.white),
@@ -116,7 +119,7 @@ class _HomeBlogSectionState extends State<HomeBlogSection> {
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
-                      onTap: () => _open('/blogs/${blog.slug}'),
+                      onTap: () => _open(blog.title, '/blogs/${blog.slug}'),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -189,7 +192,8 @@ class _HomeBlogSectionState extends State<HomeBlogSection> {
                               width: double.infinity,
                               height: 38,
                               child: ElevatedButton(
-                                onPressed: () => _open('/blogs/${blog.slug}'),
+                                onPressed: () =>
+                                    _open(blog.title, '/blogs/${blog.slug}'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFD4A73C),
                                   foregroundColor: const Color(0xFF1E3557),

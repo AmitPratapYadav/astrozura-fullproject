@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Facebook, Instagram, Youtube } from "lucide-react";
 import vedic from "../assets/vedic-astrology.png";
@@ -12,10 +12,12 @@ import api from "../api/axios";
 
 export default function Footer() {
   const { t } = useTranslation();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
   const { user } = useAuth();
   const currentYear = new Date().getFullYear();
+  const isAppView = new URLSearchParams(location.search).get("app_view") === "1";
   
   const servicesLinks = [
     { label: t("footer.view_all_services"), to: "/services" },
@@ -51,6 +53,8 @@ export default function Footer() {
       icon: Youtube,
     },
   ];
+
+  if (isAppView) return null;
 
   const handleSend = async () => {
     if (!email) {

@@ -18,6 +18,15 @@ class ShopService {
         .toList();
   }
 
+  Future<ProductModel> getProduct(int id) async {
+    final data = await _api.get(ApiConstants.productDetail(id));
+    final raw = data['data'] ?? data['product'] ?? data;
+    if (raw is Map) {
+      return ProductModel.fromJson(Map<String, dynamic>.from(raw));
+    }
+    throw const ApiException('Product details are unavailable.');
+  }
+
   Future<List<ProductModel>> getTrendingProducts() async {
     final data = await _api.get(ApiConstants.getTrendingProducts);
     return _extractList(data)

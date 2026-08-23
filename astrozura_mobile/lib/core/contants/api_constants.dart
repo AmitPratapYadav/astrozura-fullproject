@@ -64,11 +64,17 @@ class ApiConstants {
 
   static String get getProfile => endpoint('dashboard/profile');
   static String get updateProfile => endpoint('dashboard/profile/update');
+  static String get recentProfiles => endpoint('dashboard/recent-profiles');
+  static String recentProfile(int id) =>
+      endpoint('dashboard/recent-profiles/$id');
   static String get getOrders => endpoint('dashboard/orders');
   static String get storeOrder => endpoint('dashboard/orders/store');
   static String orderDetail(int id) => endpoint('dashboard/orders/$id');
   static String get getWishlist => endpoint('dashboard/wishlist');
   static String get toggleWishlist => endpoint('dashboard/wishlist/toggle');
+  static String get notifications => endpoint('notifications');
+  static String notificationRead(int id) => endpoint('notifications/$id/read');
+  static String get notificationsReadAll => endpoint('notifications/read-all');
 
   static String get getAstrologers => endpoint('astrologers');
   static String astrologerProfile(int id) => endpoint('astrologer/$id');
@@ -91,6 +97,12 @@ class ApiConstants {
       endpoint('bookings/$id/session/extend');
   static String bookingMessages(int id) => endpoint('bookings/$id/messages');
   static String sendBookingMessage(int id) => endpoint('bookings/$id/messages');
+  static String get chatAttachment => endpoint('media/chat-attachment');
+  static String bookingTyping(int id) => endpoint('bookings/$id/typing');
+  static String bookingTypingStatus(int id) =>
+      endpoint('bookings/$id/typing-status');
+  static String bookingMessagesRead(int id) =>
+      endpoint('bookings/$id/messages/read');
 
   static String get getProducts => endpoint('ecomm/products');
   static String productDetail(int id) => endpoint('ecomm/products/$id');
@@ -127,7 +139,7 @@ class ApiConstants {
   static String get lalKitab => endpoint('prokerala/lal-kitab');
   static String get tarot => endpoint('prokerala/tarot');
 
-  static String get getRituals => endpoint('rituals');
+  static String get getRituals => endpoint('rituals?per_page=100');
   static String ritualDetail(String slug) => endpoint('rituals/$slug');
   static String ritualBook(String slugOrId) =>
       endpoint('rituals/$slugOrId/book');

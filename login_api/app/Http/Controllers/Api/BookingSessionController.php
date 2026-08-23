@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\BookingSessionStateChanged;
 use App\Models\Booking;
 use App\Support\Zego\ZegoTokenService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class BookingSessionController extends Controller
@@ -73,6 +75,7 @@ class BookingSessionController extends Controller
         ]);
 
         $booking = $booking->fresh(['user', 'astrologer.astrologerDetail']);
+        $this->broadcastSessionState($booking->id, 'live', ['status' => $booking->status]);
 
         return response()->json([
             'success' => true,
@@ -124,6 +127,7 @@ class BookingSessionController extends Controller
         ]);
 
         $booking = $booking->fresh(['user', 'astrologer.astrologerDetail']);
+        $this->broadcastSessionState($booking->id, 'closed', ['status' => $booking->status]);
 
         return response()->json([
             'success' => true,
@@ -246,18 +250,36 @@ class BookingSessionController extends Controller
 
     private function ensureSessionRoomId(Booking $booking): Booking
     {
-        if (!empty($booking->session_room_id)) {
+        if (!empty($booking->session_room_id) && !empty($booking->chat_encryption_secret)) {
             return $booking;
         }
 
-        $reference = $booking->booking_reference ?: 'booking-' . $booking->id;
-        $slug = strtolower(preg_replace('/[^a-zA-Z0-9_-]+/', '-', $reference));
-        $roomId = substr("astrozura-{$slug}", 0, 120);
+        if (empty($booking->session_room_id)) {
+            $reference = $booking->booking_reference ?: 'booking-' . $booking->id;
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9_-]+/', '-', $reference));
+            $booking->session_room_id = substr("astrozura-{$slug}", 0, 120);
+        }
 
-        $booking->session_room_id = $roomId;
+        if (empty($booking->chat_encryption_secret)) {
+            $booking->chat_encryption_secret = base64_encode(random_bytes(32));
+        }
+
         $booking->save();
 
         return $booking;
+    }
+
+    private function broadcastSessionState(int $bookingId, string $state, array $session): void
+    {
+        try {
+            BookingSessionStateChanged::dispatch($bookingId, $state, $session);
+        } catch (\Throwable $exception) {
+            Log::warning('Booking session broadcast failed.', [
+                'booking_id' => $bookingId,
+                'state' => $state,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function closeExpiredSessionIfNeeded(Booking $booking): Booking
@@ -333,6 +355,7 @@ class BookingSessionController extends Controller
         $zegoUserId = $this->buildZegoUserId($viewerId, $isAstrologer ? 'astro' : 'user');
         $zegoUserName = $this->buildZegoUserName($booking, $viewerId);
         $baseRoomId = $booking->session_room_id;
+        $callStreamId = "{$baseRoomId}-callstream-{$viewerId}";
 
         return [
             'state' => $isClosed ? 'closed' : ($isLive ? 'live' : ($canJoin ? 'ready' : 'scheduled')),
@@ -359,7 +382,19 @@ class BookingSessionController extends Controller
                 'session' => $baseRoomId,
                 'chat' => "{$baseRoomId}-chat",
                 'call' => "{$baseRoomId}-call",
-                'stream' => "{$baseRoomId}-stream-{$viewerId}",
+                'stream' => $callStreamId,
+            ],
+            'chat' => [
+                'provider' => 'reverb',
+                'channel' => "private-booking.{$booking->id}",
+                'channel_name' => "booking.{$booking->id}",
+                'auth_endpoint' => '/broadcasting/auth',
+                'app_key' => config('broadcasting.connections.reverb.key'),
+                'host' => config('broadcasting.connections.reverb.options.host'),
+                'port' => (int) config('broadcasting.connections.reverb.options.port'),
+                'scheme' => config('broadcasting.connections.reverb.options.scheme'),
+                'encryption_key' => $booking->chat_encryption_secret,
+                'encryption_version' => 'booking-aes-gcm-v1',
             ],
             'viewer' => [
                 'role' => $isAstrologer ? 'astrologer' : 'user',
@@ -367,8 +402,14 @@ class BookingSessionController extends Controller
                 'zego_user_name' => $zegoUserName,
             ],
             'zego' => [
-                'chat' => $this->buildZegoProjectPayload('chat', $zegoUserId, $zegoUserName),
-                'call' => $this->buildZegoProjectPayload('call', $zegoUserId, $zegoUserName),
+                'chat' => null,
+                'call' => $this->buildZegoProjectPayload(
+                    'call',
+                    $zegoUserId,
+                    $zegoUserName,
+                    "{$baseRoomId}-call",
+                    [$callStreamId]
+                ),
             ],
         ];
     }
@@ -410,7 +451,13 @@ class BookingSessionController extends Controller
         ];
     }
 
-    private function buildZegoProjectPayload(string $projectKey, string $userId, string $userName): ?array
+    private function buildZegoProjectPayload(
+        string $projectKey,
+        string $userId,
+        string $userName,
+        ?string $roomId = null,
+        array $streamIds = []
+    ): ?array
     {
         $project = config("zego.{$projectKey}");
         $appId = (int) ($project['app_id'] ?? 0);
@@ -421,7 +468,20 @@ class BookingSessionController extends Controller
         }
 
         $ttl = (int) config('zego.token_ttl', 6 * 60 * 60);
-        $token = ZegoTokenService::generateToken04($appId, $userId, $secret, $ttl);
+        $tokenPayload = '';
+
+        if ($roomId) {
+            $tokenPayload = json_encode([
+                'room_id' => $roomId,
+                'privilege' => [
+                    1 => 1, // login room
+                    2 => 1, // publish stream
+                ],
+                'stream_id_list' => array_values(array_filter($streamIds)),
+            ], JSON_UNESCAPED_SLASHES);
+        }
+
+        $token = ZegoTokenService::generateToken04($appId, $userId, $secret, $ttl, $tokenPayload ?: '');
 
         return [
             'app_id' => $appId,
@@ -437,7 +497,7 @@ class BookingSessionController extends Controller
 
     private function buildZegoUserId(int $userId, string $role): string
     {
-        return substr("az-{$role}-{$userId}", 0, 32);
+        return substr("az{$role}{$userId}", 0, 32);
     }
 
     private function buildZegoUserName(Booking $booking, int $viewerId): string

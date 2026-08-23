@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AstrologerReview;
 use App\Models\Booking;
 use App\Models\AdminNotification;
 use App\Models\User;
@@ -25,13 +26,14 @@ class BookingController extends Controller
                 Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'astrologer')),
             ],
             'consultation_type' => 'required|in:chat,call',
+            'service_context' => 'nullable|string|max:80',
             'duration' => ['required', 'integer', Rule::in($this->allowedDurations)],
             'booking_date' => 'required|date',
         ]);
 
         $timezone = 'Asia/Kolkata';
         $astrologer = User::with('astrologerDetail')->findOrFail($validated['astrologer_id']);
-        $this->ensureAstrologerCanAccept($astrologer, $validated['consultation_type']);
+        $this->ensureAstrologerCanAccept($astrologer, $validated['consultation_type'], $validated['service_context'] ?? null);
         $day = Carbon::parse($validated['booking_date'], $timezone)->startOfDay();
         $slots = $this->generateAvailabilitySlots(
             $astrologer->id,
@@ -61,6 +63,7 @@ class BookingController extends Controller
                 Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'astrologer')),
             ],
             'consultation_type' => 'required|in:chat,call',
+            'service_context' => 'nullable|string|max:80',
             'duration'          => ['required', 'integer', Rule::in($this->allowedDurations)],
             'booking_date'      => 'required|date',
             'booking_time'      => 'required|string',
@@ -85,7 +88,7 @@ class BookingController extends Controller
         }
 
         $astrologer = User::with('astrologerDetail')->findOrFail($validated['astrologer_id']);
-        $this->ensureAstrologerCanAccept($astrologer, $validated['consultation_type']);
+        $this->ensureAstrologerCanAccept($astrologer, $validated['consultation_type'], $validated['service_context'] ?? null);
         $timezone = 'Asia/Kolkata';
         $scheduledAt = $this->parseScheduledAt($validated['booking_date'], $validated['booking_time'], $timezone);
         $endsAt = $scheduledAt->copy()->addMinutes((int) $validated['duration']);
@@ -111,6 +114,7 @@ class BookingController extends Controller
                 : $astrologer->astrologerDetail?->call_commission_percentage
         );
         $platformCommission = round($amount * $commissionPercentage / 100, 2);
+        $localPaymentBypass = app()->environment('local');
 
         $booking = Booking::create([
             'user_id' => $user->id,
@@ -119,6 +123,7 @@ class BookingController extends Controller
             'user_email' => $user->email,
             'astrologer_name' => $astrologer->name,
             'consultation_type' => $validated['consultation_type'],
+            'service_context' => $validated['service_context'] ?? null,
             'duration' => (int) $validated['duration'],
             'booking_date' => $scheduledAt->toDateString(),
             'booking_time' => $scheduledAt->format('g:i A'),
@@ -129,9 +134,10 @@ class BookingController extends Controller
             'commission_percentage' => $commissionPercentage,
             'platform_commission_amount' => $platformCommission,
             'astrologer_earning_amount' => round($amount - $platformCommission, 2),
-            'status' => 'payment_pending',
-            'payment_status' => 'pending',
-            'payment_method' => 'razorpay',
+            'status' => $localPaymentBypass ? 'confirmed' : 'payment_pending',
+            'payment_status' => $localPaymentBypass ? 'paid' : 'pending',
+            'payment_method' => $localPaymentBypass ? 'local_bypass' : 'razorpay',
+            'payment_id' => $localPaymentBypass ? 'local_' . now()->timestamp : null,
             'notes' => $validated['notes'] ?? null,
             'birth_details' => $this->extractBirthDetails($validated['birth_details'] ?? null),
         ]);
@@ -145,14 +151,18 @@ class BookingController extends Controller
             'main',
             'booking_created',
             'Consultation reserved',
-            "{$booking->booking_reference} is awaiting payment confirmation.",
+            $localPaymentBypass
+                ? "{$booking->booking_reference} is confirmed for local testing."
+                : "{$booking->booking_reference} is awaiting payment confirmation.",
             '/my-bookings',
             ['booking_id' => $booking->id]
         );
 
         return response()->json([
             'success' => true,
-            'message' => 'Booking created. Complete payment to confirm the session.',
+            'message' => $localPaymentBypass
+                ? 'Booking confirmed with local payment bypass.'
+                : 'Booking created. Complete payment to confirm the session.',
             'booking' => $booking->fresh()->load(['astrologer.astrologerDetail', 'user']),
         ], 201);
     }
@@ -189,11 +199,16 @@ class BookingController extends Controller
         $now = Carbon::now($timezone);
         $bookings = Booking::with('user')
             ->where('astrologer_id', $user->id)
-            ->orderBy('scheduled_at')
+            ->orderByDesc('scheduled_at')
             ->get();
 
-        $upcoming = $bookings->filter(fn ($booking) => $this->isUpcomingBooking($booking, $now))->values();
-        $history = $bookings->reject(fn ($booking) => $this->isUpcomingBooking($booking, $now))->values();
+        $upcoming = $bookings
+            ->filter(fn ($booking) => $this->isUpcomingBooking($booking, $now))
+            ->sortBy('scheduled_at')
+            ->values();
+        $history = $bookings
+            ->reject(fn ($booking) => $this->isUpcomingBooking($booking, $now))
+            ->values();
 
         return response()->json([
             'success' => true,
@@ -225,6 +240,78 @@ class BookingController extends Controller
                     })
                     ->sum('amount'),
             ],
+        ]);
+    }
+
+    public function astrologerPerformance(Request $request)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'astrologer') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access.',
+            ], 403);
+        }
+
+        [$start, $end, $range] = $this->resolvePerformanceRange($request);
+        $startUtc = $start->copy()->utc();
+        $endUtc = $end->copy()->utc();
+
+        $bookings = Booking::where('astrologer_id', $user->id)
+            ->whereBetween('scheduled_at', [$startUtc, $endUtc])
+            ->get();
+
+        $paidBookings = $bookings->where('payment_status', 'paid');
+        $reviews = AstrologerReview::with(['user:id,name,profile_image', 'booking:id,booking_reference,scheduled_at'])
+            ->where('astrologer_id', $user->id)
+            ->whereBetween('created_at', [$startUtc, $endUtc])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('pinned_at')
+            ->latest()
+            ->get();
+
+        $series = collect();
+        $cursor = $start->copy()->startOfDay();
+        while ($cursor->lessThanOrEqualTo($end)) {
+            $dayStart = $cursor->copy()->startOfDay();
+            $dayEnd = $cursor->copy()->endOfDay();
+            $dayStartUtc = $dayStart->copy()->utc();
+            $dayEndUtc = $dayEnd->copy()->utc();
+
+            $dayBookings = $bookings->filter(fn ($booking) => $booking->scheduled_at && $booking->scheduled_at->betweenIncluded($dayStartUtc, $dayEndUtc));
+            $dayPaid = $dayBookings->where('payment_status', 'paid');
+            $dayReviews = $reviews->filter(fn ($review) => $review->created_at && $review->created_at->betweenIncluded($dayStartUtc, $dayEndUtc));
+
+            $series->push([
+                'label' => $dayStart->format($range === 'year' ? 'M d' : 'd M'),
+                'bookings' => $dayBookings->count(),
+                'income' => round((float) $dayPaid->sum('astrologer_earning_amount'), 2),
+                'reviews' => $dayReviews->count(),
+            ]);
+
+            $cursor->addDay();
+        }
+
+        return response()->json([
+            'success' => true,
+            'range' => [
+                'key' => $range,
+                'from' => $start->toDateString(),
+                'to' => $end->toDateString(),
+                'timezone' => 'Asia/Kolkata',
+            ],
+            'stats' => [
+                'bookings_received' => $bookings->count(),
+                'completed_bookings' => $bookings->where('status', 'completed')->count(),
+                'paid_bookings' => $paidBookings->count(),
+                'gross_income' => round((float) $paidBookings->sum('amount'), 2),
+                'astrologer_earnings' => round((float) $paidBookings->sum('astrologer_earning_amount'), 2),
+                'platform_commission' => round((float) $paidBookings->sum('platform_commission_amount'), 2),
+                'reviews_count' => $reviews->count(),
+                'average_rating' => $reviews->count() ? round((float) $reviews->avg('rating'), 1) : null,
+            ],
+            'series' => $series,
+            'reviews' => $reviews->take(10)->values(),
         ]);
     }
 
@@ -276,6 +363,26 @@ class BookingController extends Controller
         }
 
         return Carbon::parse("{$bookingDate} {$bookingTime}", $timezone);
+    }
+
+    private function resolvePerformanceRange(Request $request): array
+    {
+        $timezone = 'Asia/Kolkata';
+        $range = (string) $request->query('range', 'month');
+        $now = Carbon::now($timezone);
+
+        if ($range === 'custom') {
+            $start = Carbon::parse((string) $request->query('from', $now->toDateString()), $timezone)->startOfDay();
+            $end = Carbon::parse((string) $request->query('to', $now->toDateString()), $timezone)->endOfDay();
+            return [$start, $end, $range];
+        }
+
+        return match ($range) {
+            'today', 'daily' => [$now->copy()->startOfDay(), $now->copy()->endOfDay(), 'today'],
+            'week', 'weekly' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek(), 'week'],
+            'year', 'yearly' => [$now->copy()->startOfYear(), $now->copy()->endOfYear(), 'year'],
+            default => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth(), 'month'],
+        };
     }
 
     private function hasOverlappingBooking(int $astrologerId, Carbon $start, Carbon $end): bool
@@ -355,12 +462,13 @@ class BookingController extends Controller
         return $normalized === [] ? null : $normalized;
     }
 
-    private function ensureAstrologerCanAccept(User $astrologer, string $type): void
+    private function ensureAstrologerCanAccept(User $astrologer, string $type, ?string $serviceContext = null): void
     {
         $detail = $astrologer->astrologerDetail;
         abort_if(!$detail?->is_online, 422, 'This astrologer is currently unavailable.');
         abort_if($type === 'chat' && !$detail->supports_chat, 422, 'This astrologer is not available for chat consultations.');
         abort_if($type === 'call' && !$detail->supports_call, 422, 'This astrologer is not available for call consultations.');
+        abort_if($serviceContext === 'palm-reading' && !$detail->supports_palm_reading, 422, 'This astrologer is not available for palm reading consultations.');
     }
 
     private function consultationAmount(User $astrologer, string $type, int $duration): float

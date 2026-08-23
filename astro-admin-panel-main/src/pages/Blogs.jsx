@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest, assetUrl } from "../lib/api";
 
-const emptyBlock = { type: "paragraph", text: "" };
+const emptyBlock = { type: "paragraph", text: "", html: "" };
 const emptyForm = {
   blog_category_id: "",
   title: "",
@@ -25,6 +25,109 @@ const normalizeBlogs = (payload) => {
   if (Array.isArray(payload?.data)) return payload.data;
   return [];
 };
+
+const blockHtml = (block) => block?.html || (block?.text ? String(block.text).replace(/\n/g, "<br>") : "");
+
+function RichTextEditor({ block, onChange }) {
+  const editorRef = useRef(null);
+  const value = blockHtml(block);
+
+  useEffect(() => {
+    if (!editorRef.current || document.activeElement === editorRef.current) return;
+    editorRef.current.innerHTML = value;
+  }, [value]);
+
+  const sync = () => {
+    const html = editorRef.current?.innerHTML || "";
+    onChange({ html, text: editorRef.current?.innerText || "" });
+  };
+
+  const command = (name, commandValue = null) => {
+    editorRef.current?.focus();
+    document.execCommand(name, false, commandValue);
+    sync();
+  };
+
+  const escapeHtml = (text) =>
+    text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const convertToList = (tagName) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
+    const selection = window.getSelection();
+    const selectedText = selection && selection.rangeCount ? selection.toString().trim() : "";
+    const sourceText = selectedText || editor.innerText || "";
+    const items = sourceText
+      .split(/\n+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const listItems = (items.length ? items : ["List item"])
+      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .join("");
+    const listHtml = `<${tagName}>${listItems}</${tagName}>`;
+
+    if (selection && selection.rangeCount && selectedText) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = listHtml;
+      range.insertNode(wrapper.firstElementChild);
+    } else {
+      editor.innerHTML = listHtml;
+    }
+
+    sync();
+  };
+
+  const toolbarAction = (event, name, commandValue = null) => {
+    event.preventDefault();
+    command(name, commandValue);
+  };
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 bg-gray-50 px-2 py-2">
+        <button type="button" onMouseDown={(event) => toolbarAction(event, "bold")} className="rounded border bg-white px-2 py-1 text-xs font-black">B</button>
+        <button type="button" onMouseDown={(event) => toolbarAction(event, "italic")} className="rounded border bg-white px-2 py-1 text-xs italic">I</button>
+        <button type="button" onMouseDown={(event) => toolbarAction(event, "underline")} className="rounded border bg-white px-2 py-1 text-xs underline">U</button>
+        <button type="button" onMouseDown={(event) => { event.preventDefault(); convertToList("ul"); }} className="rounded border bg-white px-2 py-1 text-xs font-semibold">Bullets</button>
+        <button type="button" onMouseDown={(event) => { event.preventDefault(); convertToList("ol"); }} className="rounded border bg-white px-2 py-1 text-xs font-semibold">Numbers</button>
+        <select onMouseDown={(event) => event.stopPropagation()} onChange={(event) => command("fontName", event.target.value)} className="rounded border bg-white px-2 py-1 text-xs" defaultValue="">
+          <option value="" disabled>Font</option>
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+        <select onMouseDown={(event) => event.stopPropagation()} onChange={(event) => command("fontSize", event.target.value)} className="rounded border bg-white px-2 py-1 text-xs" defaultValue="">
+          <option value="" disabled>Size</option>
+          <option value="2">Small</option>
+          <option value="3">Normal</option>
+          <option value="5">Large</option>
+          <option value="6">XL</option>
+        </select>
+        <label className="flex items-center gap-1 rounded border bg-white px-2 py-1 text-xs">
+          Color
+          <input type="color" onMouseDown={(event) => event.stopPropagation()} onChange={(event) => command("foreColor", event.target.value)} className="h-5 w-7 border-0 bg-transparent p-0" />
+        </label>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={sync}
+        onBlur={sync}
+        className={`${block.type === "heading" ? "min-h-[70px]" : "min-h-[150px]"} w-full px-3 py-2 text-sm leading-7 outline-none focus:ring-2 focus:ring-yellow-200 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1`}
+      />
+    </div>
+  );
+}
 
 export default function Blogs() {
   const [blogs, setBlogs] = useState([]);
@@ -68,7 +171,7 @@ export default function Blogs() {
       ...current,
       content_blocks: [
         ...current.content_blocks,
-        type === "image" ? { type: "image", url: "", alt: "", caption: "" } : { type, text: "" },
+        type === "image" ? { type: "image", url: "", alt: "", caption: "" } : { type, text: "", html: "" },
       ],
     }));
   };
@@ -325,13 +428,7 @@ export default function Blogs() {
                     {block.url && <img src={assetUrl(block.url)} alt={block.alt || ""} className="h-24 w-40 rounded-lg object-cover" />}
                   </div>
                 ) : (
-                  <textarea
-                    value={block.text || ""}
-                    onChange={(event) => updateBlock(index, { text: event.target.value })}
-                    rows={block.type === "heading" ? 2 : 5}
-                    placeholder={block.type === "heading" ? "Heading text" : "Paragraph text"}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-yellow-500"
-                  />
+                  <RichTextEditor block={block} onChange={(updates) => updateBlock(index, updates)} />
                 )}
               </div>
             ))}

@@ -15,6 +15,19 @@ class AstrologerReview extends Model
         'astrologer_id',
         'rating',
         'review',
+        'is_pinned',
+        'pinned_at',
+        'is_flagged',
+        'flag_reason',
+        'flagged_at',
+        'flagged_by',
+    ];
+
+    protected $casts = [
+        'is_pinned' => 'boolean',
+        'pinned_at' => 'datetime',
+        'is_flagged' => 'boolean',
+        'flagged_at' => 'datetime',
     ];
 
     public function booking()

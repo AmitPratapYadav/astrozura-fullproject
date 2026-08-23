@@ -92,20 +92,44 @@ class _MyOrdersPageState extends State<MyOrdersPage>
     }
   }
 
-  // Active = not delivered / not cancelled
-  List<OrderModel> get _activeOrders => _allOrders
-      .where((o) => o.status != 'delivered' && o.status != 'cancelled')
-      .toList();
+  String _statusOf(OrderModel order) =>
+      order.status.trim().toLowerCase().replaceAll(' ', '_');
 
-  List<OrderModel> get _historyOrders => _allOrders
-      .where((o) => o.status == 'delivered' || o.status == 'cancelled')
-      .toList();
+  bool _isDelivered(OrderModel order) {
+    final status = _statusOf(order);
+    return status == 'delivered' || status == 'completed';
+  }
+
+  bool _isClosed(OrderModel order) {
+    final status = _statusOf(order);
+    return _isDelivered(order) ||
+        status == 'cancelled' ||
+        status == 'canceled' ||
+        status == 'refunded';
+  }
+
+  bool _isInProgress(OrderModel order) => !_isClosed(order);
+
+  bool _canCancelOrder(OrderModel order) {
+    final status = _statusOf(order);
+    return status == 'pending' ||
+        status == 'processing' ||
+        status == 'confirmed';
+  }
 
   List<OrderModel> get _filteredHistory {
-    if (_selectedFilter == 'All') return _historyOrders;
-    return _historyOrders
-        .where((o) => o.status.toLowerCase() == _selectedFilter.toLowerCase())
-        .toList();
+    if (_selectedFilter == 'All') return _allOrders;
+    return _allOrders.where((order) {
+      final status = _statusOf(order);
+      if (_selectedFilter == 'delivered') return _isDelivered(order);
+      if (_selectedFilter == 'cancelled') {
+        return status == 'cancelled' || status == 'canceled';
+      }
+      if (_selectedFilter == 'processing') {
+        return status == 'processing' || status == 'confirmed';
+      }
+      return status == _selectedFilter.toLowerCase();
+    }).toList();
   }
 
   Future<void> _cancelOrder(OrderModel order) async {
@@ -200,42 +224,9 @@ class _MyOrdersPageState extends State<MyOrdersPage>
                                   _buildStatsRow(),
                                   const SizedBox(height: 20),
                                   _buildSectionTitle(
-                                    title: 'Active Orders',
-                                    subtitle:
-                                        'Orders currently being processed or shipped.',
-                                  ),
-                                  const SizedBox(height: 12),
-                                  if (_activeOrders.isEmpty)
-                                    _EmptyOrderCard(
-                                      title: 'No active orders',
-                                      subtitle:
-                                          'Your active orders will appear here once placed.',
-                                      onShop: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const MainNavigation(
-                                            initialIndex: 3,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    ..._activeOrders.map((o) => Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 14),
-                                          child: _OrderCard(
-                                            order: o,
-                                            formatDate: _formatDate,
-                                            isActive: true,
-                                            onTrack:
-                                                () {}, // wire up tracker later
-                                            onCancel: () => _cancelOrder(o),
-                                          ),
-                                        )),
-                                  const SizedBox(height: 24),
-                                  _buildSectionTitle(
                                     title: 'Order History',
-                                    subtitle: 'Completed and past orders.',
+                                    subtitle:
+                                        'All placed orders with live status filters.',
                                   ),
                                   const SizedBox(height: 12),
                                   _buildFilterBar(),
@@ -250,9 +241,10 @@ class _MyOrdersPageState extends State<MyOrdersPage>
                                           child: _OrderCard(
                                             order: o,
                                             formatDate: _formatDate,
-                                            isActive: false,
+                                            isActive: _isInProgress(o),
+                                            canCancel: _canCancelOrder(o),
                                             onTrack: () {},
-                                            onCancel: () {},
+                                            onCancel: () => _cancelOrder(o),
                                           ),
                                         )),
                                   const SizedBox(height: 24),
@@ -369,8 +361,8 @@ class _MyOrdersPageState extends State<MyOrdersPage>
   // ── Stats Row ────────────────────────────────────────────────────────────────
   Widget _buildStatsRow() {
     final total = _allOrders.length;
-    final delivered = _allOrders.where((o) => o.status == 'delivered').length;
-    final active = _activeOrders.length;
+    final delivered = _allOrders.where(_isDelivered).length;
+    final active = _allOrders.where(_isInProgress).length;
 
     return Row(children: [
       Expanded(
@@ -469,6 +461,7 @@ class _OrderCard extends StatelessWidget {
   final OrderModel order;
   final String Function(String) formatDate;
   final bool isActive;
+  final bool canCancel;
   final VoidCallback onTrack;
   final VoidCallback onCancel;
 
@@ -476,6 +469,7 @@ class _OrderCard extends StatelessWidget {
     required this.order,
     required this.formatDate,
     required this.isActive,
+    this.canCancel = false,
     required this.onTrack,
     required this.onCancel,
   });
@@ -517,6 +511,7 @@ class _OrderCard extends StatelessWidget {
     final extraCount = order.items.length - 1;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -650,24 +645,26 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(height: 14),
             if (isActive)
               Row(children: [
+                if (canCancel) ...[
+                  Expanded(
+                      child: OutlinedButton.icon(
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.cancel_outlined, size: 16),
+                    label: const Text('Cancel',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade500,
+                      side: BorderSide(color: Colors.red.shade300),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  )),
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
-                    child: OutlinedButton.icon(
-                  onPressed: onCancel,
-                  icon: const Icon(Icons.cancel_outlined, size: 16),
-                  label: const Text('Cancel',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red.shade500,
-                    side: BorderSide(color: Colors.red.shade300),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                )),
-                const SizedBox(width: 12),
-                Expanded(
-                    flex: 2,
+                    flex: canCancel ? 2 : 1,
                     child: ElevatedButton.icon(
                       onPressed: onTrack,
                       icon: const Icon(Icons.local_shipping_outlined, size: 16),
@@ -848,77 +845,6 @@ class _InfoChip2 extends StatelessWidget {
 }
 
 // ── Empty States ──────────────────────────────────────────────────────────────
-class _EmptyOrderCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final VoidCallback onShop;
-  const _EmptyOrderCard({
-    required this.title,
-    required this.subtitle,
-    required this.onShop,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFECEEF5), width: 1.2),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(color: _goldSoft, shape: BoxShape.circle),
-            child: const Icon(
-              Icons.shopping_bag_outlined,
-              color: _gold,
-              size: 30,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: _textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.5, color: _textSec, height: 1.5),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: onShop,
-            icon: const Icon(Icons.store_outlined, size: 16),
-            label: const Text(
-              'Visit Store',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _navy,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-              elevation: 0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _EmptyFilterCard extends StatelessWidget {
   final String filter;
   const _EmptyFilterCard({required this.filter});
@@ -929,7 +855,7 @@ class _EmptyFilterCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
         child: Text(
-          'No $filter orders found.',
+          filter == 'All' ? 'No orders found.' : 'No $filter orders found.',
           style: TextStyle(
             fontSize: 13,
             color: _textSec,

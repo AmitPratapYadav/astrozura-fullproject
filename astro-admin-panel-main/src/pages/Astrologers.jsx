@@ -20,6 +20,8 @@ const initialForm = {
   supports_chat: true,
   supports_call: true,
   is_online: true,
+  supports_palm_reading: false,
+  supports_ritual_booking: false,
   chat_commission_percentage: "20",
   call_commission_percentage: "20",
   chat_price_10: "", chat_price_15: "", chat_price_20: "", chat_price_30: "",
@@ -111,6 +113,8 @@ export default function Astrologers() {
         supports_chat: Boolean(astrologer.astrologer_detail?.supports_chat),
         supports_call: Boolean(astrologer.astrologer_detail?.supports_call),
         is_online: Boolean(astrologer.astrologer_detail?.is_online),
+        supports_palm_reading: Boolean(astrologer.astrologer_detail?.supports_palm_reading),
+        supports_ritual_booking: Boolean(astrologer.astrologer_detail?.supports_ritual_booking),
         chat_commission_percentage: astrologer.astrologer_detail?.chat_commission_percentage ?? "20",
         call_commission_percentage: astrologer.astrologer_detail?.call_commission_percentage ?? "20",
         ...Object.fromEntries([10, 15, 20, 30].flatMap((duration) => [
@@ -339,6 +343,8 @@ export default function Astrologers() {
                       </span>
                       {item.astrologer_detail?.supports_chat && <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">Chat</span>}
                       {item.astrologer_detail?.supports_call && <span className="rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-700">Call</span>}
+                      {item.astrologer_detail?.supports_palm_reading && <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">Palm Reading</span>}
+                      {item.astrologer_detail?.supports_ritual_booking && <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-700">Ritual Expert</span>}
                     </div>
                   </td>
                   <td className="p-3">
@@ -402,9 +408,11 @@ export default function Astrologers() {
                     <input type="number" min="0" max="100" step="0.01" name="chat_commission_percentage" value={form.chat_commission_percentage} onChange={handleChange} placeholder="Chat commission %" className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
                     <input type="number" min="0" max="100" step="0.01" name="call_commission_percentage" value={form.call_commission_percentage} onChange={handleChange} placeholder="Call commission %" className="w-full rounded-lg border px-4 py-2 outline-none focus:border-yellow-500" />
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
                     <label className="flex items-center gap-2"><input type="checkbox" name="supports_chat" checked={form.supports_chat} onChange={handleChange} /> Chat</label>
                     <label className="flex items-center gap-2"><input type="checkbox" name="supports_call" checked={form.supports_call} onChange={handleChange} /> Call</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" name="supports_palm_reading" checked={form.supports_palm_reading} onChange={handleChange} /> Palm Reading</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" name="supports_ritual_booking" checked={form.supports_ritual_booking} onChange={handleChange} /> Ritual Expert</label>
                     <label className="flex items-center gap-2"><input type="checkbox" name="is_online" checked={form.is_online} onChange={handleChange} /> Online</label>
                   </div>
                   <div className="rounded-xl border bg-gray-50 p-3">
