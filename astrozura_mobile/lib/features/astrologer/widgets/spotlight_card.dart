@@ -14,6 +14,7 @@ import '../../shared/widgets/remote_avatar.dart';
 import '../../../core/models/astrologer/astrologer_model.dart';
 import '../../../core/contants/app_colors.dart';
 import '../../astrologer/screens/astrologer_detail_screen.dart';
+import 'responsive_star_rating.dart';
 
 class SpotlightCard extends StatelessWidget {
   final AstrologerModel astrologer;
@@ -389,7 +390,15 @@ class _RatingColumn extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.star_rounded, size: 15, color: Colors.amber),
+            SizedBox(
+              width: 79,
+              child: ResponsiveStarRating(
+                rating: rating,
+                maxSize: 15,
+                spacing: 0.8,
+                activeColor: Colors.amber,
+              ),
+            ),
           ],
         ),
       ],

@@ -7,6 +7,7 @@ import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 
 import '../../core/contants/api_constants.dart';
 import '../../core/services/booking_service.dart';
+import '../../core/services/reverb_booking_chat_service.dart';
 
 const _navy = Color(0xFF1E3557);
 const _gold = Color(0xFFD7AF4B);
@@ -23,6 +24,7 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final _imagePicker = ImagePicker();
+  final _reverb = ReverbBookingChatService();
 
   Timer? _pollTimer;
   Timer? _typingDebounce;
@@ -39,6 +41,7 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
   bool _polling = false;
   bool _nearBottom = true;
   bool _showNewMessages = false;
+  bool _reverbConnected = false;
   int _pollTicks = 0;
   String? _error;
 
@@ -57,6 +60,7 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
   void dispose() {
     _pollTimer?.cancel();
     _typingDebounce?.cancel();
+    unawaited(_reverb.disconnect());
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -98,6 +102,7 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
         _loading = false;
       });
       await BookingService.markMessagesRead(bookingId).catchError((_) {});
+      unawaited(_connectRealtime(bookingId, _session!));
       _startPolling();
       _scrollToBottom(force: true);
     } catch (e) {
@@ -111,7 +116,7 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
 
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _poll());
+    _pollTimer = Timer.periodic(const Duration(seconds: 12), (_) => _poll());
   }
 
   Future<void> _poll() async {
@@ -120,10 +125,13 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
     _polling = true;
     try {
       _pollTicks++;
+      final realtimeConnected = _reverbConnected;
       final futures = <Future<dynamic>>[
         BookingService.getMessages(bookingId),
-        BookingService.getTypingStatus(bookingId),
       ];
+      if (!realtimeConnected) {
+        futures.add(BookingService.getTypingStatus(bookingId));
+      }
       if (_pollTicks % 4 == 0) {
         futures.add(BookingService.getSession(bookingId));
       }
@@ -131,22 +139,32 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
       if (!mounted) return;
 
       final incoming = results[0] as List<Map<String, dynamic>>;
-      final typing = results[1] as Map<String, dynamic>;
+      var resultIndex = 1;
+      final typing = !realtimeConnected
+          ? results[resultIndex++] as Map<String, dynamic>
+          : null;
       final oldCount = _messages.length;
       final nextCount = incoming.length;
       final shouldScroll =
           _nearBottom || nextCount > oldCount && _lastIsMine(incoming);
+      SessionPayload? refreshedSession;
 
       setState(() {
         _messages = incoming;
-        _otherTyping = _isTypingPayloadActive(typing);
-        if (results.length > 2) {
-          final sessionData = results[2] as Map<String, dynamic>;
+        if (typing != null) {
+          _otherTyping = _isTypingPayloadActive(typing);
+        }
+        if (results.length > resultIndex) {
+          final sessionData = results[resultIndex] as Map<String, dynamic>;
           _booking = sessionData['booking'] as BookingModel;
-          _session = sessionData['session'] as SessionPayload;
+          refreshedSession = sessionData['session'] as SessionPayload;
+          _session = refreshedSession;
         }
         _showNewMessages = nextCount > oldCount && !shouldScroll;
       });
+      if (refreshedSession != null) {
+        unawaited(_connectRealtime(bookingId, refreshedSession!));
+      }
 
       if (nextCount > oldCount) {
         await BookingService.markMessagesRead(bookingId).catchError((_) {});
@@ -168,6 +186,118 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
     return raw == true || raw == 1 || raw?.toString() == 'true';
   }
 
+  Future<void> _connectRealtime(
+    int bookingId,
+    SessionPayload session,
+  ) async {
+    if (session.chat.isEmpty) return;
+
+    try {
+      await _reverb.connect(
+        bookingId: bookingId,
+        chatConfig: session.chat,
+        onMessage: _handleRealtimeMessage,
+        onTyping: _handleRealtimeTyping,
+        onSessionChanged: (_) => unawaited(_refreshSessionSilently()),
+        onConnectionChanged: (connected) {
+          if (!mounted) return;
+          setState(() => _reverbConnected = connected);
+        },
+        onError: (error) {
+          debugPrint('Reverb chat error: $error');
+          if (!mounted) return;
+          setState(() => _reverbConnected = false);
+        },
+      );
+    } catch (error) {
+      debugPrint('Reverb connect failed: $error');
+      if (!mounted) return;
+      setState(() => _reverbConnected = false);
+    }
+  }
+
+  void _handleRealtimeMessage(Map<String, dynamic> message) {
+    if (!mounted) return;
+
+    final mine = _isMine(message);
+    final shouldScroll = _nearBottom || mine;
+    setState(() {
+      _messages = _upsertMessage(_messages, message);
+      _showNewMessages = !shouldScroll && !mine;
+    });
+
+    final bookingId = _bookingId;
+    if (bookingId != null && !mine) {
+      unawaited(BookingService.markMessagesRead(bookingId).catchError((_) {}));
+    }
+    if (shouldScroll) _scrollToBottom();
+  }
+
+  void _handleRealtimeTyping(Map<String, dynamic> payload) {
+    if (!mounted) return;
+
+    final viewerRole = _session?.viewer['role']?.toString();
+    final senderRole = payload['sender_role']?.toString() ??
+        (payload['data'] is Map
+            ? (payload['data'] as Map)['sender_role']?.toString()
+            : null);
+    if (viewerRole != null && senderRole != null && viewerRole == senderRole) {
+      return;
+    }
+
+    setState(() => _otherTyping = _isTypingPayloadActive(payload));
+  }
+
+  Future<void> _refreshSessionSilently() async {
+    final bookingId = _bookingId;
+    if (bookingId == null) return;
+
+    try {
+      final data = await BookingService.getSession(bookingId);
+      if (!mounted) return;
+      final session = data['session'] as SessionPayload;
+      setState(() {
+        _booking = data['booking'] as BookingModel;
+        _session = session;
+      });
+      unawaited(_connectRealtime(bookingId, session));
+    } catch (_) {
+      // Polling will retry the session state later.
+    }
+  }
+
+  List<Map<String, dynamic>> _upsertMessage(
+    List<Map<String, dynamic>> current,
+    Map<String, dynamic> incoming,
+  ) {
+    final next =
+        current.map((item) => Map<String, dynamic>.from(item)).toList();
+    final index = next.indexWhere((item) => _sameMessage(item, incoming));
+    if (index >= 0) {
+      next[index] = {...next[index], ...incoming};
+    } else {
+      next.add(incoming);
+    }
+    next.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
+    return next;
+  }
+
+  bool _sameMessage(Map<String, dynamic> a, Map<String, dynamic> b) {
+    final aId = a['id']?.toString();
+    final bId = b['id']?.toString();
+    if (aId != null && bId != null && aId == bId) return true;
+
+    final aUuid = a['client_uuid']?.toString();
+    final bUuid = b['client_uuid']?.toString();
+    return aUuid != null && bUuid != null && aUuid == bUuid;
+  }
+
+  DateTime _messageTime(Map<String, dynamic> message) {
+    final raw = message['created_at'] ?? message['sent_at'] ?? message['time'];
+    return DateTime.tryParse(raw?.toString() ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
   bool _lastIsMine(List<Map<String, dynamic>> messages) {
     if (messages.isEmpty) return false;
     return _isMine(messages.last);
@@ -180,7 +310,8 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
     final viewerId = viewer['id']?.toString() ?? viewer['user_id']?.toString();
     final senderRole = message['sender_role']?.toString();
     final sender = message['sender'];
-    final senderId = message['sender_id']?.toString() ??
+    final senderId = message['sender_user_id']?.toString() ??
+        message['sender_id']?.toString() ??
         (sender is Map ? sender['id']?.toString() : null);
     if (viewerId != null && senderId != null) return viewerId == senderId;
     if (viewerRole != null && senderRole != null) {
@@ -466,13 +597,12 @@ class _BookingSessionScreenState extends State<BookingSessionScreen> {
                 },
               );
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (_fullscreen) {
+    return PopScope(
+      canPop: !_fullscreen,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _fullscreen) {
           setState(() => _fullscreen = false);
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         backgroundColor: _chatBg,
@@ -886,7 +1016,7 @@ class _FileChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.65),
+        color: Colors.white.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE5DED0)),
       ),
@@ -1058,7 +1188,7 @@ class _AttachmentAction extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: _gold.withOpacity(0.18),
+                backgroundColor: _gold.withValues(alpha: 0.18),
                 child: Icon(icon, color: _navy),
               ),
               const SizedBox(height: 8),
@@ -1085,7 +1215,7 @@ class _SessionNotice extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7E3),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _gold.withOpacity(0.45)),
+        border: Border.all(color: _gold.withValues(alpha: 0.45)),
       ),
       child: Text(
         text,

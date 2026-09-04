@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../shared/widgets/remote_avatar.dart';
 import '../../../core/models/astrologer/astrologer_model.dart';
 import '../screens/schedule_session_screen.dart';
+import 'responsive_star_rating.dart';
 
 class AstrologerProfileCard extends StatelessWidget {
   final AstrologerModel astrologer;
@@ -80,14 +81,13 @@ class AstrologerProfileCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              ...List.generate(
-                5,
-                (index) => Icon(
-                  index < astrologer.rating.floor()
-                      ? Icons.star
-                      : Icons.star_border,
-                  color: Colors.amber,
-                  size: 16,
+              SizedBox(
+                width: 84,
+                child: ResponsiveStarRating(
+                  rating: astrologer.rating,
+                  maxSize: 16,
+                  spacing: 1,
+                  activeColor: Colors.amber,
                 ),
               ),
               const SizedBox(width: 6),

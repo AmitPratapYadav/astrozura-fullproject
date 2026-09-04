@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/services/cart_service.dart';
-import '../mainwidgets/header.dart';
 import './widgets/cartItem_widget.dart';
+import './widgets/shop_header.dart';
 import './checkout_screen.dart';
 
 // ── Palette (matches app theme) ───────────────────────────────────────────────
-const _navy     = Color(0xFF1E3A5F);
-const _gold     = Color(0xFFD4AF37);
+const _navy = Color(0xFF1E3A5F);
+const _gold = Color(0xFFD4AF37);
 const _darkNavy = Color(0xFF2E2A63);
 
 class CartScreen extends StatefulWidget {
@@ -28,18 +28,18 @@ class _CartScreenState extends State<CartScreen> {
   final TextEditingController _promoCtrl = TextEditingController();
 
   // ── Promo state ────────────────────────────────────────────────────────────
-  double _promoDiscount  = 0;
-  String _appliedCode    = '';
-  bool   _isPromoApplied = false;
+  double _promoDiscount = 0;
+  String _appliedCode = '';
+  bool _isPromoApplied = false;
 
   // ── Pricing constants ──────────────────────────────────────────────────────
   static const double _shippingCharge = 100.0;
 
   // ── Computed totals ────────────────────────────────────────────────────────
   double get _subtotal => _cart.totalPrice;
-  double get _total    => _subtotal + _shippingCharge - _promoDiscount;
-  int    get _itemCount => _cart.totalItems;
-  bool   get _cartEmpty => _cart.items.isEmpty;
+  double get _total => _subtotal + _shippingCharge - _promoDiscount;
+  int get _itemCount => _cart.totalItems;
+  bool get _cartEmpty => _cart.items.isEmpty;
 
   @override
   void dispose() {
@@ -58,15 +58,15 @@ class _CartScreenState extends State<CartScreen> {
     // Only all-uppercase codes are valid
     if (code == code.toUpperCase()) {
       setState(() {
-        _promoDiscount  = 50;
-        _appliedCode    = code;
+        _promoDiscount = 50;
+        _appliedCode = code;
         _isPromoApplied = true;
       });
       _showSnack('Promo applied! ₹50 discount 🎉');
     } else {
       setState(() {
-        _promoDiscount  = 0;
-        _appliedCode    = '';
+        _promoDiscount = 0;
+        _appliedCode = '';
         _isPromoApplied = false;
       });
       _showSnack('Invalid code. Use uppercase letters only.', isError: true);
@@ -75,8 +75,8 @@ class _CartScreenState extends State<CartScreen> {
 
   void _removePromo() {
     setState(() {
-      _promoDiscount  = 0;
-      _appliedCode    = '';
+      _promoDiscount = 0;
+      _appliedCode = '';
       _isPromoApplied = false;
       _promoCtrl.clear();
     });
@@ -89,10 +89,12 @@ class _CartScreenState extends State<CartScreen> {
       ..showSnackBar(
         SnackBar(
           content: Text(msg),
-          backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade700,
+          backgroundColor:
+              isError ? Colors.red.shade600 : Colors.green.shade700,
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         ),
       );
@@ -108,7 +110,7 @@ class _CartScreenState extends State<CartScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => CheckoutScreen(
-          promoDiscount:    _promoDiscount,
+          promoDiscount: _promoDiscount,
           appliedPromoCode: _isPromoApplied ? _appliedCode : null,
         ),
       ),
@@ -121,9 +123,10 @@ class _CartScreenState extends State<CartScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            const HeaderWidget(),
+            const ShopHeader(compact: true),
             _buildTitleRow(),
             Expanded(
               child: _cartEmpty ? _buildEmptyCart() : _buildCartContent(),
@@ -162,7 +165,7 @@ class _CartScreenState extends State<CartScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: _navy.withOpacity(0.08),
+                color: _navy.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -196,7 +199,7 @@ class _CartScreenState extends State<CartScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: _gold.withOpacity(0.2),
+                    color: _gold.withValues(alpha: 0.2),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -239,7 +242,8 @@ class _CartScreenState extends State<CartScreen> {
                 backgroundColor: _gold,
                 foregroundColor: Colors.black,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -390,11 +394,12 @@ class _CartScreenState extends State<CartScreen> {
                           child: TextField(
                             controller: _promoCtrl,
                             textCapitalization: TextCapitalization.characters,
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
                             decoration: const InputDecoration(
                               hintText: 'Enter code',
-                              hintStyle:
-                                  TextStyle(color: Colors.white54, fontSize: 13),
+                              hintStyle: TextStyle(
+                                  color: Colors.white54, fontSize: 13),
                               border: InputBorder.none,
                               isDense: true,
                               contentPadding: EdgeInsets.zero,
@@ -460,7 +465,8 @@ class _CartScreenState extends State<CartScreen> {
             ),
             const SizedBox(height: 16),
 
-            _summaryRow('Subtotal ($_itemCount item${_itemCount == 1 ? '' : 's'})',
+            _summaryRow(
+                'Subtotal ($_itemCount item${_itemCount == 1 ? '' : 's'})',
                 '₹${_subtotal.toStringAsFixed(2)}'),
             const SizedBox(height: 10),
             _summaryRow('Shipping', '₹${_shippingCharge.toStringAsFixed(2)}'),
@@ -546,7 +552,7 @@ class _CartScreenState extends State<CartScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.09),
+            color: Colors.black.withValues(alpha: 0.09),
             blurRadius: 14,
             offset: const Offset(0, -3),
           ),
@@ -579,8 +585,8 @@ class _CartScreenState extends State<CartScreen> {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 7),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),

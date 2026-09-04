@@ -46,6 +46,9 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
     for (final a in _allAstrologers) {
       specs.addAll(a.specialityList);
     }
+    if (_allAstrologers.any((a) => a.isPalmReadingExpert)) {
+      specs.add('Palm Reading');
+    }
     return specs.toList();
   }
 
@@ -127,13 +130,15 @@ class _AstrologerScreenState extends State<AstrologerScreen> {
           ? _allAstrologers.where((a) => a.isPalmReadingExpert).toList()
           : _selectedFilter == 'All'
               ? [..._allAstrologers]
-              : _allAstrologers.where((a) {
-                  return a.specialityList.any(
-                    (s) => s.toLowerCase().contains(
-                          _selectedFilter.toLowerCase(),
-                        ),
-                  );
-                }).toList();
+              : _selectedFilter == 'Palm Reading'
+                  ? _allAstrologers.where((a) => a.isPalmReadingExpert).toList()
+                  : _allAstrologers.where((a) {
+                      return a.specialityList.any(
+                        (s) => s.toLowerCase().contains(
+                              _selectedFilter.toLowerCase(),
+                            ),
+                      );
+                    }).toList();
 
       // 2. Search query
       if (_searchQuery.isNotEmpty) {

@@ -154,6 +154,7 @@ class SessionPayload {
   final bool needsLowTimeWarning;
   final Map<String, dynamic> rooms;
   final Map<String, dynamic> viewer;
+  final Map<String, dynamic> chat;
   final Map<String, dynamic>? zegoChat;
   final Map<String, dynamic>? zegoCall;
 
@@ -167,6 +168,7 @@ class SessionPayload {
     required this.needsLowTimeWarning,
     required this.rooms,
     required this.viewer,
+    required this.chat,
     this.zegoChat,
     this.zegoCall,
   });
@@ -182,6 +184,7 @@ class SessionPayload {
       needsLowTimeWarning: _asBool(json['needs_low_time_warning']),
       rooms: _asMap(json['rooms']),
       viewer: _asMap(json['viewer']),
+      chat: _asMap(json['chat']),
       zegoChat: _asMap(json['zego'])['chat'] == null
           ? null
           : _asMap(_asMap(json['zego'])['chat']),

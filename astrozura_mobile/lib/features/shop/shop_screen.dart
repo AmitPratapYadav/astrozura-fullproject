@@ -7,18 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/contants/app_colors.dart';
-import '../../core/services/cart_service.dart';
 import '../../core/models/product/product.model.dart';
 import '../../core/models/shop_category/shop_category_model.dart';
-import '../../core/services/product_wishlist_service.dart';
 import '../../core/services/shop_service.dart';
 
-import '../mainwidgets/header.dart';
 import '../mainwidgets/search_widget.dart';
 import 'widgets/product_chip.dart';
 import './widgets/category_section_widget.dart';
-import './cart_screen.dart';
-import './wishlist_screen.dart';
+import 'widgets/shop_header.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -30,8 +26,6 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   // ── Service ────────────────────────────────────────────────────────────────
   final ShopService _shopService = ShopService();
-  final CartService _cart = CartService();
-  final ProductWishlistService _wishlist = ProductWishlistService();
 
   // ── Data ───────────────────────────────────────────────────────────────────
   List<ProductModel> _allProducts = [];
@@ -41,7 +35,6 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _isLoadingProducts = true;
   bool _isLoadingCategories = true;
   String? _productError;
-  String? _categoryError;
 
   String _selectedCategory = 'All';
   String _selectedSort = 'Recommended';
@@ -53,7 +46,6 @@ class _ShopScreenState extends State<ShopScreen> {
   void initState() {
     super.initState();
     _fetchAll();
-    _wishlist.load();
   }
 
   Future<void> _fetchAll() async {
@@ -82,7 +74,6 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> _fetchCategories() async {
     setState(() {
       _isLoadingCategories = true;
-      _categoryError = null;
     });
     try {
       final cats = await _shopService.getCategories();
@@ -95,7 +86,6 @@ class _ShopScreenState extends State<ShopScreen> {
       });
     } catch (e) {
       setState(() {
-        _categoryError = e.toString();
         _categories = [const ShopCategoryModel(id: 0, name: 'All')];
         _isLoadingCategories = false;
       });
@@ -383,6 +373,7 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
         ),
         child: SafeArea(
+          top: false,
           child: RefreshIndicator(
             onRefresh: _fetchAll,
             child: SingleChildScrollView(
@@ -390,13 +381,9 @@ class _ShopScreenState extends State<ShopScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── HEADER ─────────────────────────────────────────────
-                  const HeaderWidget(),
-                  const SizedBox(height: 15),
-
-                  // ── TITLE + CART ICON ─────────────────────────────────
-                  _buildTitleRow(),
-                  const SizedBox(height: 16),
+                  // ── SHOP HEADER ───────────────────────────────────────
+                  const ShopHeader(),
+                  const SizedBox(height: 10),
 
                   // ── SEARCH ────────────────────────────────────────────
                   Padding(
@@ -558,7 +545,9 @@ class _ShopScreenState extends State<ShopScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3CD),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.4)),
+        border: Border.all(
+          color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -582,133 +571,6 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   // ── WIDGETS ────────────────────────────────────────────────────────────────
-
-  Widget _buildWishlistButton() {
-    return ListenableBuilder(
-      listenable: _wishlist,
-      builder: (context, _) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const ProductWishlistScreen()),
-                );
-              },
-              icon: const Icon(
-                Icons.favorite_border_rounded,
-                size: 25,
-                color: Colors.black87,
-              ),
-            ),
-            if (_wishlist.count > 0)
-              Positioned(
-                right: 4,
-                top: 4,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  constraints: const BoxConstraints(minWidth: 18),
-                  decoration: const BoxDecoration(
-                    color: Colors.amber,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    _wishlist.count.toString(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildTitleRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Center(
-            child: Text(
-              'Astro Shop',
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 27,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFFd8b14a),
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildWishlistButton(),
-                ListenableBuilder(
-                  listenable: _cart,
-                  builder: (context, _) {
-                    final cart = _cart;
-                    return Stack(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const CartScreen()),
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.shopping_cart_outlined,
-                            size: 26,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        if (cart.totalItems > 0)
-                          Positioned(
-                            right: 4,
-                            top: 4,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              constraints: const BoxConstraints(minWidth: 18),
-                              decoration: const BoxDecoration(
-                                color: Colors.amber,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                cart.totalItems.toString(),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSortDropdown() {
     return Row(

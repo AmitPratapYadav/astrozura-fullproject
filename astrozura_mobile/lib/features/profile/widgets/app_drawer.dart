@@ -176,6 +176,7 @@ class AppDrawer extends StatelessWidget {
     return Container(
       width: sw * 0.84,
       height: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(

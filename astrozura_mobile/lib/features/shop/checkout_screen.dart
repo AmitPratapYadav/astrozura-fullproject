@@ -18,9 +18,9 @@ import '../../core/services/order_service.dart';
 import '../../core/services/razorpay_service.dart';
 import '../../core/models/order/order_model.dart';
 import '../../core/models/order/place_order_request.dart';
-import '../mainwidgets/header.dart';
 import './thankyou_screen.dart';
 import './product_details_screen.dart';
+import './widgets/shop_header.dart';
 
 // ── Palette ────────────────────────────────────────────────────────────────
 const _navy = Color(0xFF1E3A5F);
@@ -490,9 +490,10 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     return Scaffold(
       backgroundColor: _bgTop,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            const HeaderWidget(),
+            const ShopHeader(compact: true),
             _buildTitleRow(),
             Expanded(
               child: Form(
@@ -554,9 +555,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: _gold.withOpacity(0.15),
+              color: _gold.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _gold.withOpacity(0.4)),
+              border: Border.all(color: _gold.withValues(alpha: 0.4)),
             ),
             child: Text(
               '3 • Review & Pay',
@@ -763,7 +764,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: _navy.withOpacity(0.08),
+        color: _navy.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -986,7 +987,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: _navy.withOpacity(0.04),
+            color: _navy.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _borderColor),
           ),
@@ -1168,7 +1169,8 @@ class _CheckoutScreenState extends State<CheckoutScreen>
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: isSelected ? _gold.withOpacity(0.18) : Colors.white,
+                color:
+                    isSelected ? _gold.withValues(alpha: 0.18) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: isSelected ? _gold : _borderColor),
               ),
@@ -1235,7 +1237,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         border: Border(top: BorderSide(color: _borderColor, width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -1333,7 +1335,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.poppins(fontSize: 12.5, color: _textMuted),
-        prefixIcon: Icon(icon, size: 17, color: _navy.withOpacity(0.5)),
+        prefixIcon: Icon(icon, size: 17, color: _navy.withValues(alpha: 0.5)),
         filled: true,
         fillColor: const Color(0xFFF9F8F5),
         contentPadding: const EdgeInsets.symmetric(

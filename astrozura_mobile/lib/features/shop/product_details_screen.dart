@@ -3,13 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/models/product/product.model.dart';
-import '../mainwidgets/header.dart';
 import '../../core/services/cart_service.dart';
 import '../../core/services/product_wishlist_service.dart';
 import '../../core/services/shop_service.dart'; // ← NEW: for fetching related
 import './cart_screen.dart';
 import './wishlist_screen.dart';
 import './widgets/product_chip.dart'; // ← NEW: reuse ProductCard
+import './widgets/shop_header.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final ProductModel product;
@@ -30,7 +30,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   late ProductModel _product;
   List<ProductModel> _relatedProducts = [];
   bool _isLoadingRelated = true;
-  bool _isLoadingProduct = false;
 
   ProductModel get product => _product;
 
@@ -46,16 +45,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   Future<void> _fetchProductDetail() async {
-    setState(() => _isLoadingProduct = true);
     try {
       final detailed = await _shopService.getProduct(widget.product.id);
       if (!mounted) return;
-      setState(() {
-        _product = detailed;
-        _isLoadingProduct = false;
-      });
+      setState(() => _product = detailed);
     } catch (_) {
-      if (mounted) setState(() => _isLoadingProduct = false);
+      // Keep the lightweight product passed from the listing.
     }
   }
 
@@ -98,10 +93,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            // ── APP HEADER ─────────────────────────────────────────────
-            const HeaderWidget(),
+            // ── SHOP HEADER ────────────────────────────────────────────
+            const ShopHeader(compact: true),
 
             // ── PAGE TITLE + BACK ──────────────────────────────────────
             _buildTitleRow(),
@@ -229,7 +225,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 try {
                   await _wishlist.toggle(product);
                 } catch (e) {
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context)
                     ..hideCurrentSnackBar()
                     ..showSnackBar(
@@ -844,7 +840,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 10,
             offset: const Offset(0, -3),
           ),

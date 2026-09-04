@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/models/astrologer/astrologer_model.dart';
 import '../../astrologer/screens/astrologer_detail_screen.dart';
+import '../../astrologer/widgets/responsive_star_rating.dart';
 import '../../shared/widgets/remote_avatar.dart';
 
 class HomeAstrologerCarousel extends StatefulWidget {
@@ -253,7 +254,6 @@ class _RatingPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rounded = rating.round().clamp(0, 5);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -272,12 +272,13 @@ class _RatingPill extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 3),
-          ...List.generate(
-            5,
-            (index) => Icon(
-              index < rounded ? Icons.star_rounded : Icons.star_border_rounded,
-              size: 10,
-              color: const Color(0xFFD4A73C),
+          SizedBox(
+            width: 54,
+            child: ResponsiveStarRating(
+              rating: rating,
+              maxSize: 10,
+              spacing: 0.5,
+              emptyColor: Color(0x553B3B4F),
             ),
           ),
         ],

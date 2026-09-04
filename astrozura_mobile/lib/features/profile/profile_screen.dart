@@ -536,21 +536,24 @@ class _ProfileCard extends StatelessWidget {
                   ),
                 ),
                 if (details.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: details
-                          .map(
-                            (detail) => SizedBox(
-                              width:
-                                  (MediaQuery.of(context).size.width - 104) / 2,
-                              child: detail,
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < details.length; i++) ...[
+                          details[i],
+                          if (i != details.length - 1)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 32),
+                              child: Divider(
+                                height: 1,
+                                thickness: 0.6,
+                                color: _divider,
+                              ),
                             ),
-                          )
-                          .toList(),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -636,47 +639,54 @@ class _ProfileInfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 72),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _goldSoft,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _goldLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 15, color: _gold),
-              const SizedBox(width: 6),
-              Flexible(
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: _goldSoft,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 15, color: _gold),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 68,
+            child: Text(
+              label.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _textSec,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Tooltip(
+                message: value,
                 child: Text(
-                  label.toUpperCase(),
-                  maxLines: 1,
+                  value,
+                  maxLines: label == 'Email' ? 2 : 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _textSec,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: _textPrimary,
+                    fontSize: label == 'Email' ? 12.5 : 13,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 7),
-          Text(
-            value,
-            maxLines: label == 'Email' ? 2 : 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _textPrimary,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              height: 1.2,
             ),
           ),
         ],
