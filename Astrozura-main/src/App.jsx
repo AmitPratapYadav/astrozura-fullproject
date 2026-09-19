@@ -26,7 +26,7 @@ import VedicCalculators from "./pages/VedicCalculators";
 import MatchingCalculators from "./pages/MatchingCalculators";
 import AboutUs from "./pages/AboutUs";
 import ContactSupport from "./pages/ContactSupport";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
+import PrivacyPolicy from "./pages/LegalPolicyDoc";
 import TermsConditions from "./pages/TermsConditions";
 import Blogs from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";

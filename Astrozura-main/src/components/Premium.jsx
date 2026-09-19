@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import tarotBanner from "../assets/tarot-intro-banner.png";
 import { useTranslation } from "react-i18next";
 import { getDailyHoroscope, getMonthlyHoroscope } from "../api/prokeralaApi";
 import { serviceCatalog } from "../data/serviceCatalog";
@@ -195,6 +196,19 @@ export default function Premium() {
       )}
 
       <div className="w-full max-w-[1200px] mx-auto">
+        <div className="pt-2 pb-10">
+          <Link
+            to="/services/tarot-reading"
+            className="block overflow-hidden rounded-2xl md:rounded-3xl shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.008]"
+          >
+            <img
+              src={tarotBanner}
+              alt="Let the Cards Inspire Clarity - Explore Tarot"
+              className="w-full h-auto object-cover rounded-2xl md:rounded-3xl cursor-pointer"
+            />
+          </Link>
+        </div>
+
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-center text-[#2B2B2B] mb-2">
             {t("premium.forecast_title")}
