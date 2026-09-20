@@ -24,7 +24,6 @@ class _DetailedKundaliMobileScreenState
   static const _gold = Color(0xFFD7AF4B);
   static const _cream = Color(0xFFFFF8E5);
   static const _border = Color(0xFFE6D7BA);
-  static const _muted = Color(0xFF64748B);
 
   final _service = AstrologyService();
   final _recentProfiles = RecentProfileService();
@@ -793,14 +792,27 @@ class _DetailedKundaliResultScreenState
   }
 
   Widget _resultHeader() {
+    const accent = Color(0xFF3559B8);
+    const soft = Color(0xFFEAF0FF);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(14, 2, 14, 7),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          colors: [soft, Colors.white],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _border),
+        border: Border.all(color: accent.withValues(alpha: 0.34)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -809,9 +821,24 @@ class _DetailedKundaliResultScreenState
             visualDensity: VisualDensity.compact,
             constraints: const BoxConstraints.tightFor(width: 36, height: 36),
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.arrow_circle_left_rounded, color: _navy),
+            icon: const Icon(Icons.arrow_circle_left_rounded, color: accent),
           ),
           const SizedBox(width: 6),
+          Container(
+            width: 42,
+            height: 42,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: accent.withValues(alpha: 0.26)),
+            ),
+            child: Image.asset(
+              'assets/images/reports/report-detailed-kundali.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1463,11 +1490,11 @@ class _CardRecord {
 }
 
 const _chartOptions = [
-  _ChartOption('chalit', 'Chalit Chart'),
-  _ChartOption('gochar', 'Gochar / Transit Chart'),
-  _ChartOption('sun', 'Sun Chart'),
-  _ChartOption('moon', 'Moon Chart'),
   _ChartOption('rasi', 'D1 Birth Chart'),
+  _ChartOption('moon', 'Moon Chart'),
+  _ChartOption('chalit', 'Chalit Chart'),
+  _ChartOption('gochar', 'Gochar Chart'),
+  _ChartOption('sun', 'Sun Chart'),
   _ChartOption('hora', 'D2 Hora Chart'),
   _ChartOption('drekkana', 'D3 Drekkana Chart'),
   _ChartOption('chaturthamsa', 'D4 Chaturthamsha Chart'),
@@ -4516,9 +4543,13 @@ String? _chartSvg(Map<String, dynamic>? chart) {
   if (chart == null) return null;
   final candidates = [
     chart['chart_svg'],
+    chart['chart_data'],
     chart['svg'],
+    _asMap(chart['chart_data'])?['svg'],
     _asMap(chart['chart'])?['svg'],
     _asMap(chart['data'])?['chart_svg'],
+    _asMap(chart['data'])?['chart_data'],
+    _asMap(_asMap(chart['data'])?['chart_data'])?['svg'],
   ];
   for (final value in candidates) {
     final text = _string(value);

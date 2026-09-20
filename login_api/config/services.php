@@ -64,6 +64,7 @@ return [
             'otp' => env('ULTRON_SMS_TEMPLATE_OTP'),
             'call_booking' => env('ULTRON_SMS_TEMPLATE_CALL_BOOKING'),
             'chat_booking' => env('ULTRON_SMS_TEMPLATE_CHAT_BOOKING'),
+            'astrologer_password_reset' => env('ULTRON_SMS_TEMPLATE_ASTROLOGER_PASSWORD_RESET', '1777178860307236614'),
             'payment_success' => env('ULTRON_SMS_TEMPLATE_PAYMENT_SUCCESS', '1707178352575305636'),
             'order_received' => env('ULTRON_SMS_TEMPLATE_ORDER_RECEIVED', '1707178352544649787'),
         ],

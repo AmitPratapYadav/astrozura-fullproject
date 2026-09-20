@@ -1,4 +1,4 @@
-enum HomeBannerDestination { shop, pooja, horoscope }
+enum HomeBannerDestination { shop, pooja, horoscope, tarot }
 
 class HomeBannerItem {
   final String assetPath;

@@ -182,7 +182,7 @@ class AstrologerProfileCard extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.call),
-                  label: const Text("Book Audio"),
+                  label: const Text("Book Call"),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white),

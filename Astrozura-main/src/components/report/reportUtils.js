@@ -9,6 +9,17 @@ export const displayCell = (value) => {
   if (React.isValidElement(value)) return value;
   if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^[{[]/.test(trimmed)) {
+      try {
+        return displayCell(JSON.parse(trimmed));
+      } catch {
+        return value.replace(/_/g, " ");
+      }
+    }
+    return value.replace(/_/g, " ");
+  }
   if (typeof value === "object") {
     if (value.name) return value.name;
     if (value.full_name) return value.full_name;

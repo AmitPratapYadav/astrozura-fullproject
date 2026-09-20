@@ -23,6 +23,20 @@ class UltronSmsService
         return $this->send($phone, $text, $templateId, ['type' => 'otp']);
     }
 
+    public function sendAstrologerPasswordResetOtp(string $phone, string $name, string $otp): bool
+    {
+        $templateId = $this->templateId('astrologer_password_reset');
+        if (!$templateId) {
+            Log::warning('Ultron astrologer password reset SMS skipped: DLT template id is missing.');
+            return false;
+        }
+
+        $userName = $this->cleanTemplateValue($name ?: 'Astrologer');
+        $text = "Dear {$userName}, your AstroZura astrologer password reset OTP is {$otp}. Do not share it with anyone. Valid for 10 minutes. Team AstroZura.";
+
+        return $this->send($phone, $text, $templateId, ['type' => 'astrologer_password_reset']);
+    }
+
     public function sendBookingConfirmation(Booking $booking): bool
     {
         $booking->loadMissing(['user', 'astrologer']);

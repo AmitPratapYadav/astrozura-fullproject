@@ -13,8 +13,12 @@ const compactText = (value) => {
   return displayCell(value);
 };
 
+const hiddenKeys = new Set(["millisecond", "milliseconds", "start_ms", "end_ms"]);
+
+const shouldHideKey = (key) => hiddenKeys.has(String(key || "").toLowerCase());
+
 const objectColumns = (items) =>
-  Array.from(new Set(items.flatMap((item) => Object.keys(item || {})))).slice(0, 10);
+  Array.from(new Set(items.flatMap((item) => Object.keys(item || {}).filter((key) => !shouldHideKey(key))))).slice(0, 10);
 
 export function ReportDataBlock({ title, data, depth = 0 }) {
   if (data === null || data === undefined || data === "") {
@@ -85,7 +89,7 @@ export function ReportDataBlock({ title, data, depth = 0 }) {
     );
   }
 
-  const entries = Object.entries(data);
+  const entries = Object.entries(data).filter(([key]) => !shouldHideKey(key));
   if (entries.length === 0) {
     return <p className="text-sm text-gray-500">No fields returned.</p>;
   }
@@ -141,6 +145,14 @@ export function ProviderSections({ sections = [], renderSectionExtra }) {
   return (
     <div className="space-y-6">
       {sections.map((section, sectionIndex) => {
+        if (section?.customRender) {
+          return (
+            <div key={section.id || sectionIndex}>
+              {section.customRender}
+            </div>
+          );
+        }
+
         const itemEntries = Object.entries(section.items || {}).filter(([key]) => formatReportLabel(key) !== "Match Making Report");
         const normalizedSectionTitle = String(section.title || "").replace(/[^a-z0-9]+/gi, "").toLowerCase();
 

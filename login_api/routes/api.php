@@ -49,6 +49,8 @@ Route::post('/login', [ApiAuthController::class, 'login']);
 Route::post('/register', [ApiAuthController::class, 'register']);
 Route::post('/login-password', [ApiAuthController::class, 'loginWithPassword']);
 Route::post('/astrologer/login', [ApiAuthController::class, 'astrologerLogin']);
+Route::post('/astrologer/password/forgot', [ApiAuthController::class, 'sendAstrologerPasswordResetOtp'])->middleware('throttle:5,1');
+Route::post('/astrologer/password/reset', [ApiAuthController::class, 'resetAstrologerPassword'])->middleware('throttle:10,1');
 Route::post('/admin/login', [ApiAuthController::class, 'adminLogin']);
 Route::post('/payments/razorpay/webhook', [RazorpayPaymentController::class, 'webhook']);
 

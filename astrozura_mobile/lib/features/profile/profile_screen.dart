@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/contants/app_colors.dart';
 import '../../core/services/auth_services.dart';
 import '../../core/services/booking_service.dart';
+import '../../core/services/order_service.dart';
 import './widgets/app_drawer.dart';
 import './edit_profile_page.dart';
 import './my_booking_page.dart';
@@ -109,6 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   UserProfile? _user;
   List<BookingModel> _upcoming = [];
   List<BookingModel> _history = [];
+  int _ordersCount = 0;
   bool _profileLoading = true;
   bool _bookingsLoading = true;
   String? _bookingsError;
@@ -151,6 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
       _fetchBookings();
+      _fetchOrders();
     }
   }
 
@@ -191,6 +194,18 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     // Then load bookings from network
     await _fetchBookings();
+    await _fetchOrders();
+  }
+
+  Future<void> _fetchOrders() async {
+    try {
+      final orders = await OrderService().getMyOrders();
+      if (!mounted) return;
+      setState(() => _ordersCount = orders.length);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _ordersCount = 0);
+    }
   }
 
   /// Network-only bookings fetch — safe to call independently (e.g. pull-to-refresh)
@@ -320,7 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           upcoming: _upcoming.length,
                           totalConsultations:
                               _history.length + _upcoming.length,
-                          orders: _history.length,
+                          orders: _ordersCount,
                         ),
                         const SizedBox(height: 14),
                         _RecentActivitySection(

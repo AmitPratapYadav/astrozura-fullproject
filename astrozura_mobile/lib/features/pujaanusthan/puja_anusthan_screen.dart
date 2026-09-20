@@ -93,13 +93,17 @@ class _PoojaAnusthanScreenState extends State<PoojaAnusthanScreen> {
                         icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
                       Expanded(
-                        child: Text(
-                          'Sacred Pooja Anusthan',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 23,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF1E3557),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Sacred Pooja Anusthan',
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF1E3557),
+                            ),
                           ),
                         ),
                       ),

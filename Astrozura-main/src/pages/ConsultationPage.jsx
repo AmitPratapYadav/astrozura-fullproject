@@ -262,7 +262,7 @@ export default function ConsultationPage() {
                 <section>
                   <h2 className="mb-4 text-lg font-semibold text-[#1E3557]">1. Choose Consultation Type</h2>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {["chat", "call"].map((item) => <button key={item} type="button" onClick={() => setConsultationType(item)} className={`rounded-2xl border p-6 text-left ${consultationType === item ? "border-[#D4A73C] bg-[#FFF7E8]" : "border-gray-200 bg-white"}`}><p className="text-base font-bold text-[#1E3557]">{item === "chat" ? "Chat" : "Audio Call"}</p><p className="mt-2 text-sm text-gray-500">{item === "chat" ? "Instant real-time messaging with your guide" : "Deep voice conversation for clarity"}</p></button>)}
+                    {["chat", "call"].map((item) => <button key={item} type="button" onClick={() => setConsultationType(item)} className={`rounded-2xl border p-6 text-left ${consultationType === item ? "border-[#D4A73C] bg-[#FFF7E8]" : "border-gray-200 bg-white"}`}><p className="text-base font-bold text-[#1E3557]">{item === "chat" ? "Chat" : "Call"}</p><p className="mt-2 text-sm text-gray-500">{item === "chat" ? "Instant real-time messaging with your guide" : "Deep voice conversation for clarity"}</p></button>)}
                   </div>
                 </section>
 
@@ -376,7 +376,7 @@ export default function ConsultationPage() {
                 <h2 className="text-lg font-semibold text-[#1E3557]">Booking Summary</h2>
                 <div className="mt-6 flex items-center gap-4"><img src={getImageUrl(details.profile_image)} alt={astrologer.name} className="h-16 w-16 rounded-full object-cover bg-gray-50" /><div><p className="text-xs font-semibold uppercase tracking-wide text-[#D4A73C]">Your Astrologer</p><p className="text-lg font-bold text-[#1E3557]">{astrologer.name}</p><p className="text-sm text-gray-500">{details.specialities || "Vedic Astrology Specialist"}</p></div></div>
                 <div className="mt-6 grid grid-cols-2 gap-5 border-t border-gray-100 pt-6">
-                  <div><p className="text-xs uppercase text-gray-400">Session</p><p className="mt-1 font-semibold text-[#1E3557]">{consultationType === "chat" ? "Chat" : "Audio Call"}</p></div>
+                  <div><p className="text-xs uppercase text-gray-400">Session</p><p className="mt-1 font-semibold text-[#1E3557]">{consultationType === "chat" ? "Chat" : "Call"}</p></div>
                   <div><p className="text-xs uppercase text-gray-400">Duration</p><p className="mt-1 font-semibold text-[#1E3557]">{duration} Minutes</p></div>
                   <div><p className="text-xs uppercase text-gray-400">Date</p><p className="mt-1 font-semibold text-[#1E3557]">{formatDisplayDate(selectedDate)}</p></div>
                   <div><p className="text-xs uppercase text-gray-400">Time</p><p className="mt-1 font-semibold text-[#1E3557]">{selectedSlot || "Select slot"}</p></div>
@@ -409,7 +409,7 @@ export default function ConsultationPage() {
                 <div className="mt-8 rounded-3xl bg-[#F8F9FC] p-6">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div><p className="text-xs uppercase text-gray-400">Astrologer</p><p className="mt-1 font-semibold text-[#1E3557]">{astrologer.name}</p></div>
-                    <div><p className="text-xs uppercase text-gray-400">Session</p><p className="mt-1 font-semibold text-[#1E3557]">{consultationType === "chat" ? "Chat Consultation" : "Audio Call Consultation"}</p></div>
+                    <div><p className="text-xs uppercase text-gray-400">Session</p><p className="mt-1 font-semibold text-[#1E3557]">{consultationType === "chat" ? "Chat Consultation" : "Call Consultation"}</p></div>
                     <div><p className="text-xs uppercase text-gray-400">Scheduled For</p><p className="mt-1 font-semibold text-[#1E3557]">{formatDisplayDate(selectedDate)} at {selectedSlot}</p></div>
                     <div><p className="text-xs uppercase text-gray-400">Amount</p><p className="mt-1 font-semibold text-[#1E3557]">Rs {payableAmount}</p></div>
                   </div>
@@ -429,7 +429,7 @@ export default function ConsultationPage() {
             <div className="mx-auto mt-8 max-w-2xl rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm md:p-12">
               <h2 className="text-3xl font-bold text-[#1E3557]">Booking Confirmed</h2>
               <p className="mt-3 text-sm leading-7 text-gray-500">Your booking is scheduled and visible on the astrologer dashboard. You will be redirected to My Bookings shortly.</p>
-              <div className="mt-8 rounded-3xl bg-[#F8F9FC] p-6 text-left"><div className="grid gap-4 md:grid-cols-2"><div><p className="text-xs uppercase text-gray-400">Booking Ref</p><p className="mt-1 font-semibold text-[#1E3557]">{confirmedBooking?.booking_reference || "-"}</p></div><div><p className="text-xs uppercase text-gray-400">Astrologer</p><p className="mt-1 font-semibold text-[#1E3557]">{astrologer.name}</p></div><div><p className="text-xs uppercase text-gray-400">Session</p><p className="mt-1 font-semibold text-[#1E3557]">{consultationType === "chat" ? "Chat" : "Audio Call"}</p></div><div><p className="text-xs uppercase text-gray-400">When</p><p className="mt-1 font-semibold text-[#1E3557]">{formatDisplayDate(selectedDate)} at {selectedSlot}</p></div></div></div>
+              <div className="mt-8 rounded-3xl bg-[#F8F9FC] p-6 text-left"><div className="grid gap-4 md:grid-cols-2"><div><p className="text-xs uppercase text-gray-400">Booking Ref</p><p className="mt-1 font-semibold text-[#1E3557]">{confirmedBooking?.booking_reference || "-"}</p></div><div><p className="text-xs uppercase text-gray-400">Astrologer</p><p className="mt-1 font-semibold text-[#1E3557]">{astrologer.name}</p></div><div><p className="text-xs uppercase text-gray-400">Session</p><p className="mt-1 font-semibold text-[#1E3557]">{consultationType === "chat" ? "Chat" : "Call"}</p></div><div><p className="text-xs uppercase text-gray-400">When</p><p className="mt-1 font-semibold text-[#1E3557]">{formatDisplayDate(selectedDate)} at {selectedSlot}</p></div></div></div>
               <button type="button" onClick={() => navigate("/my-bookings")} className="mt-8 rounded-2xl bg-[#D4A73C] px-6 py-3 text-sm font-bold text-[#1E3557]">Go to My Bookings</button>
             </div>
           )}

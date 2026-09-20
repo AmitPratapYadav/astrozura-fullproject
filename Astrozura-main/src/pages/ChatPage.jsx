@@ -45,10 +45,11 @@ import {
   sendRitualPaymentRequest,
 } from "../api/bookingApi";
 import { getDivisionalCharts, getMarriageMatching, searchLocation } from "../api/prokeralaApi";
-import MatchDivisionalCharts, {
+import MatchDivisionalCharts from "../components/report/MatchDivisionalCharts";
+import {
   MATCH_DIVISIONAL_CHART_TYPES,
   normalizeMatchCharts,
-} from "../components/report/MatchDivisionalCharts";
+} from "../components/report/matchDivisionalChartUtils";
 
 const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_URL || "https://astrozura.com";
 const CLOSED_STATUSES = new Set(["completed", "cancelled", "declined"]);
@@ -1262,7 +1263,7 @@ export default function ChatPage() {
 
     if (callEnabled) {
       if (session?.is_live) {
-        return "Audio consultation is live now.";
+        return "Call consultation is live now.";
       }
 
       if (isAstrologerViewer && session?.can_start) {
@@ -1273,7 +1274,7 @@ export default function ChatPage() {
         return "Waiting for the astrologer to start the call.";
       }
 
-      return "Audio consultation is scheduled.";
+      return "Call consultation is scheduled.";
     }
 
     if (chatReady) {
@@ -1303,7 +1304,7 @@ export default function ChatPage() {
     }
 
     if (isCallConnected) {
-      return "Audio Call Connected";
+      return "Call Connected";
     }
 
     if (!isAstrologerViewer && !session?.is_live) {
@@ -1311,10 +1312,10 @@ export default function ChatPage() {
     }
 
     if (callState === "error") {
-      return "Reconnect Audio Call";
+      return "Reconnect Call";
     }
 
-    return "Join Audio Call";
+    return "Join Call";
   }, [callLoading, callState, isAstrologerViewer, isCallConnected, session?.is_live]);
 
   const visibleMessages = useMemo(
@@ -2595,7 +2596,7 @@ export default function ChatPage() {
       const engine = await connectAudioRoom(activeSession);
       await startLocalAudio(engine, activeSession);
     } catch (error) {
-      console.error("Failed to join audio call", error);
+      console.error("Failed to join call", error);
       destroyCallConnection(session?.rooms?.call || "");
       const message = getCallErrorMessage(error);
       setCallState("error");
@@ -3316,7 +3317,7 @@ export default function ChatPage() {
                   <div className="rounded-2xl bg-[#F8F9FC] px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-gray-400">Type</p>
                     <p className="mt-1 text-sm font-semibold capitalize text-[#1E3557]">
-                      {booking?.consultation_type === "call" ? "Audio Call" : "Chat Consultation"}
+                      {booking?.consultation_type === "call" ? "Call" : "Chat Consultation"}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[#F8F9FC] px-4 py-3">

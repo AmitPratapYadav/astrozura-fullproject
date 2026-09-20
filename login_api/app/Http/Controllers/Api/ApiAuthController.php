@@ -14,6 +14,7 @@ use App\Support\MediaStorage;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -335,6 +336,96 @@ class ApiAuthController extends Controller
             'token' => $token,
             'user' => $user->load('astrologerDetail'),
         ]);
+    }
+
+    public function sendAstrologerPasswordResetOtp(Request $request, UltronSmsService $sms)
+    {
+        $validator = Validator::make($request->all(), [
+            'identifier' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $user = $this->findAstrologerByIdentifier((string) $request->identifier);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Astrologer account was not found.'], 404);
+        }
+
+        $phone = trim((string) $user->phone);
+        if ($phone === '') {
+            return response()->json(['success' => false, 'message' => 'No mobile number is linked with this astrologer account.'], 422);
+        }
+
+        $otp = (string) rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        $smsSent = $sms->sendAstrologerPasswordResetOtp($phone, (string) ($user->name ?: 'Astrologer'), $otp);
+        if (!$smsSent && app()->environment('production')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password reset OTP could not be sent. Please try again shortly.',
+            ], 503);
+        }
+
+        $payload = [
+            'success' => true,
+            'message' => $smsSent ? 'Password reset OTP sent successfully.' : 'Password reset OTP generated successfully. Messaging is not configured in this environment.',
+            'identifier' => $request->identifier,
+        ];
+
+        if (config('app.debug')) {
+            $payload['dev_otp'] = $otp;
+        }
+
+        return response()->json($payload);
+    }
+
+    public function resetAstrologerPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'identifier' => 'required|string',
+            'otp' => 'required|numeric',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $user = $this->findAstrologerByIdentifier((string) $request->identifier);
+        if (
+            !$user ||
+            !$user->otp_expires_at ||
+            !hash_equals((string) $user->otp, (string) $request->otp) ||
+            now()->greaterThan($user->otp_expires_at)
+        ) {
+            return response()->json(['success' => false, 'message' => 'Invalid or expired OTP.'], 401);
+        }
+
+        $user->password = Hash::make((string) $request->password);
+        $user->otp = null;
+        $user->otp_expires_at = null;
+        $user->save();
+        $user->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Astrologer password reset successfully. Please log in with your new password.',
+        ]);
+    }
+
+    private function findAstrologerByIdentifier(string $identifier): ?User
+    {
+        $identifier = trim($identifier);
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        return User::where($field, $identifier)
+            ->where('role', 'astrologer')
+            ->first();
     }
 
     public function adminLogin(Request $request)

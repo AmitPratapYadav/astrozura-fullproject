@@ -626,13 +626,26 @@ class _DetailedDoshaResultScreenState
   }
 
   Widget _resultHeader() {
+    const accent = Color(0xFFC2410C);
+    const soft = Color(0xFFFFEFE5);
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 4, 14, 8),
       padding: const EdgeInsets.fromLTRB(8, 9, 12, 9),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          colors: [soft, Colors.white],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
+        border: Border.all(color: accent.withValues(alpha: 0.34)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -642,9 +655,24 @@ class _DetailedDoshaResultScreenState
             constraints: const BoxConstraints.tightFor(width: 34, height: 34),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.arrow_back, color: _navy),
+            icon: const Icon(Icons.arrow_back, color: accent),
           ),
           const SizedBox(width: 4),
+          Container(
+            width: 42,
+            height: 42,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: accent.withValues(alpha: 0.26)),
+            ),
+            child: Image.asset(
+              'assets/images/reports/report-detailed-dosha.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

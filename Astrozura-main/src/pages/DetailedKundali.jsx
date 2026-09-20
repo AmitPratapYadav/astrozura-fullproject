@@ -39,11 +39,11 @@ const initialForm = {
 };
 
 const divisionalChartOptions = [
+  { value: "rasi", label: "D1 - Birth Chart" },
+  { value: "moon", label: "Moon Chart" },
   { value: "chalit", label: "Chalit - Chalit Chart" },
   { value: "gochar", label: "Gochar / Transit Chart" },
   { value: "sun", label: "Sun Chart" },
-  { value: "moon", label: "Moon Chart" },
-  { value: "rasi", label: "D1 - Birth Chart" },
   { value: "hora", label: "D2 - Hora Chart" },
   { value: "drekkana", label: "D3 - Dreshkan Chart" },
   { value: "chaturthamsa", label: "D4 - Chathurthamasha Chart" },
@@ -196,6 +196,31 @@ const planetRowsFromPayload = (kundli) => {
 const providerData = (kundli, key) => {
   const raw = kundli?.provider_payload?.[key];
   return raw?.data || raw || kundli?.[key] || {};
+};
+
+const extractChartSvg = (payload) => {
+  if (!payload) return null;
+  if (typeof payload === "string") {
+    const trimmed = payload.trim();
+    return trimmed.startsWith("<svg") ? trimmed : null;
+  }
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const svg = extractChartSvg(item);
+      if (svg) return svg;
+    }
+    return null;
+  }
+  if (typeof payload === "object") {
+    return (
+      extractChartSvg(payload.chart_svg) ||
+      extractChartSvg(payload.svg) ||
+      extractChartSvg(payload.chart) ||
+      extractChartSvg(payload.chart_data) ||
+      null
+    );
+  }
+  return null;
 };
 
 const providerEntry = (kundli, key) => kundli?.provider_payload?.[key] || kundli?.[key] || null;
@@ -801,7 +826,7 @@ export default function DetailedKundali() {
       
       if (res?.status === "success" && res.data) {
         // Prokerala returns either standard SVG block or charts list
-        const svg = res.data.chart_svg || res.data.chart || (Array.isArray(res.data) && res.data[0]?.chart_svg) || res.data.chart_data?.svg;
+        const svg = extractChartSvg(res?.data ?? res);
         if (svg) {
           setLoadedCharts(prev => ({ ...prev, [type]: svg }));
         }
@@ -1234,13 +1259,12 @@ export default function DetailedKundali() {
 
                   {/* Divisional Charts Tab Content */}
                   {activeDossierTab === "charts" && (
-                    <div className="overflow-hidden rounded-[2.2rem] border border-[#EFE3D1] bg-white shadow-sm space-y-6">
-                      <div className="flex items-center justify-between gap-4 flex-wrap bg-[#D7AF4B] px-6 py-5">
-                        <h3 className="text-2xl font-black text-[#1E3557]">Divisional Charts</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-end">
                         <select
                           value={selectedChartType}
                           onChange={(e) => setSelectedChartType(e.target.value)}
-                          className="rounded-xl border border-slate-200 bg-[#f8f9fc] px-4 py-2 text-xs outline-none font-bold text-[#1E3557]"
+                          className="w-full rounded-xl border border-[#E6D7BA] bg-white px-4 py-3 text-xs font-bold text-[#1E3557] outline-none focus:border-[#D7AF4B] sm:w-auto"
                         >
                           {divisionalChartOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -1248,8 +1272,8 @@ export default function DetailedKundali() {
                         </select>
                       </div>
 
-                      <div className="p-6 mt-0 pt-0">
-                        <div className="flex min-h-[300px] items-center justify-center overflow-x-auto border border-gray-200 bg-[#fffbf0] rounded-2xl p-4 shadow-inner relative">
+                      <div>
+                        <div className="relative flex min-h-[300px] items-center justify-center overflow-x-auto rounded-2xl border border-[#E6D7BA] bg-white p-3 shadow-sm sm:p-4">
                           {loadingChart ? (
                             <div className="text-center"><FaSpinner className="animate-spin text-2xl text-[#1E3C72] mx-auto" /><p className="mt-2 text-xs text-gray-500 font-semibold">Generating Chart Layout...</p></div>
                           ) : loadedCharts[selectedChartType] ? (

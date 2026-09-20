@@ -22,25 +22,37 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
   static const _muted = Color(0xFF6B7280);
 
   final AstrologyService _service = AstrologyService();
+  final TextEditingController _yesNoQuestion = TextEditingController();
   final Map<String, TarotCard?> _selected = {
     'love': null,
     'career': null,
     'finance': null,
   };
 
+  String _mode = 'general';
   String _activeSlot = 'love';
+  TarotCard? _yesNoCard;
   bool _loading = false;
   String? _error;
   Map<String, dynamic>? _reading;
+  Map<String, dynamic>? _yesNoReading;
   List<TarotCard> _deckCards =
       _shuffledTarotDeck(_generatedFallbackTarotDeck());
 
   bool get _canRead => _selected.values.every((card) => card != null);
+  bool get _canYesNoRead =>
+      _yesNoQuestion.text.trim().isNotEmpty && _yesNoCard != null;
 
   @override
   void initState() {
     super.initState();
     _loadAvailableDeck();
+  }
+
+  @override
+  void dispose() {
+    _yesNoQuestion.dispose();
+    super.dispose();
   }
 
   Future<void> _loadAvailableDeck() async {
@@ -68,6 +80,10 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
   }
 
   Future<void> _run() async {
+    if (_mode == 'yes-no') {
+      await _runYesNo();
+      return;
+    }
     if (!_canRead) {
       setState(
           () => _error = 'Select one card each for Love, Career, and Finance.');
@@ -107,8 +123,60 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
     }
   }
 
+  Future<void> _runYesNo() async {
+    if (!_canYesNoRead) {
+      setState(() => _error = 'Enter your question and select one card.');
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+      _yesNoReading = null;
+    });
+
+    try {
+      final response = await _service.tarot({
+        'type': 'yes-no',
+        'question': _yesNoQuestion.text.trim(),
+        'card': _yesNoCard!.id,
+        'la': 'en',
+      });
+      if (!mounted) return;
+      final data = _asMap(response['data']);
+      final reading = _asMap(data['reading']);
+      setState(() {
+        _loading = false;
+        if (response['status'] == 'success' && reading.isNotEmpty) {
+          _yesNoReading = reading;
+        } else {
+          _error = response['message']?.toString() ??
+              'Unable to read the selected card.';
+        }
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
   void _toggleCard(TarotCard card) {
     setState(() {
+      if (_mode == 'yes-no') {
+        _yesNoCard = _yesNoCard?.id == card.id ? null : card;
+        _yesNoReading = null;
+        _error = null;
+        final pinnedCardIds = {
+          card.id,
+          if (_yesNoCard != null) _yesNoCard!.id,
+        };
+        _deckCards = _shuffleDeckWithPinnedCards(_deckCards, pinnedCardIds);
+        return;
+      }
+
       final currentSlot = _selectedSlotFor(card.id);
 
       if (currentSlot != null) {
@@ -155,9 +223,17 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
                 children: [
                   _topBar(),
                   const SizedBox(height: 10),
-                  _slotSelector(),
+                  _modeSelector(),
+                  const SizedBox(height: 10),
+                  if (_mode == 'general')
+                    _slotSelector()
+                  else
+                    _yesNoQuestionField(),
                   const SizedBox(height: 16),
-                  _selectedCards(),
+                  if (_mode == 'general')
+                    _selectedCards()
+                  else
+                    _yesNoSelectedCard(),
                   const SizedBox(height: 16),
                   _deck(),
                   const SizedBox(height: 18),
@@ -168,7 +244,9 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
                       icon: const Icon(Icons.auto_awesome),
                       label: Text(_loading
                           ? 'Reading Cards...'
-                          : 'Reveal Tarot Reading'),
+                          : _mode == 'general'
+                              ? 'Reveal Tarot Reading'
+                              : 'Reveal Yes/No Answer'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _gold,
                         foregroundColor: _navy,
@@ -186,12 +264,61 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
                     )
                   else if (_error != null)
                     _errorCard()
-                  else if (_reading != null)
+                  else if (_mode == 'yes-no' && _yesNoReading != null)
+                    _yesNoPanel()
+                  else if (_mode == 'general' && _reading != null)
                     _readingPanel(),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _modeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: _cream,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        children: [
+          _modeButton('general', 'General Reading'),
+          _modeButton('yes-no', 'Yes/No Reading'),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeButton(String value, String label) {
+    final selected = _mode == value;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() {
+          _mode = value;
+          _error = null;
+        }),
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+          decoration: BoxDecoration(
+            color: selected ? _navy : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected ? Colors.white : _navy,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ),
       ),
     );
@@ -265,6 +392,35 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
     );
   }
 
+  Widget _yesNoQuestionField() {
+    return TextField(
+      controller: _yesNoQuestion,
+      onChanged: (_) => setState(() {
+        _yesNoReading = null;
+        _error = null;
+      }),
+      textInputAction: TextInputAction.done,
+      decoration: InputDecoration(
+        isDense: true,
+        labelText: 'Your yes/no question',
+        hintText: 'Example: Will this decision be good for me?',
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _gold, width: 1.4),
+        ),
+      ),
+    );
+  }
+
   Widget _selectedCards() {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -321,6 +477,46 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
     );
   }
 
+  Widget _yesNoSelectedCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.style_rounded, color: _gold, size: 20),
+          const SizedBox(width: 9),
+          const Text(
+            'Selected Card',
+            style: TextStyle(
+              color: _muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _yesNoCard?.name ?? 'Tap one card from the deck',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: _navy,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _deck() {
     return Container(
       width: double.infinity,
@@ -333,7 +529,10 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Tap a card for ${_slotTitle(_activeSlot)}',
+          Text(
+              _mode == 'general'
+                  ? 'Tap a card for ${_slotTitle(_activeSlot)}'
+                  : 'Tap one card for your answer',
               style:
                   const TextStyle(color: _navy, fontWeight: FontWeight.w900)),
           const SizedBox(height: 12),
@@ -366,7 +565,7 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
 
   Widget _stackedCard(TarotCard card, int index) {
     final selectedSlot = _selectedSlotFor(card.id);
-    final selected = selectedSlot != null;
+    final selected = selectedSlot != null || _yesNoCard?.id == card.id;
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 180),
       left: index * 34,
@@ -435,6 +634,95 @@ class _LiveTarotScreenState extends State<LiveTarotScreen> {
         children: const ['love', 'career', 'finance']
             .map((slot) => _readingSection(slot))
             .toList(),
+      ),
+    );
+  }
+
+  Widget _yesNoPanel() {
+    final card = _yesNoCard;
+    final reading = _yesNoReading ?? const <String, dynamic>{};
+    final name = reading['name']?.toString().trim();
+    final value = reading['value']?.toString().trim();
+    final description = reading['description']?.toString().trim();
+    final isPositive = (value ?? '').toLowerCase().contains('yes');
+    final badgeColor =
+        isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 18),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (card != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                card.imagePath,
+                width: 82,
+                height: 128,
+                fit: BoxFit.cover,
+              ),
+            ),
+          if (card != null) const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name == null || name.isEmpty
+                            ? card?.name ?? 'Selected Card'
+                            : name,
+                        style: const TextStyle(
+                          color: _navy,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        value == null || value.isEmpty ? '-' : value,
+                        style: TextStyle(
+                          color: badgeColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description == null || description.isEmpty
+                      ? 'No description returned.'
+                      : description,
+                  style: const TextStyle(
+                    color: Color(0xFF374151),
+                    fontSize: 13,
+                    height: 1.36,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

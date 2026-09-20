@@ -881,6 +881,33 @@ String _assetForTool(String key) {
   return assets[key] ?? 'assets/images/services/calculators.png';
 }
 
+Color _toolAccentColor(String key) {
+  final normalized = _calcKey(key);
+  if (normalized.contains('mangal')) return const Color(0xFFEF4444);
+  if (normalized.contains('kaal') || normalized.contains('kalsarpa')) {
+    return const Color(0xFF8B5CF6);
+  }
+  if (normalized.contains('sade')) return const Color(0xFF2563EB);
+  if (normalized.contains('pitra')) return const Color(0xFFF97316);
+  if (normalized.contains('gem')) return const Color(0xFF10B981);
+  if (normalized.contains('rudraksha')) return const Color(0xFF7C2D12);
+  if (normalized.contains('puja')) return const Color(0xFFD97706);
+  if (normalized.contains('vimshottari')) return const Color(0xFF7C3AED);
+  if (normalized.contains('char_dasha')) return const Color(0xFF0EA5E9);
+  if (normalized.contains('yogini')) return const Color(0xFFDB2777);
+  if (normalized.contains('varshaphal')) return const Color(0xFF5B21B6);
+  if (normalized == 'kp') return const Color(0xFF0F766E);
+  if (normalized.contains('ashtak')) return const Color(0xFF059669);
+  if (normalized.contains('biorhythm')) return const Color(0xFFEC4899);
+  if (normalized.contains('nakshatra')) return const Color(0xFF0284C7);
+  return const Color(0xFFD7AF4B);
+}
+
+Color _toolSoftColor(String key) {
+  final accent = _toolAccentColor(key);
+  return Color.alphaBlend(accent.withValues(alpha: 0.13), Colors.white);
+}
+
 class _CalculatorResultScreen extends StatefulWidget {
   final String toolKey;
   final String title;
@@ -974,7 +1001,84 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
         payload: payload,
       ));
     }
+    if (_calcKey(widget.toolKey) == 'yogini_dasha') {
+      return _mergeYoginiTabs(tabs);
+    }
+    if (_calcKey(widget.toolKey) == 'vimshottari_dasha') {
+      return _normalizeVimshottariTabs(tabs);
+    }
     return tabs;
+  }
+
+  List<_CalculatorTab> _normalizeVimshottariTabs(List<_CalculatorTab> tabs) {
+    final byId = <String, _CalculatorTab>{};
+    for (final tab in tabs) {
+      if (tab.id == 'current_vdasha_all') {
+        continue;
+      }
+      byId.putIfAbsent(tab.id, () => tab);
+    }
+
+    const order = [
+      'current_vdasha',
+      'major_vdasha',
+      'sub_vdasha',
+      'sub_sub_vdasha',
+      'sub_sub_sub_vdasha',
+      'sub_sub_sub_sub_vdasha',
+      'current_vdasha_date',
+    ];
+    final ordered = <_CalculatorTab>[];
+    for (final id in order) {
+      final tab = byId.remove(id);
+      if (tab != null) ordered.add(tab);
+    }
+    ordered.addAll(byId.values);
+    return ordered.isEmpty ? tabs : ordered;
+  }
+
+  List<_CalculatorTab> _mergeYoginiTabs(List<_CalculatorTab> tabs) {
+    _CalculatorTab? major;
+    _CalculatorTab? current;
+    _CalculatorTab? sub;
+    final remaining = <_CalculatorTab>[];
+
+    for (final tab in tabs) {
+      switch (tab.id) {
+        case 'major_yogini_dasha':
+          major = tab;
+          break;
+        case 'current_yogini_dasha':
+          current = tab;
+          break;
+        case 'sub_yogini_dasha':
+          sub = tab;
+          break;
+        default:
+          remaining.add(tab);
+      }
+    }
+
+    final merged = <_CalculatorTab>[];
+    if (major != null || current != null) {
+      merged.add(_CalculatorTab(
+        id: 'yogini_dasha_details',
+        label: 'Yogini Dasha Details',
+        payload: {
+          if (major != null) 'major': _calcUnwrap(major.payload),
+          if (current != null) 'current': _calcUnwrap(current.payload),
+        },
+      ));
+    }
+    if (sub != null) {
+      merged.add(_CalculatorTab(
+        id: 'sub_yogini_dasha',
+        label: 'Sub Yogini Dasha',
+        payload: sub.payload,
+      ));
+    }
+    merged.addAll(remaining);
+    return merged.isEmpty ? tabs : merged;
   }
 
   void _setActive(int index) {
@@ -1056,6 +1160,7 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
   }
 
   bool _isFlatSuggestionTab(String id) {
+    final normalized = _calcKey(id);
     const flatTabs = {
       'biorhythm',
       'moon_biorhythm',
@@ -1070,26 +1175,58 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
       'sub_sub_vdasha',
       'sub_sub_sub_vdasha',
       'sub_sub_sub_sub_vdasha',
+      'yogini_dasha_details',
+      'sub_yogini_dasha',
+      'varshaphal_year_chart',
+      'varshaphal_month_chart',
+      'varshaphal_details',
+      'varshaphal_planets',
+      'varshaphal_muntha',
+      'varshaphal_mudda_dasha',
+      'varshaphal_panchavargeeya_bala',
+      'varshaphal_harsha_bala',
+      'varshaphal_saham_points',
+      'varshaphal_yoga',
+      'kp_planets',
+      'kp_house_cusps',
+      'kp_birth_chart',
+      'kp_house_significator',
+      'kp_planet_significator',
+      'sarvashtak',
     };
-    return flatTabs.contains(id);
+    return flatTabs.contains(normalized) ||
+        normalized.startsWith('planet_ashtak');
   }
 
   Widget _resultHeader() {
+    final accent = _toolAccentColor(widget.toolKey);
+    final soft = _toolSoftColor(widget.toolKey);
     return Container(
       width: double.infinity,
       margin: EdgeInsets.fromLTRB(14, 6, 14, _tabs.length > 1 ? 8 : 6),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          colors: [soft, Colors.white],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
+        border: Border.all(color: accent.withValues(alpha: 0.36)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
           IconButton(
             visualDensity: VisualDensity.compact,
             onPressed: () => Navigator.of(context).maybePop(),
-            icon: const Icon(Icons.arrow_back, color: _navy),
+            icon: Icon(Icons.arrow_back, color: accent),
           ),
           const SizedBox(width: 2),
           Container(
@@ -1097,9 +1234,9 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
             height: 44,
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFCF2),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: _border),
+              border: Border.all(color: accent.withValues(alpha: 0.3)),
             ),
             child: Image.asset(
               _assetForTool(widget.toolKey),
@@ -1137,14 +1274,18 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
   }
 
   Widget _tabBar() {
+    final denseTabs = widget.toolKey == 'varshaphal' ||
+        widget.toolKey == 'kp' ||
+        widget.toolKey == 'sarvashtakavarga' ||
+        widget.toolKey == 'yogini-dasha';
     return SizedBox(
-      height: 42,
+      height: denseTabs ? 38 : 42,
       child: ListView.separated(
         controller: _tabScrollController,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         scrollDirection: Axis.horizontal,
         itemCount: _tabs.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        separatorBuilder: (_, __) => SizedBox(width: denseTabs ? 5 : 6),
         itemBuilder: (context, index) {
           final selected = index == _activeIndex;
           return KeyedSubtree(
@@ -1156,13 +1297,13 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
               backgroundColor: Colors.white,
               visualDensity: VisualDensity.compact,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+              labelPadding: EdgeInsets.symmetric(horizontal: denseTabs ? 6 : 8),
               side: BorderSide(color: selected ? _navy : _border),
               label: Text(
                 _tabs[index].label,
                 style: TextStyle(
                   color: selected ? Colors.white : _navy,
-                  fontSize: 11.4,
+                  fontSize: denseTabs ? 10.4 : 11.4,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1178,6 +1319,9 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
       return _UnavailableCard(message: _calcErrorMessage(tab.payload));
     }
     final clean = _calcUnwrap(tab.payload);
+    if (tab.id.startsWith('planet_ashtak')) {
+      return _AshtakavargaBody(data: clean, isSarvashtak: false);
+    }
     switch (tab.id) {
       case 'current_vdasha':
       case 'current_vdasha_all':
@@ -1195,11 +1339,47 @@ class _CalculatorResultScreenState extends State<_CalculatorResultScreen> {
       case 'current_yogini_dasha':
         return _DashaResultBody(tabId: tab.id, data: clean);
       case 'sub_yogini_dasha':
+        return _YoginiSubDashaBody(data: clean);
       case 'sub_yogini_dasha_by_cycle':
         return _NestedRecordResultBody(data: clean);
+      case 'yogini_dasha_details':
+        return _YoginiDashaDetailsBody(data: clean);
       case 'varshaphal_year_chart':
+        return _VarshaYearChartBody(data: clean);
       case 'varshaphal_month_chart':
-        return _NestedRecordResultBody(data: clean);
+        return _VarshaMonthChartBody(data: clean);
+      case 'varshaphal_details':
+        return _VarshaDetailsBody(data: clean);
+      case 'varshaphal_planets':
+        return _VarshaPlanetsBody(data: clean);
+      case 'varshaphal_muntha':
+        return _VarshaMunthaBody(data: clean);
+      case 'varshaphal_panchavargeeya_bala':
+      case 'varshaphal_harsha_bala':
+        return _VarshaBalaBody(data: clean);
+      case 'varshaphal_saham_points':
+        return _VarshaSahamBody(data: clean);
+      case 'varshaphal_yoga':
+        return _VarshaYogaBody(data: clean);
+      case 'varshaphal_mudda_dasha':
+        return _DashaResultBody(tabId: tab.id, data: clean);
+      case 'kp_planets':
+        return _KpPlanetsBody(data: clean);
+      case 'kp_house_cusps':
+        return _KpHouseCuspsBody(data: clean);
+      case 'kp_birth_chart':
+        return _KpBirthChartBody(data: clean);
+      case 'kp_house_significator':
+        return _KpHouseSignificatorBody(data: clean);
+      case 'kp_planet_significator':
+        return _KpPlanetSignificatorBody(data: clean);
+      case 'sarvashtak':
+        return _AshtakavargaBody(data: clean, isSarvashtak: true);
+      case 'manglik':
+        return _StandaloneMangalDoshaBody(data: clean);
+      case 'kalsarpa_details':
+      case 'kaal_sarp_dosha':
+        return _StandaloneKaalSarpDoshaBody(data: clean);
       case 'basic_gem_suggestion':
         return _GemSuggestionBody(data: _calcAsMap(clean));
       case 'puja_suggestion':
@@ -1792,6 +1972,408 @@ class _CompactPredictionCard extends StatelessWidget {
   }
 }
 
+class _StandaloneMangalDoshaBody extends StatelessWidget {
+  final dynamic data;
+
+  const _StandaloneMangalDoshaBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final root = _calcAsMap(_calcCleanValue(data));
+    if (root.isEmpty) {
+      return const _UnavailableCard(
+        message:
+            'Mangal Dosha details are not available for this birth profile.',
+      );
+    }
+
+    final present = _doshaBool(_bioLookup(root, const [
+      'is_present',
+      'present',
+      'manglik_present',
+      'is_manglik',
+    ]));
+    final status = _cleanDoshaStatus(_bioLookup(root, const [
+      'manglik_status',
+      'status',
+      'mangal_status',
+    ]));
+    final beforePercent = _doshaNumber(_bioLookup(root, const [
+      'percentage_manglik_present',
+      'manglik_percentage',
+      'percentage',
+    ]));
+    final afterPercent = _doshaNumber(_bioLookup(root, const [
+      'percentage_manglik_after_cancellation',
+      'percentage_after_cancellation',
+    ]));
+    final cancelled = _doshaBool(_bioLookup(root, const [
+      'is_mars_manglik_cancelled',
+      'is_manglik_cancelled',
+      'manglik_cancelled',
+    ]));
+    final report = _doshaParagraphs(_bioLookup(root, const [
+      'manglik_report',
+      'report',
+      'description',
+    ]));
+
+    final accent = present == true
+        ? const Color(0xFFEF4444)
+        : beforePercent != null && beforePercent > 0
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFF10B981);
+    final verdict = present == true
+        ? 'Manglik Influence Present'
+        : beforePercent != null && beforePercent > 0
+            ? 'Weak Mangal Influence'
+            : 'No Strong Mangal Dosha';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _DoshaStatusBand(
+          icon: Icons.local_fire_department_rounded,
+          title: verdict,
+          value: status == '-'
+              ? (present == true ? 'PRESENT' : 'LOW RISK')
+              : status,
+          color: accent,
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (beforePercent != null)
+              _DoshaMetricChip(
+                label: 'Mangal Strength',
+                value: '${_varshaNumber(beforePercent)}%',
+                color: accent,
+              ),
+            if (afterPercent != null)
+              _DoshaMetricChip(
+                label: 'After Cancellation',
+                value: '${_varshaNumber(afterPercent)}%',
+                color: cancelled == true
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFF2563EB),
+              ),
+            if (cancelled != null)
+              _DoshaMetricChip(
+                label: 'Cancellation',
+                value: cancelled ? 'Yes' : 'No',
+                color: cancelled
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFF64748B),
+              ),
+          ],
+        ),
+        if (report.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _DoshaParagraphCard(paragraphs: report),
+        ],
+        ..._mangalRuleCards(root),
+      ],
+    );
+  }
+}
+
+class _StandaloneKaalSarpDoshaBody extends StatelessWidget {
+  final dynamic data;
+
+  const _StandaloneKaalSarpDoshaBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final root = _calcAsMap(_calcCleanValue(data));
+    if (root.isEmpty) {
+      return const _UnavailableCard(
+        message:
+            'Kaal Sarp Dosha details are not available for this birth profile.',
+      );
+    }
+
+    final present = _doshaBool(_bioLookup(root, const [
+      'present',
+      'is_present',
+      'kaal_sarp_present',
+      'kalsarpa_present',
+    ]));
+    final name = _calcCleanText(_calcValue(_bioLookup(root, const ['name'])));
+    final type = _calcCleanText(_calcValue(_bioLookup(root, const ['type'])));
+    final oneLine = _calcCleanText(
+      _calcValue(_bioLookup(root, const ['one_line', 'oneLine', 'summary'])),
+    );
+    final reportMap = _calcAsMap(root['report']);
+    final report = _doshaParagraphs(
+      reportMap['report'] ??
+          _bioLookup(root, const ['report_text', 'description', 'details']),
+    );
+    final accent =
+        present == true ? const Color(0xFFE11D48) : const Color(0xFF10B981);
+
+    final details = <MapEntry<String, dynamic>>[
+      if (name != '-') MapEntry('Dosha Name', name),
+      if (type != '-') MapEntry('Type', type),
+      if (present != null)
+        MapEntry('Status', present ? 'Present' : 'Not Present'),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (details.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: details
+                .map((entry) => _DoshaMetricChip(
+                      label: entry.key,
+                      value: _calcValue(entry.value),
+                      color: accent,
+                    ))
+                .toList(),
+          ),
+        if (oneLine.isNotEmpty && oneLine != '-') ...[
+          const SizedBox(height: 10),
+          _DoshaHighlight(text: oneLine, color: accent),
+        ],
+        if (report.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _DoshaParagraphCard(paragraphs: report),
+        ],
+      ],
+    );
+  }
+}
+
+class _DoshaStatusBand extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color color;
+
+  const _DoshaStatusBand({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF1E3557),
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              value.toUpperCase(),
+              style: TextStyle(
+                color: color,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DoshaMetricChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _DoshaMetricChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 11.5, height: 1.1),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(
+                color: Color(0xFF1E3557),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            TextSpan(
+              text: value,
+              style: TextStyle(color: color, fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DoshaHighlight extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _DoshaHighlight({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF102A52),
+          fontSize: 13.5,
+          height: 1.35,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _DoshaParagraphCard extends StatelessWidget {
+  final List<String> paragraphs;
+
+  const _DoshaParagraphCard({required this.paragraphs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE6D7BA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: paragraphs
+            .map(
+              (paragraph) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  paragraph,
+                  style: const TextStyle(
+                    color: Color(0xFF102A52),
+                    fontSize: 13,
+                    height: 1.36,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+List<Widget> _mangalRuleCards(Map<String, dynamic> root) {
+  final widgets = <Widget>[];
+  for (final item in const [
+    MapEntry('Presence Rules', 'manglik_present_rule'),
+    MapEntry('Cancellation Rules', 'manglik_cancel_rule'),
+  ]) {
+    final value = _calcCleanValue(root[item.value]);
+    if (_calcIsMeaningfullyEmpty(value)) continue;
+    final rows = _calcAsMap(value)
+        .entries
+        .where((entry) =>
+            !_calcShouldHideKey(entry.key) &&
+            !_calcIsMeaningfullyEmpty(entry.value))
+        .toList();
+    if (rows.isEmpty) continue;
+    widgets.add(const SizedBox(height: 10));
+    widgets.add(_CompactInlineSection(
+      title: item.key,
+      child: _CompactKeyValueTable(rows: rows),
+    ));
+  }
+  return widgets;
+}
+
+bool? _doshaBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final text = value?.toString().trim().toLowerCase();
+  if (text == null || text.isEmpty || text == '-') return null;
+  if (const {'true', 'yes', 'y', 'present', '1'}.contains(text)) return true;
+  if (const {'false', 'no', 'n', 'not present', '0'}.contains(text)) {
+    return false;
+  }
+  return null;
+}
+
+double? _doshaNumber(dynamic value) {
+  if (value is num) return value.toDouble();
+  final text = value?.toString().replaceAll('%', '').trim();
+  if (text == null || text.isEmpty) return null;
+  return double.tryParse(text);
+}
+
+String _cleanDoshaStatus(dynamic value) {
+  final text = _calcCleanText(_calcValue(value));
+  if (text == '-') return text;
+  return text.toUpperCase();
+}
+
+List<String> _doshaParagraphs(dynamic value) {
+  final text = _calcCleanText(_calcValue(value));
+  if (text.isEmpty || text == '-') return const [];
+  return text
+      .split(RegExp(r'\.\s+'))
+      .map((item) => item.endsWith('.') ? item : '$item.')
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty && item != '.')
+      .toList();
+}
+
 class _GemSuggestionBody extends StatelessWidget {
   final Map<String, dynamic> data;
 
@@ -2245,6 +2827,1718 @@ class _DashaTableCell extends StatelessWidget {
   }
 }
 
+class _YoginiDashaDetailsBody extends StatefulWidget {
+  final dynamic data;
+
+  const _YoginiDashaDetailsBody({required this.data});
+
+  @override
+  State<_YoginiDashaDetailsBody> createState() =>
+      _YoginiDashaDetailsBodyState();
+}
+
+class _YoginiDashaDetailsBodyState extends State<_YoginiDashaDetailsBody> {
+  int _active = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final map = _calcAsMap(_calcCleanValue(widget.data));
+    final majorRows = _yoginiMajorRows(map['major']);
+    final currentRows = _yoginiCurrentRows(map['current']);
+    final labels = <String>[];
+    final views = <Widget>[];
+
+    if (majorRows.isNotEmpty) {
+      labels.add('Mahadasha');
+      views.add(_VarshaRecordTable(
+        records: majorRows,
+        preferredColumns: const ['dasha', 'start', 'end', 'duration'],
+      ));
+    }
+    if (currentRows.isNotEmpty) {
+      labels.add('Current Dasha');
+      views.add(_VarshaRecordTable(
+        records: currentRows,
+        preferredColumns: const ['level', 'dasha', 'start', 'end', 'duration'],
+      ));
+    }
+
+    if (views.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Yogini Dasha details are not available right now.',
+      );
+    }
+    final selected = _active.clamp(0, views.length - 1);
+    if (selected != _active) _active = selected;
+
+    return Column(
+      children: [
+        if (labels.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _YoginiSegmentedTabs(
+              labels: labels,
+              activeIndex: selected,
+              onChanged: (index) => setState(() => _active = index),
+            ),
+          ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: KeyedSubtree(
+            key: ValueKey(selected),
+            child: views[selected],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _YoginiSegmentedTabs extends StatelessWidget {
+  final List<String> labels;
+  final int activeIndex;
+  final ValueChanged<int> onChanged;
+
+  const _YoginiSegmentedTabs({
+    required this.labels,
+    required this.activeIndex,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE6D7BA)),
+      ),
+      child: Row(
+        children: labels.asMap().entries.map((entry) {
+          final selected = entry.key == activeIndex;
+          return Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onChanged(entry.key),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                decoration: BoxDecoration(
+                  color: selected ? const Color(0xFF1E3557) : Colors.white,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  entry.value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: selected ? Colors.white : const Color(0xFF1E3557),
+                    fontSize: 11.2,
+                    height: 1.0,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _YoginiSubDashaBody extends StatelessWidget {
+  final dynamic data;
+
+  const _YoginiSubDashaBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = _calcRecordList(_calcCleanValue(data))
+        .map(_yoginiSubGroup)
+        .where((group) => group.rows.isNotEmpty)
+        .toList();
+    if (groups.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Sub Yogini Dasha details are not available right now.',
+      );
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      const gap = 8.0;
+      final columns = constraints.maxWidth < 360 ? 2 : 3;
+      final width = (constraints.maxWidth - (gap * (columns - 1))) / columns;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: groups.map((group) {
+          return SizedBox(
+            width: width,
+            child: _YoginiSubTile(
+              group: group,
+              onTap: () => _showYoginiSubDialog(context, group),
+            ),
+          );
+        }).toList(),
+      );
+    });
+  }
+}
+
+class _YoginiSubTile extends StatelessWidget {
+  final _YoginiSubGroup group;
+  final VoidCallback onTap;
+
+  const _YoginiSubTile({
+    required this.group,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 96),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE6D7BA)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                group.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF1E3557),
+                  fontSize: 11.8,
+                  height: 1.08,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${group.rows.length} sub dasha',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'See Sub Dasha',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Color(0xFFD7AF4B),
+                        fontSize: 10.4,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 17,
+                    color: Color(0xFFD7AF4B),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _YoginiSubGroup {
+  final String name;
+  final List<Map<String, dynamic>> rows;
+
+  const _YoginiSubGroup({
+    required this.name,
+    required this.rows,
+  });
+}
+
+void _showYoginiSubDialog(BuildContext context, _YoginiSubGroup group) {
+  showDialog<void>(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 26),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      group.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF1E3557),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.68,
+                ),
+                child: SingleChildScrollView(
+                  child: _VarshaRecordTable(
+                    records: group.rows,
+                    preferredColumns: const ['dasha', 'start', 'end'],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _VarshaYearChartBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaYearChartBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final map = _calcAsMap(_calcCleanValue(data));
+    final chart = _varshaChartRows(map['chart']);
+    final summary = <MapEntry<String, dynamic>>[
+      if (!_calcIsMeaningfullyEmpty(map['year_lord']))
+        MapEntry('Year Lord', map['year_lord']),
+      if (!_calcIsMeaningfullyEmpty(map['varshaphal_date']))
+        MapEntry('Varshaphal Date', map['varshaphal_date']),
+    ];
+    if (summary.isEmpty && chart.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Varshaphal chart details are not available right now.',
+      );
+    }
+    return Column(
+      children: [
+        if (summary.isNotEmpty) _VarshaKeyValueTable(rows: summary),
+        if (chart.isNotEmpty)
+          _VarshaRecordTable(
+            records: chart,
+            preferredColumns: const [
+              'sign',
+              'sign_name',
+              'planets',
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _VarshaMonthChartBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaMonthChartBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final months = _calcRecordList(_calcCleanValue(data))
+        .where((record) => _varshaChartRows(record['chart']).isNotEmpty)
+        .toList();
+    if (months.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Monthly Varshaphal charts are not available right now.',
+      );
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      const gap = 8.0;
+      final columns = constraints.maxWidth < 340 ? 2 : 3;
+      final width = (constraints.maxWidth - (gap * (columns - 1))) / columns;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: months.map((record) {
+          final month = _calcValue(record['month_id'] ?? record['month']);
+          final rows = _varshaChartRows(record['chart']);
+          final planetCount = rows.fold<int>(
+            0,
+            (sum, row) {
+              final planets = _calcValue(row['planets']);
+              if (planets == '-' || planets == 'None') return sum;
+              return sum + planets.split(',').length;
+            },
+          );
+          return SizedBox(
+            width: width,
+            child: _VarshaMonthTile(
+              title: month == '-' ? 'Month' : 'Month $month',
+              subtitle: '$planetCount planets',
+              onTap: () => _showVarshaMonthDialog(context, month, rows),
+            ),
+          );
+        }).toList(),
+      );
+    });
+  }
+}
+
+class _VarshaMonthTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _VarshaMonthTile({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE6D7BA)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF1E3557),
+                  fontSize: 12.2,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: Color(0xFFD7AF4B),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _showVarshaMonthDialog(
+  BuildContext context,
+  String month,
+  List<Map<String, dynamic>> rows,
+) {
+  showDialog<void>(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      month == '-' ? 'Month Chart' : 'Month $month Chart',
+                      style: const TextStyle(
+                        color: Color(0xFF1E3557),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.68,
+                ),
+                child: SingleChildScrollView(
+                  child: _VarshaRecordTable(
+                    records: rows,
+                    preferredColumns: const ['sign', 'sign_name', 'planets'],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _VarshaDetailsBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaDetailsBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final map = _calcAsMap(_calcCleanValue(data));
+    if (map.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Varshaphal details are not available right now.',
+      );
+    }
+
+    final panchadhikari = _calcAsMap(map['panchadhikari']);
+    final muntha = _calcAsMap(map['varshaphala_muntha']);
+    final basicRows = <MapEntry<String, dynamic>>[];
+    for (final key in const [
+      'varshaphala_year',
+      'age_of_native',
+      'ayanamsha_name',
+      'ayanamsha_degree',
+      'native_birth_date',
+      'varshaphala_date',
+      'varshaphala_year_lord',
+    ]) {
+      if (!_calcIsMeaningfullyEmpty(map[key])) {
+        basicRows.add(MapEntry(key, map[key]));
+      }
+    }
+    final munthaRows = muntha.entries
+        .where((entry) =>
+            !_calcShouldHideKey(entry.key) &&
+            !_calcIsMeaningfullyEmpty(entry.value))
+        .toList();
+
+    return Column(
+      children: [
+        if (basicRows.isNotEmpty) _VarshaKeyValueTable(rows: basicRows),
+        if (panchadhikari.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _VarshaPanchadhikariGrid(data: panchadhikari),
+          ),
+        if (munthaRows.isNotEmpty) _VarshaKeyValueTable(rows: munthaRows),
+      ],
+    );
+  }
+}
+
+class _VarshaPanchadhikariGrid extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  const _VarshaPanchadhikariGrid({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <_VarshaColorTileData>[
+      _VarshaColorTileData(
+        'Muntha Lord',
+        _calcValue(data['muntha_lord']),
+        const Color(0xFFFFF3C4),
+      ),
+      _VarshaColorTileData(
+        'Birth Ascendant Lord',
+        _calcValue(data['birth_ascendant_lord']),
+        const Color(0xFFDDEBFF),
+      ),
+      _VarshaColorTileData(
+        'Year Ascendant Lord',
+        _calcValue(data['year_ascendant_lord']),
+        const Color(0xFFFFE1E5),
+      ),
+      _VarshaColorTileData(
+        'Dinratri Lord',
+        _calcValue(data['dinratri_lord']),
+        const Color(0xFFE3F8E8),
+      ),
+      _VarshaColorTileData(
+        'Trirashi Lord',
+        _calcValue(data['trirashi_lord']),
+        const Color(0xFFE9E6FF),
+      ),
+    ].where((item) => item.value != '-').toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return LayoutBuilder(builder: (context, constraints) {
+      const gap = 6.0;
+      final width = (constraints.maxWidth - gap) / 2;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: items
+            .map(
+                (item) => SizedBox(width: width, child: _VarshaColorTile(item)))
+            .toList(),
+      );
+    });
+  }
+}
+
+class _VarshaColorTile extends StatelessWidget {
+  final _VarshaColorTileData item;
+
+  const _VarshaColorTile(this.item);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 76),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+      decoration: BoxDecoration(
+        color: item.color,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white, width: 1.2),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            item.label,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 11.2,
+              height: 1.15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            item.value,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VarshaColorTileData {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _VarshaColorTileData(this.label, this.value, this.color);
+}
+
+class _VarshaPlanetsBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaPlanetsBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _calcRecordList(_calcCleanValue(data))
+        .map(_varshaPlanetRow)
+        .where((row) => row.isNotEmpty)
+        .toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Varshaphal planet positions are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const [
+        'name',
+        'sign',
+        'degree',
+        'sign_lord',
+        'nakshatra',
+        'pada',
+        'house',
+        'retro',
+        'combust',
+        'state',
+      ],
+      forceScrollHint: true,
+    );
+  }
+}
+
+class _VarshaMunthaBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaMunthaBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final clean = _calcCleanValue(data);
+    final records = _calcRecordList(clean);
+    if (records.isNotEmpty) {
+      return _VarshaRecordTable(records: records.map(_varshaCleanRow).toList());
+    }
+    final map = _calcAsMap(clean);
+    if (map.isNotEmpty) {
+      return _VarshaKeyValueTable(rows: _varshaVisibleEntries(map));
+    }
+    if (!_calcIsMeaningfullyEmpty(clean)) {
+      return _CompactPredictionCard(text: _calcValue(clean));
+    }
+    return const _UnavailableCard(
+      message: 'Varshaphal Muntha details are not available right now.',
+    );
+  }
+}
+
+class _VarshaBalaBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaBalaBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final map = _calcAsMap(_calcCleanValue(data));
+    final rows = <Map<String, dynamic>>[];
+    for (final entry in map.entries) {
+      final values = _calcAsList(entry.value);
+      if (values.isEmpty) continue;
+      rows.add({
+        'bala': _calcFriendlyTitle(entry.key),
+        for (var i = 0;
+            i < math.min(values.length, _varshaPlanetShort.length);
+            i++)
+          _varshaPlanetShort[i]: _varshaNumber(values[i]),
+      });
+    }
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Varshaphal Bala details are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const [
+        'bala',
+        'su',
+        'mo',
+        'ma',
+        'me',
+        'ju',
+        've',
+        'sa'
+      ],
+      highlightTotalRows: true,
+    );
+  }
+}
+
+class _VarshaSahamBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaSahamBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _calcRecordList(_calcCleanValue(data))
+        .map((record) => {
+              'no': _calcValue(record['saham_id'] ?? record['id']),
+              'name': _calcValue(record['saham_name'] ?? record['name']),
+              'degree':
+                  _varshaDegree(record['saham_degree'] ?? record['degree']),
+            })
+        .where((row) => row.values.any((value) => value != '-'))
+        .toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Saham points are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const ['no', 'name', 'degree'],
+    );
+  }
+}
+
+class _VarshaYogaBody extends StatelessWidget {
+  final dynamic data;
+
+  const _VarshaYogaBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _calcRecordList(_calcCleanValue(data))
+        .map((record) => {
+              'yoga': _calcValue(record['yog_name'] ?? record['name']),
+              'status': _calcValue(record['is_yog_happening']),
+              if (!_calcIsMeaningfullyEmpty(record['powerfullness_percentage']))
+                'power': _calcValue(record['powerfullness_percentage']),
+              if (!_calcIsMeaningfullyEmpty(record['yog_prediction']))
+                'prediction': _calcValue(record['yog_prediction']),
+              if (!_calcIsMeaningfullyEmpty(record['planets']))
+                'planets': _calcValue(record['planets']),
+            })
+        .where((row) => row.values.any((value) => value != '-'))
+        .toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'Varshaphal Yoga details are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const [
+        'yoga',
+        'status',
+        'power',
+        'prediction',
+        'planets'
+      ],
+      forceScrollHint: true,
+    );
+  }
+}
+
+class _KpPlanetsBody extends StatelessWidget {
+  final dynamic data;
+
+  const _KpPlanetsBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _calcRecordList(_calcCleanValue(data))
+        .map(_kpPlanetRow)
+        .where((row) => row.isNotEmpty)
+        .toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'KP planet details are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const [
+        'planet',
+        'sign',
+        'degree',
+        'house',
+        'sign_lord',
+        'nakshatra',
+        'nakshatra_lord',
+        'charan',
+        'sub_lord',
+        'sub_sub_lord',
+        'retro',
+      ],
+      forceScrollHint: true,
+    );
+  }
+}
+
+class _KpHouseCuspsBody extends StatelessWidget {
+  final dynamic data;
+
+  const _KpHouseCuspsBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _calcRecordList(_calcCleanValue(data))
+        .map(_kpHouseCuspRow)
+        .where((row) => row.isNotEmpty)
+        .toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'KP house cusp details are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const [
+        'house',
+        'sign',
+        'degree',
+        'sign_lord',
+        'nakshatra',
+        'nakshatra_lord',
+        'sub_lord',
+        'sub_sub_lord',
+      ],
+      forceScrollHint: true,
+    );
+  }
+}
+
+class _KpBirthChartBody extends StatelessWidget {
+  final dynamic data;
+
+  const _KpBirthChartBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final records = _calcRecordList(_calcCleanValue(data));
+    final rows = records.asMap().entries.map((entry) {
+      final record = entry.value;
+      return {
+        'house': entry.key + 1,
+        'signs': _calcValue(record['signs']),
+        'planets': _kpListValue(record['planets'], emptyText: 'None'),
+        'planet_signs': _kpListValue(record['planet_signs']),
+      };
+    }).where((row) {
+      return row.values.any((value) => _calcValue(value) != '-');
+    }).toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'KP birth chart details are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const ['house', 'signs', 'planets', 'planet_signs'],
+    );
+  }
+}
+
+class _KpHouseSignificatorBody extends StatelessWidget {
+  final dynamic data;
+
+  const _KpHouseSignificatorBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _calcRecordList(_calcCleanValue(data))
+        .map((record) => {
+              'house': record['house'] ?? record['house_id'],
+              'significators': _kpListValue(record['significators']),
+            })
+        .where((row) => row.values.any((value) => _calcValue(value) != '-'))
+        .toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'KP house significators are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const ['house', 'significators'],
+    );
+  }
+}
+
+class _KpPlanetSignificatorBody extends StatelessWidget {
+  final dynamic data;
+
+  const _KpPlanetSignificatorBody({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _calcRecordList(_calcCleanValue(data))
+        .map((record) => {
+              'planet': record['planet'] ?? record['planet_name'],
+              'significators': _kpListValue(record['significators']),
+            })
+        .where((row) => row.values.any((value) => _calcValue(value) != '-'))
+        .toList();
+    if (rows.isEmpty) {
+      return const _UnavailableCard(
+        message: 'KP planet significators are not available right now.',
+      );
+    }
+    return _VarshaRecordTable(
+      records: rows,
+      preferredColumns: const ['planet', 'significators'],
+    );
+  }
+}
+
+class _AshtakavargaBody extends StatelessWidget {
+  final dynamic data;
+  final bool isSarvashtak;
+
+  const _AshtakavargaBody({
+    required this.data,
+    required this.isSarvashtak,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _ashtakRows(data);
+    if (rows.isEmpty) {
+      return _UnavailableCard(
+        message: isSarvashtak
+            ? 'Sarvashtakavarga points are not available right now.'
+            : 'Ashtakavarga points are not available right now.',
+      );
+    }
+    return _AshtakPointsTable(rows: rows, isSarvashtak: isSarvashtak);
+  }
+}
+
+class _AshtakPointsTable extends StatelessWidget {
+  final List<Map<String, dynamic>> rows;
+  final bool isSarvashtak;
+
+  const _AshtakPointsTable({
+    required this.rows,
+    required this.isSarvashtak,
+  });
+
+  static const _columns = [
+    'sign',
+    'sun',
+    'moon',
+    'mars',
+    'mercury',
+    'jupiter',
+    'venus',
+    'saturn',
+    'ascendant',
+    'total',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE6D7BA)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Table(
+          columnWidths: const {
+            0: FlexColumnWidth(1.05),
+            1: FlexColumnWidth(0.58),
+            2: FlexColumnWidth(0.58),
+            3: FlexColumnWidth(0.58),
+            4: FlexColumnWidth(0.58),
+            5: FlexColumnWidth(0.58),
+            6: FlexColumnWidth(0.58),
+            7: FlexColumnWidth(0.58),
+            8: FlexColumnWidth(0.7),
+            9: FlexColumnWidth(0.9),
+          },
+          border: TableBorder.symmetric(
+            inside: const BorderSide(color: Color(0xFFE8E0CF), width: 0.7),
+          ),
+          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+          children: [
+            TableRow(
+              decoration: const BoxDecoration(color: Color(0xFFD7AF4B)),
+              children: _columns
+                  .map((column) => _AshtakCell(
+                        _ashtakColumnLabel(column),
+                        header: true,
+                      ))
+                  .toList(),
+            ),
+            ...rows.asMap().entries.map((entry) {
+              final row = entry.value;
+              return TableRow(
+                decoration: BoxDecoration(
+                  color:
+                      entry.key.isEven ? Colors.white : const Color(0xFFFFFCF4),
+                ),
+                children: _columns.map((column) {
+                  final value = _calcValue(row[column]);
+                  if (column == 'total') {
+                    return _AshtakTotalCell(
+                      value,
+                      color: _ashtakTotalColor(value, isSarvashtak),
+                    );
+                  }
+                  return _AshtakCell(
+                    value,
+                    attribute: column == 'sign',
+                  );
+                }).toList(),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AshtakCell extends StatelessWidget {
+  final String text;
+  final bool header;
+  final bool attribute;
+
+  const _AshtakCell(
+    this.text, {
+    this.header = false,
+    this.attribute = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: header ? 2 : 3,
+        vertical: header ? 5 : 6,
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: const Color(0xFF102A52),
+          fontSize: header ? 9.4 : 10.8,
+          height: 1.0,
+          fontWeight: header || attribute ? FontWeight.w900 : FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+class _AshtakTotalCell extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _AshtakTotalCell(this.text, {required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+      child: Align(
+        alignment: Alignment.center,
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10.8,
+              height: 1.0,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VarshaKeyValueTable extends StatelessWidget {
+  final List<MapEntry<String, dynamic>> rows;
+
+  const _VarshaKeyValueTable({required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = rows
+        .where((entry) =>
+            !_calcShouldHideKey(entry.key) &&
+            !_varshaShouldHideKey(entry.key) &&
+            !_calcIsMeaningfullyEmpty(entry.value))
+        .toList();
+    if (visible.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE6D7BA)),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Table(
+            columnWidths: const {
+              0: FlexColumnWidth(0.9),
+              1: FlexColumnWidth(1.24),
+            },
+            border: TableBorder.symmetric(
+              inside: const BorderSide(color: Color(0xFFE8E0CF), width: 0.8),
+            ),
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            children: visible.asMap().entries.map((entry) {
+              final row = entry.value;
+              return TableRow(
+                decoration: BoxDecoration(
+                  color:
+                      entry.key.isEven ? Colors.white : const Color(0xFFFFFCF4),
+                ),
+                children: [
+                  _VarshaTableCell(_calcFriendlyTitle(row.key),
+                      attribute: true),
+                  _VarshaTableCell(_varshaValue(row.value, key: row.key)),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VarshaRecordTable extends StatelessWidget {
+  final List<Map<String, dynamic>> records;
+  final List<String> preferredColumns;
+  final bool forceScrollHint;
+  final bool highlightTotalRows;
+
+  const _VarshaRecordTable({
+    required this.records,
+    this.preferredColumns = const [],
+    this.forceScrollHint = false,
+    this.highlightTotalRows = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cleaned = records
+        .map(_varshaCleanRow)
+        .where((record) => record.isNotEmpty)
+        .toList();
+    if (cleaned.isEmpty) return const SizedBox.shrink();
+    final columns = _varshaColumns(cleaned, preferredColumns);
+    if (columns.isEmpty) return const SizedBox.shrink();
+    final naturalWidth = columns.fold<double>(
+      0,
+      (sum, column) => sum + _varshaColumnWidth(column, cleaned),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: LayoutBuilder(builder: (context, constraints) {
+        final tableWidth = naturalWidth < constraints.maxWidth
+            ? constraints.maxWidth
+            : naturalWidth;
+        final needsScroll = naturalWidth > constraints.maxWidth + 1;
+        final table = ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFE6D7BA)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: SizedBox(
+              width: tableWidth,
+              child: Table(
+                columnWidths: {
+                  for (var i = 0; i < columns.length; i++)
+                    i: FixedColumnWidth(
+                      tableWidth *
+                          (_varshaColumnWidth(columns[i], cleaned) /
+                              naturalWidth),
+                    ),
+                },
+                border: TableBorder.symmetric(
+                  inside:
+                      const BorderSide(color: Color(0xFFE8E0CF), width: 0.8),
+                ),
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                children: [
+                  TableRow(
+                    decoration: const BoxDecoration(color: Color(0xFFD7AF4B)),
+                    children: columns
+                        .map((column) =>
+                            _VarshaTableHeader(_calcFriendlyTitle(column)))
+                        .toList(),
+                  ),
+                  ...cleaned.asMap().entries.map((entry) {
+                    final row = entry.value;
+                    final label = _calcKey(
+                      _calcValue(row['bala'] ?? row['name'] ?? row['yoga']),
+                    );
+                    final special = highlightTotalRows &&
+                        (label.contains('total') || label.contains('final'));
+                    return TableRow(
+                      decoration: BoxDecoration(
+                        color: special
+                            ? (label.contains('final')
+                                ? const Color(0xFFE2F8E9)
+                                : const Color(0xFFFFF4C7))
+                            : (entry.key.isEven
+                                ? Colors.white
+                                : const Color(0xFFFFFCF4)),
+                      ),
+                      children: columns.map((column) {
+                        return _VarshaTableCell(
+                          _varshaValue(row[column], key: column),
+                          attribute: column == columns.first || special,
+                        );
+                      }).toList(),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+        final wrapped = needsScroll
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal, child: table)
+            : table;
+        if (!needsScroll && !forceScrollHint) return wrapped;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (needsScroll || forceScrollHint) const _DashaScrollHint(),
+            if (needsScroll || forceScrollHint) const SizedBox(height: 5),
+            wrapped,
+          ],
+        );
+      }),
+    );
+  }
+}
+
+class _VarshaTableHeader extends StatelessWidget {
+  final String text;
+
+  const _VarshaTableHeader(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+      child: Text(
+        text.toUpperCase(),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Color(0xFF1E3557),
+          fontSize: 10.2,
+          height: 1.05,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _VarshaTableCell extends StatelessWidget {
+  final String text;
+  final bool attribute;
+
+  const _VarshaTableCell(this.text, {this.attribute = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+      child: Text(
+        text.isEmpty ? '-' : text,
+        maxLines: attribute ? 3 : 4,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: const Color(0xFF102A52),
+          fontSize: 10.8,
+          height: 1.08,
+          fontWeight: attribute ? FontWeight.w900 : FontWeight.w400,
+        ),
+      ),
+    );
+  }
+}
+
+const _varshaPlanetShort = ['su', 'mo', 'ma', 'me', 'ju', 've', 'sa'];
+
+List<Map<String, dynamic>> _varshaChartRows(dynamic value) {
+  return _calcRecordList(value).map((record) {
+    final planets = _calcAsList(record['planet'])
+        .map(_calcValue)
+        .where((item) => item != '-')
+        .join(', ');
+    return {
+      'sign': _calcValue(record['sign']),
+      'sign_name': _calcValue(record['sign_name'] ?? record['rashi']),
+      'planets': planets.isEmpty ? 'None' : planets,
+    };
+  }).toList();
+}
+
+Map<String, dynamic> _varshaPlanetRow(Map<String, dynamic> record) {
+  return {
+    'name': record['name'],
+    'sign': record['sign'],
+    'degree': _varshaDegree(
+      record['normDegree'] ?? record['norm_degree'] ?? record['degree'],
+    ),
+    'sign_lord': record['signLord'] ?? record['sign_lord'],
+    'nakshatra': record['nakshatra'],
+    'pada': record['nakshatra_pad'] ?? record['pada'] ?? record['charan'],
+    'house': record['house'],
+    'retro': _varshaBool(record['isRetro'] ?? record['retro']),
+    'combust': _varshaBool(record['is_planet_set'] ?? record['combust']),
+    'state': record['planet_awastha'] ?? record['state'],
+  }..removeWhere((key, value) => _calcIsMeaningfullyEmpty(value));
+}
+
+Map<String, dynamic> _kpPlanetRow(Map<String, dynamic> record) {
+  return {
+    'planet': record['planet'] ?? record['planet_name'] ?? record['name'],
+    'sign': record['sign'],
+    'degree': _kpDegree(
+      record['formatted_norm_degree'] ??
+          record['norm_degree'] ??
+          record['formatted_degree'] ??
+          record['degree'],
+    ),
+    'house': record['house'],
+    'sign_lord': record['sign_lord'] ?? record['signLord'],
+    'nakshatra': record['nakshatra'],
+    'nakshatra_lord': record['nakshatra_lord'] ?? record['nakshatraLord'],
+    'charan': record['charan'] ?? record['pada'] ?? record['nakshatra_pad'],
+    'sub_lord': record['sub_lord'] ?? record['subLord'],
+    'sub_sub_lord': record['sub_sub_lord'] ?? record['subSubLord'],
+    'retro': _varshaBool(record['is_retro'] ?? record['isRetro']),
+  }..removeWhere((key, value) => _calcIsMeaningfullyEmpty(value));
+}
+
+Map<String, dynamic> _kpHouseCuspRow(Map<String, dynamic> record) {
+  return {
+    'house': record['house'] ?? record['house_id'],
+    'sign': record['sign'],
+    'degree': _kpDegree(
+      record['formatted_degree'] ??
+          record['cusp_full_degree'] ??
+          record['degree'],
+    ),
+    'sign_lord': record['sign_lord'] ?? record['signLord'],
+    'nakshatra': record['nakshatra'],
+    'nakshatra_lord': record['nakshatra_lord'] ?? record['nakshatraLord'],
+    'sub_lord': record['sub_lord'] ?? record['subLord'],
+    'sub_sub_lord': record['sub_sub_lord'] ?? record['subSubLord'],
+  }..removeWhere((key, value) => _calcIsMeaningfullyEmpty(value));
+}
+
+String _kpListValue(dynamic value, {String emptyText = '-'}) {
+  final items = _calcAsList(value)
+      .map(_calcValue)
+      .where((item) => item != '-' && item.trim().isNotEmpty)
+      .toList();
+  return items.isEmpty ? emptyText : items.join(', ');
+}
+
+String _kpDegree(dynamic value) {
+  if (_calcIsMeaningfullyEmpty(value)) return '-';
+  if (value is num) return _varshaDegree(value);
+  final text = _calcValue(value);
+  final parts = text.split(':');
+  if (parts.length == 3 && parts.every((part) => int.tryParse(part) != null)) {
+    return '${parts[0]}d${parts[1]}\'${parts[2]}"';
+  }
+  return _calcCleanText(text);
+}
+
+List<Map<String, dynamic>> _ashtakRows(dynamic value) {
+  final map = _calcAsMap(_calcCleanValue(value));
+  final points = _calcAsMap(map['ashtak_points'] ?? map['points']);
+  if (points.isEmpty) return const [];
+
+  const orderedSigns = [
+    'aries',
+    'taurus',
+    'gemini',
+    'cancer',
+    'leo',
+    'virgo',
+    'libra',
+    'scorpio',
+    'sagittarius',
+    'capricorn',
+    'aquarius',
+    'pisces',
+  ];
+  final rows = <Map<String, dynamic>>[];
+  for (final sign in orderedSigns) {
+    final values = _calcAsMap(points[sign]);
+    if (values.isEmpty) continue;
+    rows.add(_ashtakRow(sign, values));
+  }
+  for (final entry in points.entries) {
+    final sign = _calcKey(entry.key);
+    if (orderedSigns.contains(sign)) continue;
+    final values = _calcAsMap(entry.value);
+    if (values.isEmpty) continue;
+    rows.add(_ashtakRow(sign, values));
+  }
+  return rows;
+}
+
+Map<String, dynamic> _ashtakRow(
+  String sign,
+  Map<String, dynamic> values,
+) {
+  return {
+    'sign': _ashtakSignLabel(sign),
+    'sun': values['sun'],
+    'moon': values['moon'],
+    'mars': values['mars'],
+    'mercury': values['mercury'],
+    'jupiter': values['jupiter'],
+    'venus': values['venus'],
+    'saturn': values['saturn'],
+    'ascendant': values['ascendant'] ?? values['asc'],
+    'total': values['total'],
+  };
+}
+
+String _ashtakSignLabel(String sign) {
+  const signs = {
+    'aries': 'Ari',
+    'taurus': 'Tau',
+    'gemini': 'Gem',
+    'cancer': 'Can',
+    'leo': 'Leo',
+    'virgo': 'Vir',
+    'libra': 'Lib',
+    'scorpio': 'Sco',
+    'sagittarius': 'Sag',
+    'capricorn': 'Cap',
+    'aquarius': 'Aqu',
+    'pisces': 'Pis',
+  };
+  final key = _calcKey(sign);
+  return signs[key] ?? _calcFriendlyTitle(sign);
+}
+
+String _ashtakColumnLabel(String column) {
+  const labels = {
+    'sign': 'Sign',
+    'sun': 'Su',
+    'moon': 'Mo',
+    'mars': 'Ma',
+    'mercury': 'Me',
+    'jupiter': 'Ju',
+    'venus': 'Ve',
+    'saturn': 'Sa',
+    'ascendant': 'Asc',
+    'total': 'Total',
+  };
+  return labels[column] ?? _calcFriendlyTitle(column);
+}
+
+Color _ashtakTotalColor(String value, bool isSarvashtak) {
+  final total = num.tryParse(value);
+  if (total == null) return const Color(0xFF0EA5E9);
+  if (isSarvashtak) {
+    if (total >= 28) return const Color(0xFF10B981);
+    if (total >= 24) return const Color(0xFF0EA5E9);
+    return const Color(0xFFF43F5E);
+  }
+  if (total >= 5) return const Color(0xFF10B981);
+  if (total >= 4) return const Color(0xFF0EA5E9);
+  return const Color(0xFFF43F5E);
+}
+
+Map<String, dynamic> _varshaCleanRow(Map<String, dynamic> record) {
+  final cleaned = <String, dynamic>{};
+  for (final entry in record.entries) {
+    if (_calcShouldHideKey(entry.key) ||
+        _varshaShouldHideKey(entry.key) ||
+        _calcIsImageKey(entry.key) ||
+        _calcIsMeaningfullyEmpty(entry.value)) {
+      continue;
+    }
+    cleaned[entry.key] = _calcCleanValue(entry.value);
+  }
+  return cleaned;
+}
+
+List<MapEntry<String, dynamic>> _varshaVisibleEntries(
+    Map<String, dynamic> map) {
+  return map.entries
+      .where((entry) =>
+          !_calcShouldHideKey(entry.key) &&
+          !_varshaShouldHideKey(entry.key) &&
+          !_calcIsMeaningfullyEmpty(entry.value))
+      .toList();
+}
+
+bool _varshaShouldHideKey(String key) {
+  final compact = _calcKey(key);
+  return compact == 'id' ||
+      compact.endsWith('_id') ||
+      compact == 'varshaphala_timestamp' ||
+      compact == 'timestamp' ||
+      compact == 'planet_degree' ||
+      compact == 'planet_small' ||
+      compact == 'fulldegree' ||
+      compact == 'full_degree' ||
+      compact == 'normdegree' ||
+      compact == 'norm_degree';
+}
+
+List<String> _varshaColumns(
+  List<Map<String, dynamic>> rows,
+  List<String> preferred,
+) {
+  final discovered = <String>[];
+  for (final row in rows) {
+    for (final key in row.keys) {
+      if (_varshaShouldHideKey(key) || discovered.contains(key)) continue;
+      discovered.add(key);
+    }
+  }
+  final ordered = <String>[];
+  for (final key in preferred) {
+    final actual = discovered.firstWhere(
+      (candidate) => _calcKey(candidate) == _calcKey(key),
+      orElse: () => '',
+    );
+    if (actual.isNotEmpty && !ordered.contains(actual)) ordered.add(actual);
+  }
+  for (final key in discovered) {
+    if (!ordered.contains(key)) ordered.add(key);
+  }
+  return ordered;
+}
+
+double _varshaColumnWidth(
+  String column,
+  List<Map<String, dynamic>> rows,
+) {
+  final key = _calcKey(column);
+  if (key == 'no' || key == 'sign' || key == 'house' || key == 'pada') {
+    return 48;
+  }
+  if (_varshaPlanetShort.contains(key)) return 46;
+  if (key == 'retro' || key == 'combust' || key == 'status') return 60;
+  if (key == 'bala') return 98;
+  if (key == 'name' || key == 'yoga') return 112;
+  if (key == 'planets') return 118;
+  if (key.contains('nakshatra')) return 118;
+  if (key.contains('lord')) return 88;
+  if (key.contains('degree')) return 96;
+  if (key.contains('prediction')) return 180;
+  final longest = rows
+      .map((row) => _varshaValue(row[column], key: column).length)
+      .fold<int>(0, math.max);
+  if (longest <= 5) return 50;
+  if (longest <= 12) return 76;
+  if (longest <= 24) return 104;
+  return 142;
+}
+
+String _varshaValue(dynamic value, {String key = ''}) {
+  if (_calcIsMeaningfullyEmpty(value)) return '-';
+  final compact = _calcKey(key);
+  if (compact.contains('degree')) return _varshaDegree(value);
+  if (value is bool) return value ? 'Yes' : 'No';
+  if (value is String &&
+      (value.toLowerCase() == 'true' || value.toLowerCase() == 'false')) {
+    return value.toLowerCase() == 'true' ? 'Yes' : 'No';
+  }
+  if (value is num) return _varshaNumber(value);
+  return _calcCleanText(_calcValue(value));
+}
+
+String _varshaBool(dynamic value) {
+  if (value is bool) return value ? 'Yes' : 'No';
+  final text = value?.toString().trim().toLowerCase();
+  if (text == 'true' || text == '1' || text == 'yes') return 'Yes';
+  if (text == 'false' || text == '0' || text == 'no') return 'No';
+  return _calcValue(value);
+}
+
+String _varshaNumber(dynamic value) {
+  final number = value is num ? value.toDouble() : double.tryParse('$value');
+  if (number == null) return _calcValue(value);
+  final fixed = number.toStringAsFixed(2);
+  return fixed.replaceAll(RegExp(r'\.?0+$'), '');
+}
+
+String _varshaDegree(dynamic value) {
+  final number = value is num ? value.toDouble() : double.tryParse('$value');
+  if (number == null) return _calcValue(value);
+  final normalized = number < 0 ? (number % 360) + 360 : number % 360;
+  final degrees = normalized.floor();
+  final minutesFloat = (normalized - degrees) * 60;
+  final minutes = minutesFloat.floor();
+  final seconds = ((minutesFloat - minutes) * 60).round();
+  return '${degrees}d${minutes.toString().padLeft(2, '0')}'
+      '\'${seconds.toString().padLeft(2, '0')}"';
+}
+
 List<String> _dashaColumns(List<Map<String, dynamic>> records) {
   final discovered = <String>[];
   for (final record in records) {
@@ -2278,6 +4572,108 @@ double _dashaColumnWidth(String column) {
   if (key.contains('duration')) return 82;
   if (key.contains('lord') || key.contains('sign')) return 86;
   return 104;
+}
+
+List<Map<String, dynamic>> _yoginiMajorRows(dynamic value) {
+  return _calcRecordList(_calcCleanValue(value))
+      .map((record) => {
+            'dasha': _yoginiDashaName(record),
+            'start': _yoginiDate(record['start_date'] ?? record['start']),
+            'end': _yoginiDate(record['end_date'] ?? record['end']),
+            if (!_calcIsMeaningfullyEmpty(record['duration']))
+              'duration': _yoginiDuration(record['duration']),
+          })
+      .where((row) => row.values.any((item) => _calcValue(item) != '-'))
+      .toList();
+}
+
+List<Map<String, dynamic>> _yoginiCurrentRows(dynamic value) {
+  final map = _calcAsMap(_calcCleanValue(value));
+  final rows = <Map<String, dynamic>>[];
+  for (final entry in const [
+    MapEntry('Mahadasha', 'major_dasha'),
+    MapEntry('Antardasha', 'sub_dasha'),
+    MapEntry('Pratyantardasha', 'sub_sub_dasha'),
+  ]) {
+    final record = _calcAsMap(map[entry.value]);
+    if (record.isEmpty) continue;
+    rows.add({
+      'level': entry.key,
+      'dasha': _yoginiDashaName(record),
+      'start': _yoginiDate(record['start_date'] ?? record['start']),
+      'end': _yoginiDate(record['end_date'] ?? record['end']),
+      if (!_calcIsMeaningfullyEmpty(record['duration']))
+        'duration': _yoginiDuration(record['duration']),
+    });
+  }
+  return rows;
+}
+
+_YoginiSubGroup _yoginiSubGroup(Map<String, dynamic> record) {
+  final major = _calcAsMap(record['major_dasha']);
+  final rows = _calcRecordList(record['sub_dasha'])
+      .map((sub) => {
+            'dasha': _yoginiDashaName(sub),
+            'start': _yoginiDate(sub['start_date'] ?? sub['start']),
+            'end': _yoginiDate(sub['end_date'] ?? sub['end']),
+          })
+      .where((row) => row.values.any((item) => _calcValue(item) != '-'))
+      .toList();
+  return _YoginiSubGroup(
+    name: major.isEmpty ? 'Yogini Dasha' : _yoginiDashaName(major),
+    rows: rows,
+  );
+}
+
+String _yoginiDashaName(Map<String, dynamic> record) {
+  final name = _calcCleanText(
+    _calcValue(record['dasha_name'] ?? record['name'] ?? record['dasha']),
+  );
+  if (name == '-') return name;
+  final suffix = _yoginiPlanetSuffix(record['dasha_id'], name);
+  if (suffix.isEmpty || name.contains('(')) return name;
+  return '$name ($suffix)';
+}
+
+String _yoginiPlanetSuffix(dynamic id, String name) {
+  final dashaId = id is num ? id.toInt() : int.tryParse('$id');
+  const byId = {
+    0: 'Mo',
+    1: 'Su',
+    2: 'Ju',
+    3: 'Ma',
+    4: 'Me',
+    5: 'Sa',
+    6: 'Ve',
+    7: 'Ra-Ke',
+  };
+  if (dashaId != null && byId.containsKey(dashaId)) return byId[dashaId]!;
+  const byName = {
+    'mangla': 'Mo',
+    'mangala': 'Mo',
+    'pingla': 'Su',
+    'pingala': 'Su',
+    'dhanya': 'Ju',
+    'bhramari': 'Ma',
+    'bhadrika': 'Me',
+    'ulka': 'Sa',
+    'siddha': 'Ve',
+    'sankata': 'Ra-Ke',
+  };
+  return byName[_calcKey(name)] ?? '';
+}
+
+String _yoginiDate(dynamic value) {
+  final text = _calcCleanText(_calcValue(value));
+  if (text == '-') return text;
+  return text.replaceFirst(RegExp(r'\s+'), ' • ');
+}
+
+String _yoginiDuration(dynamic value) {
+  if (_calcIsMeaningfullyEmpty(value)) return '-';
+  if (value is num) return '${_varshaNumber(value)} yr';
+  final text = _calcCleanText(_calcValue(value));
+  return text.toLowerCase().contains('year') ? text : '$text yr';
 }
 
 class _NestedRecordResultBody extends StatelessWidget {
@@ -3676,11 +6072,13 @@ String _calcFriendlyTitle(dynamic raw) {
     'sub_sub_chardasha': 'Sub Sub Char Dasha',
     'major_yogini_dasha': 'Major Yogini Dasha',
     'current_yogini_dasha': 'Current Yogini Dasha',
+    'yogini_dasha_details': 'Yogini Dasha Details',
     'sub_yogini_dasha': 'Sub Yogini Dasha',
     'varshaphal_year_chart': 'Varshaphal Year Chart',
     'varshaphal_month_chart': 'Varshaphal Month Chart',
     'varshaphal_details': 'Varshaphal Details',
     'varshaphal_planets': 'Varshaphal Planets',
+    'varshaphal_muntha': 'Muntha',
     'varshaphal_mudda_dasha': 'Mudda Dasha',
     'varshaphal_panchavargeeya_bala': 'Panchavargeeya Bala',
     'varshaphal_harsha_bala': 'Harsha Bala',
@@ -3697,6 +6095,7 @@ String _calcFriendlyTitle(dynamic raw) {
     'moon_biorhythm': 'Moon Biorhythm',
   };
   if (overrides.containsKey(key)) return overrides[key]!;
+  if (key.startsWith('planet_ashtak')) return 'Ashtakavarga';
   final spaced = raw.toString().replaceAll('_', ' ').replaceAll('-', ' ');
   return spaced
       .split(RegExp(r'\s+'))

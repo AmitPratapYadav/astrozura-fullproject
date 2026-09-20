@@ -682,14 +682,27 @@ class _LalKitabResultScreenState extends State<_LalKitabResultScreen> {
   }
 
   Widget _resultHeader() {
+    const accent = Color(0xFF9F1239);
+    const soft = Color(0xFFFFEEF2);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(14, 6, 14, 10),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(8, 10, 14, 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          colors: [soft, Colors.white],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE6D7BA)),
+        border: Border.all(color: accent.withValues(alpha: 0.34)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -697,10 +710,25 @@ class _LalKitabResultScreenState extends State<_LalKitabResultScreen> {
             onPressed: _safeBack,
             icon: const Icon(
               Icons.arrow_circle_left_rounded,
-              color: Color(0xFF1E3557),
+              color: accent,
             ),
           ),
           const SizedBox(width: 6),
+          Container(
+            width: 44,
+            height: 44,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: accent.withValues(alpha: 0.26)),
+            ),
+            child: Image.asset(
+              'assets/images/reports/report-lal-kitab.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -16,6 +16,7 @@ import 'widgets/panchang_screen.dart';
 import 'widgets/product_section.dart';
 import 'widgets/puja_section.dart';
 import 'widgets/service_tools_section.dart';
+import 'widgets/tarot_spotlight_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -97,6 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     title: 'Tools for Deeper Insight',
                     services: calculatorServices,
                   ),
+                  const SizedBox(height: 18),
+                  const TarotSpotlightBanner(),
                   const SizedBox(height: 20),
                   const ProductsSection(),
                   const SizedBox(height: 28),

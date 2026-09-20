@@ -210,7 +210,7 @@ export default function MyBookings() {
           </p>
           <h3 className="mt-2 text-lg font-bold text-[#1E3557]">{booking.astrologer_name}</h3>
           <p className="mt-1 text-sm text-gray-500">
-            {booking.consultation_type === "chat" ? "Chat Consultation" : "Audio Call"} for{" "}
+            {booking.consultation_type === "chat" ? "Chat Consultation" : "Call"} for{" "}
             {booking.duration} minutes
           </p>
         </div>

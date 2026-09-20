@@ -103,12 +103,12 @@ const ValueCardGrid = ({ entries }) => {
       {entries.map(([key, value]) => (
         <div
           key={key}
-          className="rounded-2xl border border-[#E6D7BA] bg-white px-4 py-3 shadow-sm transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]"
+          className="rounded-2xl border border-[#E6D7BA] bg-white px-3 py-2.5 shadow-sm transition-colors hover:bg-[#FFF7DF] active:bg-[#FCE9AE]"
         >
-          <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+          <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[#1E3C72]">
             {formatReportLabel(key)}
           </span>
-          <span className="mt-1 block break-words text-sm font-black leading-6 text-[#1E3557]">
+          <span className="mt-0.5 block break-words text-xs font-semibold leading-5 text-slate-700 sm:text-sm">
             {formatValue(value)}
           </span>
         </div>
@@ -150,7 +150,7 @@ const ArrayCards = ({ rows }) => {
   return (
     <div className="grid gap-3 md:hidden">
       {cards.map((card) => (
-        <div key={card.sn} className="rounded-2xl border border-[#E6D7BA] bg-white p-4 shadow-sm">
+        <div key={card.sn} className="rounded-2xl border border-[#E6D7BA] bg-white p-3 shadow-sm">
           <div className="mb-3 inline-flex rounded-full bg-[#FFF3C4] px-3 py-1 text-xs font-black text-[#8A6200]">
             S.N. {card.sn}
           </div>
@@ -183,9 +183,9 @@ const ArrayTable = ({ rows }) => {
           <table className="w-full min-w-[560px] border-collapse text-left text-xs">
             <thead>
               <tr className="bg-[#D7AF4B] text-[#1E3557]">
-                <th className="border border-[#D7AF4B] px-3 py-3 font-black">S.N.</th>
+                <th className="border border-[#D7AF4B] px-2 py-2 font-black">S.N.</th>
                 {headers.map((heading) => (
-                  <th key={heading} className="border border-[#D7AF4B] px-3 py-3 font-black">
+                  <th key={heading} className="border border-[#D7AF4B] px-2 py-2 font-black">
                     {formatReportLabel(heading)}
                   </th>
                 ))}
@@ -197,9 +197,9 @@ const ArrayTable = ({ rows }) => {
                   key={index}
                   className="border-b border-gray-100 transition-colors odd:bg-white even:bg-[#F8FAFC] hover:bg-[#FFF7DF] active:bg-[#FCE9AE]"
                 >
-                  <td className="border border-gray-200 px-3 py-3 align-top text-slate-700">{index + 1}</td>
+                  <td className="border border-gray-200 px-2 py-2 align-top text-slate-700">{index + 1}</td>
                   {headers.map((heading) => (
-                    <td key={heading} className="border border-gray-200 px-3 py-3 align-top text-slate-700">
+                    <td key={heading} className="border border-gray-200 px-2 py-2 align-top leading-5 text-slate-700">
                       {formatValue(row?.[heading])}
                     </td>
                   ))}
@@ -210,10 +210,10 @@ const ArrayTable = ({ rows }) => {
                   key={`primitive-${index}`}
                   className="border-b border-gray-100 transition-colors odd:bg-white even:bg-[#F8FAFC] hover:bg-[#FFF7DF] active:bg-[#FCE9AE]"
                 >
-                  <td className="border border-gray-200 px-3 py-3 align-top text-slate-700">
+                  <td className="border border-gray-200 px-2 py-2 align-top text-slate-700">
                     {objectRows.length + index + 1}
                   </td>
-                  <td className="border border-gray-200 px-3 py-3 align-top text-slate-700">{formatValue(row)}</td>
+                  <td className="border border-gray-200 px-2 py-2 align-top text-slate-700">{formatValue(row)}</td>
                 </tr>
               ))}
             </tbody>
@@ -228,8 +228,8 @@ const ArraySection = ({ title, rows }) => {
   if (!Array.isArray(rows) || !rows.length) return null;
 
   return (
-    <section className="space-y-3">
-      <h5 className="text-sm font-black text-[#1E3557]">{formatReportLabel(title)}</h5>
+    <section className="space-y-2">
+      <h5 className="text-xs font-black text-[#1E3557]">{formatReportLabel(title)}</h5>
       <ArrayCards rows={rows} />
       <ArrayTable rows={rows} />
     </section>
@@ -241,11 +241,11 @@ const ObjectSection = ({ title, value, level = 0 }) => {
 
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     return (
-      <div className="rounded-2xl border border-[#E6D7BA] bg-white px-4 py-3 shadow-sm">
-        <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+      <div className="rounded-2xl border border-[#E6D7BA] bg-white px-3 py-2.5 shadow-sm">
+        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1E3C72]">
           {formatReportLabel(title)}
         </span>
-        <span className="mt-1 block text-sm font-black text-[#1E3557]">{formatValue(data)}</span>
+        <span className="mt-0.5 block text-xs font-semibold text-slate-700 sm:text-sm">{formatValue(data)}</span>
       </div>
     );
   }
@@ -254,8 +254,8 @@ const ObjectSection = ({ title, value, level = 0 }) => {
   const children = complexEntries(data);
 
   return (
-    <section className={`space-y-4 ${level === 0 ? "" : "rounded-2xl border border-[#E6D7BA] bg-[#FFFDF7] p-4"}`}>
-      {title ? <h5 className="text-sm font-black text-[#1E3557]">{formatReportLabel(title)}</h5> : null}
+    <section className={`space-y-3 ${level === 0 ? "" : "rounded-2xl border border-[#E6D7BA] bg-[#FFFDF7] p-3"}`}>
+      {title ? <h5 className="text-xs font-black text-[#1E3557]">{formatReportLabel(title)}</h5> : null}
       <ValueCardGrid entries={scalars} />
       {children.map(([key, item]) =>
         Array.isArray(item) ? (
@@ -283,18 +283,15 @@ export default function BiorhythmReport({ kundli, result }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {visibleModules.map((module) => {
         const data = unwrap(module.entry);
         const scalars = scalarEntries(data);
         const children = complexEntries(data);
 
         return (
-          <section key={module.key} className="overflow-hidden rounded-[2rem] border border-[#E6D7BA] bg-white shadow-sm">
-            <div className="bg-[#D7AF4B] px-5 py-4">
-              <h4 className="text-lg font-black text-[#1E3557]">{module.title}</h4>
-            </div>
-            <div className="space-y-5 p-5">
+          <section key={module.key} className="space-y-4">
+            <div className="space-y-4">
               <ValueCardGrid entries={scalars} />
               {Array.isArray(data) ? (
                 <ArraySection title={module.title} rows={data} />

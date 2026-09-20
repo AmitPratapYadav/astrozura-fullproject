@@ -40,6 +40,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
       HomeBannerDestination.shop => 3,
       HomeBannerDestination.pooja => 7,
       HomeBannerDestination.horoscope => 11,
+      HomeBannerDestination.tarot => 28,
     };
     if (MainNavigationState.activateIndex(index)) return;
     Navigator.push(

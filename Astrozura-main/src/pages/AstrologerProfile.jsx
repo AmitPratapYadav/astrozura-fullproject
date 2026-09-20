@@ -14,7 +14,6 @@ export default function AstrologerProfile() {
 
 const { id } = useParams()
 const [msg,setMsg] = useState("")
-const [activeBtn,setActiveBtn] = useState(null)
 const [astrologer, setAstrologer] = useState(null)
 const [similarAstrologers, setSimilarAstrologers] = useState([])
 const [loading, setLoading] = useState(true)
@@ -28,7 +27,7 @@ const showMsg = (text)=>{
 }
 
 const handleBtn = (id,text)=>{
-  setActiveBtn(id)
+  void id
   showMsg(text + " Clickable")
 }
 
@@ -214,7 +213,7 @@ Book Chat (Rs {details.chat_price || 0}/min)
 
 <button
 onClick={()=>{
-handleBtn("call","Audio Call")
+handleBtn("call","Call")
 navigate(`/consultation/${astrologer.id}`,{ state:{ type:"call", astrologer} })
 }}
 className="px-7 py-3 rounded-xl shadow border bg-white text-[#D4A73C] border-[#c7926a]"

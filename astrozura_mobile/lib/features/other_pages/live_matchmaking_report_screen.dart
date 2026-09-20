@@ -18,11 +18,16 @@ class LiveMatchmakingReportScreen extends StatefulWidget {
 class _LiveMatchmakingReportScreenState
     extends State<LiveMatchmakingReportScreen> {
   static const _navy = Color(0xFF1E3557);
+  static const _languageCodes = {
+    'English': 'en',
+    'Hindi': 'hi',
+  };
 
   final AstrologyService _service = AstrologyService();
   final RecentProfileService _recentProfiles = RecentProfileService();
   final _male = _PersonBirthForm(role: 'male');
   final _female = _PersonBirthForm(role: 'female');
+  String _language = 'English';
   bool _loading = false;
   String? _error;
 
@@ -63,7 +68,7 @@ class _LiveMatchmakingReportScreenState
         'girl_coordinates': femaleLocation.coordinates,
         'boy_timezone': '+05:30',
         'girl_timezone': '+05:30',
-        'la': 'en',
+        'la': _languageCodes[_language] ?? 'en',
       });
       if (!mounted) return;
       setState(() => _loading = false);
@@ -80,6 +85,7 @@ class _LiveMatchmakingReportScreenState
               male: _MatchPerson.fromForm(_male, maleLocation),
               female: _MatchPerson.fromForm(_female, femaleLocation),
               response: response,
+              languageCode: _languageCodes[_language] ?? 'en',
             ),
           ),
         );
@@ -204,6 +210,8 @@ class _LiveMatchmakingReportScreenState
                     onChooseRecent: () => _showRecentProfiles(_female),
                   ),
                   const SizedBox(height: 16),
+                  _languagePicker(),
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -256,17 +264,47 @@ class _LiveMatchmakingReportScreenState
       ),
     );
   }
+
+  Widget _languagePicker() {
+    return DropdownButtonFormField<String>(
+      initialValue: _language,
+      isExpanded: true,
+      decoration: InputDecoration(
+        isDense: true,
+        labelText: 'Report Language',
+        prefixIcon: const Icon(Icons.translate_rounded),
+        filled: true,
+        fillColor: const Color(0xFFFFF8E5),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      items: _languageCodes.keys
+          .map(
+            (language) => DropdownMenuItem(
+              value: language,
+              child: Text(language),
+            ),
+          )
+          .toList(),
+      onChanged: (value) {
+        if (value != null) setState(() => _language = value);
+      },
+    );
+  }
 }
 
 class _MatchmakingResultScreen extends StatefulWidget {
   final _MatchPerson male;
   final _MatchPerson female;
   final Map<String, dynamic> response;
+  final String languageCode;
 
   const _MatchmakingResultScreen({
     required this.male,
     required this.female,
     required this.response,
+    required this.languageCode,
   });
 
   @override
@@ -287,22 +325,38 @@ class _MatchmakingResultScreenState extends State<_MatchmakingResultScreen> {
   String? _chartError;
   final Map<String, _ChartPair> _chartCache = {};
 
-  List<_MatchTab> get _tabs => [
-        ..._sectionTabs(widget.response),
-        _MatchTab(
-          id: 'match-summary-conclusion',
-          title: 'Match Conclusion',
-          summary: '',
-          data: widget.response,
-        ),
-        _MatchTab(
-          id: 'match-divisional-charts',
-          title: 'Match Divisional Charts',
-          summary: 'Compare Male and Female Kundali charts side by side.',
-          data: const {},
-          isCharts: true,
-        ),
-      ];
+  List<_MatchTab> get _tabs {
+    final sections = _sectionTabs(widget.response);
+    final charts = _MatchTab(
+      id: 'match-divisional-charts',
+      title: 'Divisional Charts',
+      summary: 'Compare Male and Female Kundali charts side by side.',
+      data: const {},
+      isCharts: true,
+    );
+    final tabs = <_MatchTab>[];
+    var insertedCharts = false;
+    for (final section in sections) {
+      tabs.add(section);
+      final marker = '${section.id} ${section.title}'.toLowerCase();
+      if (!insertedCharts && marker.contains('astro')) {
+        tabs.add(charts);
+        insertedCharts = true;
+      }
+    }
+    if (!insertedCharts) {
+      final ashtakootIndex = tabs.indexWhere((tab) =>
+          '${tab.id} ${tab.title}'.toLowerCase().contains('ashtakoot'));
+      tabs.insert(ashtakootIndex > 0 ? ashtakootIndex : tabs.length, charts);
+    }
+    tabs.add(_MatchTab(
+      id: 'match-summary-conclusion',
+      title: 'Match Conclusion',
+      summary: '',
+      data: widget.response,
+    ));
+    return tabs;
+  }
 
   @override
   void initState() {
@@ -318,7 +372,10 @@ class _MatchmakingResultScreenState extends State<_MatchmakingResultScreen> {
   }
 
   Future<void> _ensureChartsLoaded() async {
-    if (_index != _tabs.length - 1 || _chartCache.containsKey(_chartType)) {
+    final tabs = _tabs;
+    if (_index >= tabs.length ||
+        !tabs[_index].isCharts ||
+        _chartCache.containsKey(_chartType)) {
       return;
     }
     setState(() {
@@ -327,8 +384,12 @@ class _MatchmakingResultScreenState extends State<_MatchmakingResultScreen> {
     });
     try {
       final results = await Future.wait([
-        _service.divisionalCharts(widget.male.chartPayload(_chartType)),
-        _service.divisionalCharts(widget.female.chartPayload(_chartType)),
+        _service.divisionalCharts(
+          widget.male.chartPayload(_chartType, widget.languageCode),
+        ),
+        _service.divisionalCharts(
+          widget.female.chartPayload(_chartType, widget.languageCode),
+        ),
       ]);
       if (!mounted) return;
       setState(() {
@@ -420,7 +481,7 @@ class _MatchmakingResultScreenState extends State<_MatchmakingResultScreen> {
                       onPageChanged: (next) {
                         setState(() => _index = next);
                         _scrollTab(next);
-                        if (next == tabs.length - 1) {
+                        if (tabs[next].isCharts) {
                           Future.microtask(_ensureChartsLoaded);
                         }
                       },
@@ -751,27 +812,62 @@ class _ResultHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 34,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints.tightFor(width: 34, height: 42),
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_circle_left_rounded, size: 22),
+    const accent = Color(0xFF7C3AED);
+    const soft = Color(0xFFF3E8FF);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(6, 8, 8, 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [soft, Colors.white],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withValues(alpha: 0.34)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
           ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _ProfileCard(person: male, icon: Icons.male),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _ProfileCard(person: female, icon: Icons.female),
-        ),
-      ],
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 34,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 34, height: 42),
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(
+                Icons.arrow_circle_left_rounded,
+                size: 22,
+                color: accent,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _ProfileCard(
+              person: male,
+              icon: Icons.male,
+              accent: const Color(0xFF2563EB),
+              soft: const Color(0xFFEFF6FF),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _ProfileCard(
+              person: female,
+              icon: Icons.female,
+              accent: const Color(0xFFDB2777),
+              soft: const Color(0xFFFDF2F8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -779,17 +875,24 @@ class _ResultHeader extends StatelessWidget {
 class _ProfileCard extends StatelessWidget {
   final _MatchPerson person;
   final IconData icon;
+  final Color accent;
+  final Color soft;
 
-  const _ProfileCard({required this.person, required this.icon});
+  const _ProfileCard({
+    required this.person,
+    required this.icon,
+    required this.accent,
+    required this.soft,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: soft,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8D7A7)),
+        border: Border.all(color: accent.withValues(alpha: 0.26)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -798,8 +901,8 @@ class _ProfileCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 14,
-                backgroundColor: const Color(0xFFFFF3D0),
-                foregroundColor: const Color(0xFF1E3557),
+                backgroundColor: Colors.white,
+                foregroundColor: accent,
                 child: Icon(icon, size: 16),
               ),
               const SizedBox(width: 6),
@@ -2164,11 +2267,11 @@ class _MatchPerson {
     );
   }
 
-  Map<String, dynamic> chartPayload(String chartType) => {
+  Map<String, dynamic> chartPayload(String chartType, String languageCode) => {
         'datetime': _isoDateTime(date, time),
         'coordinates': coordinates,
         'ayanamsa': 1,
-        'la': 'en',
+        'la': languageCode,
         'chart_type': chartType,
       };
 }
@@ -2218,11 +2321,11 @@ class _ChartOption {
 }
 
 const _chartOptions = [
-  _ChartOption('chalit', 'Chalit Chart'),
-  _ChartOption('gochar', 'Gochar / Transit Chart'),
-  _ChartOption('sun', 'Sun Chart'),
-  _ChartOption('moon', 'Moon Chart'),
   _ChartOption('rasi', 'D1 Birth Chart'),
+  _ChartOption('moon', 'Moon Chart'),
+  _ChartOption('chalit', 'Chalit Chart'),
+  _ChartOption('gochar', 'Gochar Chart'),
+  _ChartOption('sun', 'Sun Chart'),
   _ChartOption('hora', 'D2 Hora Chart'),
   _ChartOption('drekkana', 'D3 Drekkana Chart'),
   _ChartOption('chaturthamsa', 'D4 Chaturthamsha Chart'),
@@ -3213,9 +3316,13 @@ String? _chartSvg(Map<String, dynamic>? chart) {
   if (chart == null) return null;
   final candidates = [
     chart['chart_svg'],
+    chart['chart_data'],
     chart['svg'],
+    _asMap(chart['chart_data'])?['svg'],
     _asMap(chart['chart'])?['svg'],
     _asMap(chart['data'])?['chart_svg'],
+    _asMap(chart['data'])?['chart_data'],
+    _asMap(_asMap(chart['data'])?['chart_data'])?['svg'],
   ];
   for (final value in candidates) {
     final text = _string(value);

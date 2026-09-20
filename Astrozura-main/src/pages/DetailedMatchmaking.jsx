@@ -11,10 +11,11 @@ import { FaHeart, FaStar, FaInfoCircle, FaSpinner, FaExchangeAlt, FaMars, FaVenu
 import { serviceCatalog } from "../data/serviceCatalog";
 import { getServiceIcon } from "../data/serviceIcons";
 import { ProviderSections } from "../components/report/ReportDataRenderer";
-import MatchDivisionalCharts, {
+import MatchDivisionalCharts from "../components/report/MatchDivisionalCharts";
+import {
   MATCH_DIVISIONAL_CHART_TYPES,
   normalizeMatchCharts,
-} from "../components/report/MatchDivisionalCharts";
+} from "../components/report/matchDivisionalChartUtils";
 import { buildRecentProfilePayload, profileTime } from "../utils/recentProfile";
 
 const initialForm = {
@@ -67,6 +68,32 @@ const formatProfileDate = (value) => {
   const [year, month, day] = value.split("-");
   if (!year || !month || !day) return value;
   return `${day}-${month}-${year}`;
+};
+
+const injectMatchChartSection = (sections = [], charts) => {
+  if (!charts?.male?.length && !charts?.female?.length) return sections;
+
+  const chartSection = {
+    id: "match-divisional-charts",
+    title: "Divisional Charts",
+    summary: "",
+    items: {},
+    customRender: <MatchDivisionalCharts charts={charts} title="Divisional Charts" />,
+  };
+
+  if (!Array.isArray(sections) || sections.length === 0) return [chartSection];
+
+  const output = [];
+  let inserted = false;
+  sections.forEach((section) => {
+    output.push(section);
+    if (!inserted && section?.id === "match-astro-details") {
+      output.push(chartSection);
+      inserted = true;
+    }
+  });
+
+  return inserted ? output : [chartSection, ...output];
 };
 
 export default function DetailedMatchmaking() {
@@ -594,14 +621,7 @@ export default function DetailedMatchmaking() {
                       </div>
                     </div>
                   </div>
-                  <ProviderSections
-                    sections={matchInfo.provider_sections || []}
-                    renderSectionExtra={(section) =>
-                      section?.id === "match-astro-details" ? (
-                        <MatchDivisionalCharts charts={matchInfo.match_charts} />
-                      ) : null
-                    }
-                  />
+                  <ProviderSections sections={injectMatchChartSection(matchInfo.provider_sections || [], matchInfo.match_charts)} />
                 </div>
               )}
             </main>

@@ -112,15 +112,6 @@ const getSuccessData = (providerPayload = {}, key) => {
   return item.status === "success" ? item.data : item.data || null;
 };
 
-const providerErrorRows = (providerPayload = {}) =>
-  Object.entries(providerPayload || {})
-    .filter(([, item]) => isObject(item) && item.status === "error")
-    .map(([key, item], index) => ({
-      id: index + 1,
-      endpoint: item.endpoint || key,
-      message: item.message || "Provider returned no data.",
-    }));
-
 export function ProviderErrorNotice() {
   return null;
 }
@@ -258,6 +249,17 @@ const compactRows = (data, omitKeys = []) =>
     .slice(0, 12)
     .map(([key, value]) => [formatReportLabel(key), stripHtml(displayCell(value))]);
 
+const statusTone = (value) => {
+  const text = String(value ?? "").toLowerCase();
+  if (/(no|not|absent|false|cancel|clean|inactive|weak)/.test(text)) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  }
+  if (/(yes|present|active|high|strong|detected)/.test(text)) {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+  return "border-[#E6D7BA] bg-[#FFF8E6] text-[#1E3557]";
+};
+
 const objectRows = (value, omitKeys = []) => {
   const parsed = parseMaybeJson(value);
   if (!isObject(parsed)) return [];
@@ -305,28 +307,6 @@ const cleanDashaRows = (value, extraOmitKeys = []) =>
     }
     return [label, item];
   });
-
-const humanizeRudrakshaKey = (value) => {
-  if (!value) return value;
-  const words = String(value).split(/_+/).filter(Boolean);
-  const groups = [];
-  for (let index = 0; index < words.length; index += 1) {
-    if (words[index + 1] === "faced") {
-      groups.push(`${words[index]} faced`);
-      index += 1;
-    } else {
-      groups.push(words[index]);
-    }
-  }
-  return groups
-    .map((group) =>
-      group
-        .split(/\s+/)
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ")
-    )
-    .join(" + ");
-};
 
 const getAny = (source, keys = []) => {
   if (!isObject(source)) return undefined;
@@ -1311,23 +1291,49 @@ export function SadeSatiReport({ result }) {
 export function KaalSarpDoshaReport({ result }) {
   const providerPayload = result?.data?.provider_payload || {};
   const data = getSuccessData(providerPayload, "kalsarpa_details") || result?.data;
+  const oneLine = stripHtml(data?.one_line || data?.oneLine || findValue(data, ["one_line", "oneline"]) || "");
+  const doshaName = data?.name || data?.dosha_name || data?.type || findValue(data, ["dosha_name", "kaal_sarp_type", "type"]) || "Kaal Sarp Dosha";
+  const status = getStatusText(data, "Present", "Not Present");
+  const direction = data?.direction || data?.dosha_direction || findValue(data, ["direction"]);
   const report = data?.report || data?.bot_response || data?.description || findValue(data, ["report", "description"]);
   const reportParagraphs = normalizeNarrativeList(report);
-  const detailRows = objectRows(data, ["report", "description", "bot_response"]);
+  const detailRows = objectRows(data, ["report", "description", "bot_response", "one_line", "oneLine", "house_id", "houseId"]);
 
   return (
-    <div className="space-y-6">
-      <ReportPanel title="Kalsarpa Details" subtitle="Kaal Sarp dosha presence, type and interpretation.">
-        <AttributeTable rows={detailRows} />
-      </ReportPanel>
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className={`rounded-2xl border px-4 py-3 shadow-sm ${statusTone(status)}`}>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] opacity-75">Status</p>
+          <p className="mt-1 text-sm font-black">{renderCleanValue(status)}</p>
+        </div>
+        <div className="rounded-2xl border border-[#E6D7BA] bg-white px-4 py-3 shadow-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Dosha</p>
+          <p className="mt-1 text-sm font-black text-[#1E3557]">{renderCleanValue(doshaName)}</p>
+        </div>
+        {direction ? (
+          <div className="rounded-2xl border border-[#E6D7BA] bg-white px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Direction</p>
+            <p className="mt-1 text-sm font-black text-[#1E3557]">{renderCleanValue(direction)}</p>
+          </div>
+        ) : null}
+      </div>
+
+      {oneLine ? (
+        <div className="rounded-2xl border border-[#C7F0DD] bg-[#ECFDF5] px-4 py-3 text-sm font-semibold leading-6 text-emerald-900 shadow-sm">
+          {oneLine}
+        </div>
+      ) : null}
+
+      {detailRows.length > 0 && <AttributeTable rows={detailRows} />}
+
       {reportParagraphs.length > 0 && (
-        <ReportPanel title="Report">
+        <div className="rounded-2xl border border-[#E6D7BA] bg-white p-4 shadow-sm">
           <div className="space-y-3 text-sm leading-7 text-gray-800">
             {reportParagraphs.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
             ))}
           </div>
-        </ReportPanel>
+        </div>
       )}
     </div>
   );
@@ -1350,8 +1356,23 @@ export function MangalDoshaReport({ result }) {
   const ruleRows = normalizeList(data?.manglik_present_rule || data?.rules || data?.based_on_aspect || data?.based_on_house);
 
   return (
-    <div className="space-y-6">
-      <ReportPanel title="Mangal Dosha Status">
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className={`rounded-2xl border px-4 py-3 shadow-sm ${statusTone(status)}`}>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] opacity-75">Mangal Dosha</p>
+          <p className="mt-1 text-lg font-black">{renderCleanValue(status)}</p>
+        </div>
+        <div className="rounded-2xl border border-[#B7D3F4] bg-[#EFF6FF] px-4 py-3 shadow-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#406A9E]">Present</p>
+          <p className="mt-1 text-lg font-black text-[#1E3557]">{renderCleanValue(data?.percentage_manglik_present ?? data?.percentage ?? "-")}</p>
+        </div>
+        <div className="rounded-2xl border border-[#F4D7A3] bg-[#FFFBEB] px-4 py-3 shadow-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8A6200]">After Cancellation</p>
+          <p className="mt-1 text-lg font-black text-[#1E3557]">{renderCleanValue(data?.percentage_manglik_after_cancellation ?? data?.percentage_after_cancellation ?? "-")}</p>
+        </div>
+      </div>
+
+      <ReportPanel title="Mangal Dosha Status" hideHeader>
         <AttributeTable rows={statusRows} />
         {report ? (
           <div className="mt-5 rounded-sm border border-amber-200 bg-amber-50 p-4">
@@ -1361,8 +1382,8 @@ export function MangalDoshaReport({ result }) {
       </ReportPanel>
 
       {ruleRows.length ? (
-        <ReportPanel title="Rules Matched">
-          <SimpleTextTable heading="Rule" items={ruleRows} />
+        <ReportPanel title="Rules Matched" hideHeader>
+          <SimpleTextTable title="Rule" items={ruleRows} />
         </ReportPanel>
       ) : null}
 

@@ -61,8 +61,18 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -181,7 +191,6 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
                                   icon: Icons.chat_bubble_outline,
                                   title: 'Chat',
                                   desc: 'Instant messaging',
-
                                 ),
                               ),
                             ),
@@ -197,9 +206,8 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
                                 child: _typeCard(
                                   isSelected: _selectedType == 'call',
                                   icon: Icons.call_outlined,
-                                  title: 'Audio Call',
+                                  title: 'Call',
                                   desc: 'Voice consultation',
-
                                 ),
                               ),
                             ),
@@ -392,8 +400,7 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
         ),
         const SizedBox(width: 8),
         Text(title,
-            style:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -413,10 +420,7 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
           color: isSelected ? const Color(0xFF2F5AA8) : Colors.grey.shade300,
         ),
         boxShadow: isSelected
-            ? [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.1), blurRadius: 10)
-              ]
+            ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)]
             : [],
       ),
       child: Column(
@@ -435,8 +439,7 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
               color: isSelected ? null : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon,
-                color: isSelected ? Colors.black : Colors.grey),
+            child: Icon(icon, color: isSelected ? Colors.black : Colors.grey),
           ),
           const SizedBox(height: 10),
           Text(title,
@@ -446,7 +449,6 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
           Text(desc,
               style: const TextStyle(fontSize: 12, color: Colors.black54)),
           const SizedBox(height: 6),
-
         ],
       ),
     );
@@ -549,8 +551,7 @@ class _ScheduleSessionScreenState extends State<ScheduleSessionScreen> {
                       : const Row(
                           children: [
                             Text('Choose Time Slot',
-                                style:
-                                    TextStyle(fontWeight: FontWeight.bold)),
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                             SizedBox(width: 6),
                             Icon(Icons.arrow_forward, size: 16),
                           ],

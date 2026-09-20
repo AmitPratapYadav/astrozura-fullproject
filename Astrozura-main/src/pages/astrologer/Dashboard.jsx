@@ -51,7 +51,7 @@ const formatBirthDetails = (birthDetails) => {
 
 const getConsultationLabel = (booking) => {
   if (booking.service_context === "ritual-consultation") return "Pooja Anusthan Consultation";
-  return booking.consultation_type === "call" ? "Audio Call" : "Chat Consultation";
+  return booking.consultation_type === "call" ? "Call" : "Chat Consultation";
 };
 
 const getActivityTitle = (booking) => {

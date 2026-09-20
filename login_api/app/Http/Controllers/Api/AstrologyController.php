@@ -1080,9 +1080,7 @@ class AstrologyController extends Controller
                 ]),
                 $language
             );
-            $chartSvg = is_string($response) && str_starts_with(trim($response), '<svg')
-                ? $response
-                : ($response['svg'] ?? null);
+            $chartSvg = $this->extractChartSvg($response);
 
             return response()->json([
                 'status' => 'success',
@@ -2416,11 +2414,11 @@ class AstrologyController extends Controller
     private function d1ToD16ChartTypes(): array
     {
         return [
+            ['value' => 'rasi', 'chart_id' => 'D1', 'label' => 'D1 - Birth Chart'],
+            ['value' => 'moon', 'chart_id' => 'MOON', 'label' => 'Moon Chart'],
             ['value' => 'chalit', 'chart_id' => 'chalit', 'label' => 'Chalit - Chalit Chart'],
             ['value' => 'gochar', 'chart_id' => 'gochar', 'label' => 'Gochar / Transit Chart'],
             ['value' => 'sun', 'chart_id' => 'SUN', 'label' => 'Sun Chart'],
-            ['value' => 'moon', 'chart_id' => 'MOON', 'label' => 'Moon Chart'],
-            ['value' => 'rasi', 'chart_id' => 'D1', 'label' => 'D1 - Birth Chart'],
             ['value' => 'hora', 'chart_id' => 'D2', 'label' => 'D2 - Hora Chart'],
             ['value' => 'drekkana', 'chart_id' => 'D3', 'label' => 'D3 - Dreshkan Chart'],
             ['value' => 'chaturthamsa', 'chart_id' => 'D4', 'label' => 'D4 - Chathurthamasha Chart'],
@@ -2475,9 +2473,7 @@ class AstrologyController extends Controller
                     ]),
                     $language
                 );
-                $chartSvg = is_string($response) && str_starts_with(trim($response), '<svg')
-                    ? $response
-                    : ($response['svg'] ?? null);
+                $chartSvg = $this->extractChartSvg($response);
 
                 $charts[] = [
                     'status' => 'success',
@@ -2500,6 +2496,42 @@ class AstrologyController extends Controller
         }
 
         return $charts;
+    }
+
+    private function extractChartSvg(mixed $response): ?string
+    {
+        if (is_string($response)) {
+            $trimmed = trim($response);
+            return str_starts_with($trimmed, '<svg') ? $trimmed : null;
+        }
+
+        if (!is_array($response)) {
+            return null;
+        }
+
+        foreach (['chart_svg', 'svg', 'chart', 'chart_data'] as $key) {
+            if (!array_key_exists($key, $response)) {
+                continue;
+            }
+
+            $svg = $this->extractChartSvg($response[$key]);
+            if ($svg !== null) {
+                return $svg;
+            }
+        }
+
+        foreach ($response as $item) {
+            if (!is_array($item) && !is_string($item)) {
+                continue;
+            }
+
+            $svg = $this->extractChartSvg($item);
+            if ($svg !== null) {
+                return $svg;
+            }
+        }
+
+        return null;
     }
 
     private function mapChartStyle(string $chartStyle): string
