@@ -1,0 +1,469 @@
+[
+  {
+    "viewport": "mobile",
+    "route": "/",
+    "url": "https://astrozura.com/",
+    "status": 200,
+    "elapsedMs": 8178,
+    "loadError": "",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-home.png",
+    "title": "AstroZura",
+    "bodyText": "EN Sign In THE MASTERMIND Meet Ananya Gupta (Astrotarsh) ALIGN YOUR STARS. ENGINEER YOUR DESTINY. \"Welcome! I am Ananya Gupta Founder of Astrozura, professionally known as AstroTarsh. My journey bridges two seemingly different worlds: data-driven engineering and ancient Vedic Astrology. As a Mechanical and AI/ML Engineer, I spent years analyzing complex data systems. Today, I apply that same rigorous analytical precision to decode the cosmic scripts written in the stars. Driven by a profound reverence for ancient Vedic culture, I transitioned from engineering algorithms to mastering the ultimate truth of Karma. Over the past 10 years, I have delivered more than 50,000 personalized consultati",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 16140,
+    "brokenImages": [],
+    "overflow": [
+      {
+        "tag": "div",
+        "text": "",
+        "left": 309,
+        "right": 437,
+        "width": 128
+      },
+      {
+        "tag": "span",
+        "text": "",
+        "left": -32,
+        "right": 16,
+        "width": 48
+      },
+      {
+        "tag": "div",
+        "text": "Leo",
+        "left": 352,
+        "right": 422,
+        "width": 70
+      },
+      {
+        "tag": "div",
+        "text": "",
+        "left": 357,
+        "right": 417,
+        "width": 60
+      },
+      {
+        "tag": "img",
+        "text": "",
+        "left": 365,
+        "right": 409,
+        "width": 44
+      },
+      {
+        "tag": "p",
+        "text": "Leo",
+        "left": 352,
+        "right": 422,
+        "width": 70
+      },
+      {
+        "tag": "div",
+        "text": "Virgo",
+        "left": 434,
+        "right": 504,
+        "width": 70
+      },
+      {
+        "tag": "div",
+        "text": "",
+        "left": 439,
+        "right": 499,
+        "width": 60
+      }
+    ],
+    "skeletonCount": 1
+  },
+  {
+    "viewport": "mobile",
+    "route": "/tarot",
+    "url": "https://astrozura.com/tarot/",
+    "status": 404,
+    "elapsedMs": 7195,
+    "loadError": "",
+    "consoleErrors": [
+      "error: Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-tarot.png",
+    "title": "404 Not Found",
+    "bodyText": "404 Not Found The resource requested could not be found on this server! Proudly powered by LiteSpeed Web Server Please be advised that LiteSpeed Technologies Inc. is not a web hosting company and, as such, has no control over content found on this site.",
+    "scrollWidth": 595,
+    "clientWidth": 390,
+    "scrollHeight": 1288,
+    "brokenImages": [],
+    "overflow": [
+      {
+        "tag": "div",
+        "text": "404 Not Found The resource requested could not be found on this server!",
+        "left": -205,
+        "right": 595,
+        "width": 800
+      },
+      {
+        "tag": "h1",
+        "text": "404",
+        "left": -205,
+        "right": 595,
+        "width": 800
+      },
+      {
+        "tag": "h2",
+        "text": "Not Found",
+        "left": -205,
+        "right": 595,
+        "width": 800
+      },
+      {
+        "tag": "p",
+        "text": "The resource requested could not be found on this server!",
+        "left": -205,
+        "right": 595,
+        "width": 800
+      }
+    ],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "mobile",
+    "route": "/shop",
+    "url": "https://astrozura.com/shop",
+    "status": 200,
+    "elapsedMs": 7211,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/shop\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-shop.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 844,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "mobile",
+    "route": "/astrologers",
+    "url": "https://astrozura.com/astrologers",
+    "status": 200,
+    "elapsedMs": 7259,
+    "loadError": "",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-astrologers.png",
+    "title": "AstroZura",
+    "bodyText": "EN Sign In OUR EXPERTS Consult With Expert Astrologers Choose from experienced Vedic astrologers for personalized guidance. Language Experience Rating Consultation Reader FEATURED EXPERT ALIGN YOUR STARS. ENGINEER YOUR DESTINY. Astro Tarsh Welcome! I am Ananya Gupta Founder of Astrozura, professionally known as AstroTarsh. My journey bridges two seemingly different worlds: data-driven engineering and ancient Vedic Astrology. As a Mechanical and AI/ML Engineer, I spent years analyzing complex data systems. Today, I apply that same rigorous analytical precision to decode the cosmic scripts written in the stars. Driven by a profound reverence for ancient Vedic culture, I transitioned from engin",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 4877,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "mobile",
+    "route": "/kundli",
+    "url": "https://astrozura.com/kundli",
+    "status": 200,
+    "elapsedMs": 7233,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/kundli\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-kundli.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 844,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "mobile",
+    "route": "/matchmaking",
+    "url": "https://astrozura.com/matchmaking",
+    "status": 200,
+    "elapsedMs": 7196,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/matchmaking\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-matchmaking.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 844,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "mobile",
+    "route": "/panchang",
+    "url": "https://astrozura.com/panchang",
+    "status": 200,
+    "elapsedMs": 7254,
+    "loadError": "",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-panchang.png",
+    "title": "AstroZura",
+    "bodyText": "EN Sign In Panchang For Sunday, 04 October 2026 SELECT DATE SELECT PANCHANG PLACE India LOCATION SELECT LANGUAGE English Hindi Tamil Telugu Malayalam Previous Next 04 October 2026 AYANA - - - SUNRISE - SUNSET - MOONRISE - MOONSET - VEDIC SUNRISE - VEDIC SUNSET - SUN SIGN - MOON SIGN - Panchang Elements TITHI - NAKSHATRA - YOG - KARAN - Hindu Month & Year VIKRAM SAMVAT - VIKRAM SAMVAT NAME - SHAKA SAMVAT - SHAKA SAMVAT NAME - PAKSHA - RITU - AYANA - PURNIMANTA - AMANTA - ADHIK MAAS - SUN SIGN - MOON SIGN - Today's Festival & Vratas No festival returned Inauspicious Timing RAHU KAAL - YAMGHANT KAAL - GULIKA KAAL - Auspicious Timing ABHIJIT MUHURTA - AMRIT KALAM - PANCHANG YOG - Shool & Nivas D",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 5550,
+    "brokenImages": [],
+    "overflow": [
+      {
+        "tag": "table",
+        "text": "PLANET SIGN DEGREE NAKSHATRA HOUSE MOTION - - - - - -",
+        "left": 38,
+        "right": 529,
+        "width": 491
+      },
+      {
+        "tag": "thead",
+        "text": "PLANET SIGN DEGREE NAKSHATRA HOUSE MOTION",
+        "left": 39,
+        "right": 529,
+        "width": 490
+      },
+      {
+        "tag": "tr",
+        "text": "PLANET SIGN DEGREE NAKSHATRA HOUSE MOTION",
+        "left": 39,
+        "right": 529,
+        "width": 490
+      },
+      {
+        "tag": "th",
+        "text": "HOUSE",
+        "left": 369,
+        "right": 444,
+        "width": 75
+      },
+      {
+        "tag": "th",
+        "text": "MOTION",
+        "left": 444,
+        "right": 529,
+        "width": 85
+      },
+      {
+        "tag": "tbody",
+        "text": "- - - - - -",
+        "left": 39,
+        "right": 529,
+        "width": 490
+      },
+      {
+        "tag": "tr",
+        "text": "- - - - - -",
+        "left": 39,
+        "right": 529,
+        "width": 490
+      },
+      {
+        "tag": "td",
+        "text": "-",
+        "left": 369,
+        "right": 444,
+        "width": 75
+      }
+    ],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "mobile",
+    "route": "/profile",
+    "url": "https://astrozura.com/profile",
+    "status": 200,
+    "elapsedMs": 7272,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/profile\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\mobile-profile.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 844,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "desktop",
+    "route": "/",
+    "url": "https://astrozura.com/",
+    "status": 200,
+    "elapsedMs": 8017,
+    "loadError": "",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-home.png",
+    "title": "AstroZura",
+    "bodyText": "Panchang Consultations Calculators Pooja Anusthan Reports Blogs LIVE EN Sign In Horoscope Kundali Match Making Numerology Tarot Palm Reading Shop 12+ YEARS OF Experience THE MASTERMIND Meet Ananya Gupta (Astrotarsh) ALIGN YOUR STARS. ENGINEER YOUR DESTINY. \"Welcome! I am Ananya Gupta Founder of Astrozura, professionally known as AstroTarsh. My journey bridges two seemingly different worlds: data-driven engineering and ancient Vedic Astrology. As a Mechanical and AI/ML Engineer, I spent years analyzing complex data systems. Today, I apply that same rigorous analytical precision to decode the cosmic scripts written in the stars. Driven by a profound reverence for ancient Vedic culture, I trans",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 7463,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 1
+  },
+  {
+    "viewport": "desktop",
+    "route": "/tarot",
+    "url": "https://astrozura.com/tarot/",
+    "status": 404,
+    "elapsedMs": 7217,
+    "loadError": "",
+    "consoleErrors": [
+      "error: Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-tarot.png",
+    "title": "404 Not Found",
+    "bodyText": "404 Not Found The resource requested could not be found on this server! Proudly powered by LiteSpeed Web Server Please be advised that LiteSpeed Technologies Inc. is not a web hosting company and, as such, has no control over content found on this site.",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 768,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "desktop",
+    "route": "/shop",
+    "url": "https://astrozura.com/shop",
+    "status": 200,
+    "elapsedMs": 7308,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/shop\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-shop.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 768,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "desktop",
+    "route": "/astrologers",
+    "url": "https://astrozura.com/astrologers",
+    "status": 200,
+    "elapsedMs": 7388,
+    "loadError": "",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-astrologers.png",
+    "title": "AstroZura",
+    "bodyText": "Panchang Consultations Calculators Pooja Anusthan Reports Blogs LIVE EN Sign In Horoscope Kundali Match Making Numerology Tarot Palm Reading Shop OUR EXPERTS Consult With Expert Astrologers Choose from experienced Vedic astrologers for personalized guidance. Language Experience Rating Consultation Reader FEATURED EXPERT ALIGN YOUR STARS. ENGINEER YOUR DESTINY. Astro Tarsh Welcome! I am Ananya Gupta Founder of Astrozura, professionally known as AstroTarsh. My journey bridges two seemingly different worlds: data-driven engineering and ancient Vedic Astrology. As a Mechanical and AI/ML Engineer, I spent years analyzing complex data systems. Today, I apply that same rigorous analytical precision",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 2435,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "desktop",
+    "route": "/kundli",
+    "url": "https://astrozura.com/kundli",
+    "status": 200,
+    "elapsedMs": 7367,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/kundli\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-kundli.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 768,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "desktop",
+    "route": "/matchmaking",
+    "url": "https://astrozura.com/matchmaking",
+    "status": 200,
+    "elapsedMs": 7331,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/matchmaking\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-matchmaking.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 768,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "desktop",
+    "route": "/panchang",
+    "url": "https://astrozura.com/panchang",
+    "status": 200,
+    "elapsedMs": 8013,
+    "loadError": "",
+    "consoleErrors": [],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-panchang.png",
+    "title": "AstroZura",
+    "bodyText": "Panchang Consultations Calculators Pooja Anusthan Reports Blogs LIVE EN Sign In Horoscope Kundali Match Making Numerology Tarot Palm Reading Shop Panchang For Sunday, 04 October 2026 Select Date Select Panchang Place India Location Select Language English Hindi Tamil Telugu Malayalam Previous Next 04 October 2026 AYANA - - - SUNRISE - SUNSET - MOONRISE - MOONSET - VEDIC SUNRISE - VEDIC SUNSET - SUN SIGN - MOON SIGN - Panchang Elements TITHI - NAKSHATRA - YOG - KARAN - Hindu Month & Year VIKRAM SAMVAT - VIKRAM SAMVAT NAME - SHAKA SAMVAT - SHAKA SAMVAT NAME - PAKSHA - RITU - AYANA - PURNIMANTA - AMANTA - ADHIK MAAS - SUN SIGN - MOON SIGN - Today's Festival & Vratas No festival returned Inauspi",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 3269,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  },
+  {
+    "viewport": "desktop",
+    "route": "/profile",
+    "url": "https://astrozura.com/profile",
+    "status": 200,
+    "elapsedMs": 7756,
+    "loadError": "",
+    "consoleErrors": [
+      "warning: No routes matched location \"/profile\" "
+    ],
+    "failedRequests": [],
+    "screenshot": "D:\\astrozura-fullproject\\output\\playwright\\desktop-profile.png",
+    "title": "AstroZura",
+    "bodyText": "",
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 768,
+    "brokenImages": [],
+    "overflow": [],
+    "skeletonCount": 0
+  }
+]
